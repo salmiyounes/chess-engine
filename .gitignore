@@ -1,0 +1,5 @@
+notes
+__pycache__
+*.o
+*.out
+*.so
