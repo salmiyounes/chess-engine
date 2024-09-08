@@ -12,6 +12,51 @@ void make_move(ChessBoard *board, Move *move) {
 	do_move(board, move);
 }
 
+void notate_move(ChessBoard *board, Move* move, char *result) {
+	int piece   = move->piece;
+	int color   = move->color;
+	bb capture;
+	if (COLOR(color)) {
+		capture    = board->AllWhitePieces & BIT(move->dst);
+	} else {
+		capture    = board->AllBalckPieces & BIT(move->dst);
+	}
+
+	char rank1 = '1' + move->src / 8;
+	char file1 = 'a' + move->src % 8;
+
+	char ramk2 = '1' + move->dst / 8;
+	char file2 = 'a' + move->dst % 8;
+
+	switch(PIECE(piece)) {
+		case KNIGHT: *result++ = 'N'; break;
+		case BISHOP: *result++ = 'B'; break;
+		case ROOK:   *result++ = 'R'; break;
+		case QUEEN:	 *result++ = 'Q'; break;
+		case KING:   *result++ = 'K'; break;
+	}
+
+	*result++ = file1;
+	*result++ = rank1;
+
+	if (capture) *result++ = 'x';
+
+	*result++ = file2;
+	*result++ = ramk2;
+
+	if (move->promotion) {
+		*result++ = '=';
+		switch (move->promotion) {
+            case KNIGHT: *result++ = 'N'; break;
+            case BISHOP: *result++ = 'B'; break;
+            case ROOK:   *result++ = 'R'; break;
+            case QUEEN:  *result++ = 'Q'; break;
+        }
+	}
+
+	*result++ = 0;
+}
+
 int get_piece_type(ChessBoard *board, int sq, int color) {
 	switch (color) {
 		case BLACK: 

@@ -16,5 +16,6 @@ typedef struct {
 #define MAX_MOVES 0x100
 void do_move(ChessBoard *board, Move *move);
 void make_move(ChessBoard *board, Move *move);
+void notate_move(ChessBoard *board, Move* move, char *result);
 
 #endif

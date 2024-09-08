@@ -63,10 +63,8 @@ class ChessGui:
             if move.piece == 0:
                 break
             if move.src == 63 - (x_src * 8 + y_src) and move.dst == 63 - (x_dst * 8 + y_dst):
-                ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, piece
-                ChessGui.chess_game.do_move(move)
-                return True
-        return False
+                return move
+        return None
 
     @staticmethod
     def draw_pieces(board):
@@ -94,31 +92,30 @@ class ChessGui:
             for j in range(8):
                 pos = i * 8 + j
                 if ChessGui.chess_game.board.WhitePawns & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wP.value
-                elif ChessGui.chess_game.board.BlackPawns & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bP.value
-                elif ChessGui.chess_game.board.WhiteRooks & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wR.value
-                elif ChessGui.chess_game.board.BlackRooks & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bR.value
-                elif ChessGui.chess_game.board.WhiteKnights & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wN.value
-                elif ChessGui.chess_game.board.BlackKnights & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bN.value
-                elif ChessGui.chess_game.board.WhiteBishops & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wB.value
-                elif ChessGui.chess_game.board.BlackBishops & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bB.value
-                elif ChessGui.chess_game.board.WhiteQueens & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wQ.value
-                elif ChessGui.chess_game.board.BlackQueens & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bQ.value
-                elif ChessGui.chess_game.board.WhiteKing & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.wK.value
-                elif ChessGui.chess_game.board.BlackKing & (1 << pos):
-                    ChessGui.board[i][j] = AllPieces.bK.value
-        ChessGui.board[:] = ChessGui.board[::-1]
-
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wP.value
+                if ChessGui.chess_game.board.BlackPawns & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bP.value
+                if ChessGui.chess_game.board.WhiteRooks & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wR.value
+                if ChessGui.chess_game.board.BlackRooks & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bR.value
+                if ChessGui.chess_game.board.WhiteKnights & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wN.value
+                if ChessGui.chess_game.board.BlackKnights & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bN.value
+                if ChessGui.chess_game.board.WhiteBishops & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wB.value
+                if ChessGui.chess_game.board.BlackBishops & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bB.value
+                if ChessGui.chess_game.board.WhiteQueens & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wQ.value
+                if ChessGui.chess_game.board.BlackQueens & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bQ.value
+                if ChessGui.chess_game.board.WhiteKing & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.wK.value
+                if ChessGui.chess_game.board.BlackKing & (1 << pos):
+                    ChessGui.board[7 - i][7 - j] = AllPieces.bK.value
+                    
     @staticmethod
     def draw_moves(x_src, y_src, color):
         moves = ChessGui.chess_game.gen_moves(color)
@@ -131,7 +128,7 @@ class ChessGui:
                 else :
                     pygame.draw.rect(ChessGui.screen,ChessGui.HIGHLIGHT_COLOR, pygame.Rect(col * ChessGui.SQ_SIZE, row * ChessGui.SQ_SIZE, ChessGui.SQ_SIZE, ChessGui.SQ_SIZE))
 
-        pygame.draw.rect(ChessGui.screen,ChessGui.HIGHLIGHT_COLOR, pygame.Rect(y_src * ChessGui.SQ_SIZE, x_src * ChessGui.SQ_SIZE, ChessGui.SQ_SIZE, ChessGui.SQ_SIZE))
+        pygame.draw.rect(ChessGui.screen, (255,228,181), pygame.Rect(y_src * ChessGui.SQ_SIZE, x_src * ChessGui.SQ_SIZE, ChessGui.SQ_SIZE, ChessGui.SQ_SIZE))
 
 
     @staticmethod
@@ -162,7 +159,12 @@ class ChessGui:
                     else:
                         x_dst, y_dst = x, y
                         is_capture = ChessGui.board[x_dst][y_dst] != AllPieces.empty.value
-                        if ChessGui.update_board(x_src, y_src, x_dst, y_dst, ChessGui.board[x_src][y_src], player):
+                        piece = ChessGui.board[x_src][y_src]
+                        move = ChessGui.update_board(x_src, y_src, x_dst, y_dst, piece, player)
+                        if move:
+                            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, piece
+                            ChessGui.chess_game.notate_move(move)
+                            ChessGui.chess_game.do_move(move)
                             ChessGui.play_sound(is_capture)
                             player = ChessGui.switch_player(player)
                             ChessGui.chess_game.print_board()

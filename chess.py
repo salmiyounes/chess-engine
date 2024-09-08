@@ -58,6 +58,7 @@ class Chess(object):
     
     def __init__(self):
         self.chess_lib = ctypes.CDLL('./engine/libchess.so')
+        self.c_lib     = ctypes.cdll.LoadLibrary("libc.so.6")
         self.board     = ChessBoard()
         self.pieces    = Pieces()
     
@@ -98,3 +99,11 @@ class Chess(object):
     	self.chess_lib.board_clear(ctypes.byref(self.board))
     	self.board_init()
     	return None
+
+    def notate_move(self, move) -> None:
+        self.chess_lib.malloc.restype = ctypes.POINTER(ctypes.c_char)
+        res = self.chess_lib.malloc(10 * ctypes.sizeof(ctypes.c_char)) 
+        self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
+        self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
+        self.c_lib.printf(b"%s\n", res)
+        return None
