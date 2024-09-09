@@ -14,6 +14,10 @@ typedef struct {
 } Move;
 
 #define MAX_MOVES 0x100
+#define CAPTURE(a, b, c, m) \
+  if (COLOR(c)) { a = b->AllWhitePieces & BIT(m->dst);}\
+  else {a = b->AllBalckPieces & BIT(m->dst);}
+
 void do_move(ChessBoard *board, Move *move);
 void make_move(ChessBoard *board, Move *move);
 void notate_move(ChessBoard *board, Move* move, char *result);

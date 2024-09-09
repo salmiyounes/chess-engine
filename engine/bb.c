@@ -205,7 +205,7 @@ void bb_init() {
             int index = (obstacles * MAGIC_ROOK[sq]) >> SHIFT_ROOK[sq];
             bb previous = ATTACK_ROOK[offset + index];
             if (previous && previous != value) {
-                printf("ERROR: invalid ATTACK_ROOK table\n");
+                fprintf(stdout ,"ERROR: invalid ATTACK_ROOK table\n");
             }
             ATTACK_ROOK[offset + index] = value;
         }

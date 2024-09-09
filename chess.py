@@ -62,9 +62,19 @@ class Chess(object):
         self.board     = ChessBoard()
         self.pieces    = Pieces()
     
+    def __call__(self):
+        self.board_init()
+        self.bit_board_init()
+        return None
+
     def board_init(self) -> None:
         self.chess_lib.initializeBoard.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Pieces)]
         self.chess_lib.initializeBoard(ctypes.byref(self.board), ctypes.byref(self.pieces))
+        return None
+    
+    def board_reset(self) -> None:
+        self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
+        self.chess_lib.board_clear(ctypes.byref(self.board))
         return None
 
     def bit_board_init(self) -> None:
@@ -106,4 +116,11 @@ class Chess(object):
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
         self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
         self.c_lib.printf(b"%s\n", res)
+        return None
+
+    def load_fen(self, fen: bytes) -> None:
+        if not isinstance(fen, bytes):
+            raise TypeError(f"Expected bytes-like object, got '{type(fen).__name__}'")
+        self.chess_lib.board_load_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
+        self.chess_lib.board_load_fen(ctypes.byref(self.board), fen)
         return None

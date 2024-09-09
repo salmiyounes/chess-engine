@@ -34,8 +34,6 @@ class ChessGui:
     pygame.display.set_caption("Chess")
 
     chess_game = Chess()
-    chess_game.board_init()
-    chess_game.bit_board_init()
 
     board = [[AllPieces.empty.value for _ in range(8)] for _ in range(8)]
 
@@ -88,6 +86,7 @@ class ChessGui:
 
     @staticmethod
     def make_board():
+        ChessGui.chess_game()
         for i in range(8):
             for j in range(8):
                 pos = i * 8 + j
@@ -170,6 +169,9 @@ class ChessGui:
                             ChessGui.chess_game.print_board()
                         src_selected = False
                         draw = False
+                if event.type == pygame.KEYDOWN :
+                    if event.key == pygame.K_RSHIFT or event.key == pygame.K_LSHIFT :
+                        pass
             ChessGui.draw_pieces(ChessGui.board)
 
             pygame.display.flip()

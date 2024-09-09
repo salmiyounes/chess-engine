@@ -9,6 +9,7 @@
 
 #define initializeAllWhitePieces(b) ((b->AllWhitePieces = (b->WhitePawns | b->WhiteRooks | b->WhiteBishops | b->WhiteKnights | b->WhiteQueens | b->WhiteKing)))
 #define initializeAllBlackPieces(b) ((b->AllBalckPieces = (b->BlackPawns | b->BlackRooks | b->BlackBishops | b->BlackKnights | b->BlackQueens | b->BlackKing)))
+#define initializeAllBoard(b) ( ( b->Board) = (board->AllBalckPieces) | (board->AllWhitePieces))
 
 typedef struct {
 	char *WhitePawns;
@@ -60,6 +61,7 @@ void  initializeBoard(ChessBoard *b, Pieces *p);
 void  printBoard(ChessBoard *b, const Pieces *p);
 void  myFunc(char **grid, bb bstate, char *pt);
 void  board_set(ChessBoard *board, int sq,  int piece, int color);
+void board_load_fen(ChessBoard *board, char *fen);
 
 #define EMPTY 0x00
 #define PAWN 0x01

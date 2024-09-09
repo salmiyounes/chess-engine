@@ -16,11 +16,8 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 	int piece   = move->piece;
 	int color   = move->color;
 	bb capture;
-	if (COLOR(color)) {
-		capture    = board->AllWhitePieces & BIT(move->dst);
-	} else {
-		capture    = board->AllBalckPieces & BIT(move->dst);
-	}
+	
+	CAPTURE(capture, board, color, move);
 
 	char rank1 = '1' + move->src / 8;
 	char file1 = 'a' + move->src % 8;
@@ -95,12 +92,7 @@ void do_move(ChessBoard *board, Move *move) {
 	int color     = move->color;
 	int promotion = move->promotion;
 	bb capture;
-	if (COLOR(color)) {
-		capture    = board->AllWhitePieces & BIT(move->dst);
-	} else {
-		capture    = board->AllBalckPieces & BIT(move->dst);
-	}
-
+	CAPTURE(capture, board, color, move);
 	board_set(board, move->src, piece, color);
 	if (promotion) {
 		board_set(board, move->dst, move->promotion, color);

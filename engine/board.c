@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -98,9 +97,10 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
     //QUEENS
     board->WhiteQueens  = BIT(RF(0, 3));
     board->BlackQueens  = BIT(RF(7, 3));
+
     initializeAllWhitePieces(board);
     initializeAllBlackPieces(board);
-    board->Board = (board->AllWhitePieces | board->AllBalckPieces);
+    initializeAllBoard(board);
 
     // 
     p->BlackPawns   = "♙ "; 
@@ -163,3 +163,60 @@ void printBoard(ChessBoard *b, const Pieces *p) {
     free(grid);
 }
 
+void board_load_fen(ChessBoard *board, char *fen) {
+    board_clear(board);
+    int i = 0;
+    int n = strlen(fen);
+    int rank = 7, file = 0;
+    for (; i < n; i++) {
+        bool done = false;
+        switch(fen[i]) {
+            // White
+            case 'P': board->WhitePawns   |= BIT(RF(rank, file++)); break;
+            case 'N': board->WhiteKnights |= BIT(RF(rank, file++)); break;
+            case 'B': board->WhiteBishops |= BIT(RF(rank, file++)); break;
+            case 'Q': board->WhiteQueens  |= BIT(RF(rank, file++)); break;
+            case 'K': board->WhiteKing    |= BIT(RF(rank, file++)); break;
+            case 'R': board->WhiteRooks   |= BIT(RF(rank, file++)); break;
+
+            // Black
+            case 'p': board->BlackPawns   |= BIT(RF(rank, file++)); break;
+            case 'n': board->BlackKnights |= BIT(RF(rank, file++)); break;
+            case 'b': board->BlackBishops |= BIT(RF(rank, file++)); break;
+            case 'q': board->BlackQueens  |= BIT(RF(rank, file++)); break;
+            case 'k': board->BlackKing    |= BIT(RF(rank, file++)); break;
+            case 'r': board->BlackRooks   |= BIT(RF(rank, file++)); break;
+
+            //
+            case '1': file += 1; break;
+            case '2': file += 2; break;
+            case '3': file += 3; break;
+            case '4': file += 4; break;
+            case '5': file += 5; break;
+            case '6': file += 6; break;
+            case '7': file += 7; break;
+            case '8': file += 8; break;
+
+            //
+            case '/': file = 0; rank--; break;
+
+            //
+            case ' ': done = true;
+
+            default: break;
+        }
+
+        if (done) {
+            if (rank != 0 || file != 8) {
+                break;
+            }
+            break;
+        }
+    }
+
+    initializeAllBlackPieces(board);
+    initializeAllWhitePieces(board);
+    initializeAllBoard(board);
+
+    return ; 
+}
