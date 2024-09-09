@@ -2,7 +2,7 @@
 #define BB_H
 
 #include <stdint.h>
-typedef uint64_t  bb;
+typedef unsigned long long  bb;
 
 #define BIT(sq) (1L << (sq))
 #define RF(rank, file) ((rank) * 8 + (file))

@@ -67,6 +67,8 @@ int get_piece_type(ChessBoard *board, int sq, int color) {
 				return QUEEN;
 			} else if (BIT(sq) & board->BlackKing) {
 				return KING;
+			} else if (BIT(sq) & board->BlackRooks) {
+				return ROOK;
 			}
 			break;
 		case WHITE:
@@ -80,6 +82,8 @@ int get_piece_type(ChessBoard *board, int sq, int color) {
 				return QUEEN;
 			} else if (BIT(sq) & board->WhiteKing) {
 				return KING;
+			} else if (BIT(sq) & board->WhiteRooks) {
+				return ROOK;
 			}
 			break;
 

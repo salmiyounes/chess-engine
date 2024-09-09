@@ -152,7 +152,7 @@ int gen_white_knight_moves(ChessBoard *board, Move *moves) {
 
 int gen_white_bishop_moves(ChessBoard *board, Move *moves) {
     return gen_bishop_moves(
-        moves, board->WhiteBishops, ~board->AllBalckPieces, board->Board, WHITE);
+        moves, board->WhiteBishops, ~board->AllWhitePieces, board->Board, WHITE);
 }
 
 int gen_white_rook_moves(ChessBoard *board, Move *moves) {
@@ -245,7 +245,7 @@ int gen_black_bishop_moves(ChessBoard *board, Move *moves) {
 
 int gen_black_rook_moves(ChessBoard *board, Move *moves) {
     return gen_rook_moves(
-        moves, board->WhiteRooks, ~board->AllBalckPieces, board->Board, BLACK);
+        moves, board->BlackRooks, ~board->AllBalckPieces, board->Board, BLACK);
 }
 
 int gen_black_queen_moves(ChessBoard *board, Move *moves) {
