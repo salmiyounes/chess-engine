@@ -62,6 +62,7 @@ void  printBoard(ChessBoard *b, const Pieces *p);
 void  myFunc(char **grid, bb bstate, char *pt);
 void  board_set(ChessBoard *board, int sq,  int piece, int color);
 void board_load_fen(ChessBoard *board, char *fen);
+int trans_to_fen(ChessBoard *state, char *result);
 
 #define EMPTY 0x00
 #define PAWN 0x01

@@ -62,6 +62,9 @@ class Chess(object):
         self.board     = ChessBoard()
         self.pieces    = Pieces()
     
+    def __repr__(self):
+        return f'{self.__class__.__name__} Board({self.board_to_fen()})'
+
     def __call__(self):
         self.board_init()
         self.bit_board_init()
@@ -112,7 +115,7 @@ class Chess(object):
 
     def notate_move(self, move) -> None:
         self.chess_lib.malloc.restype = ctypes.POINTER(ctypes.c_char)
-        res = self.chess_lib.malloc(10 * ctypes.sizeof(ctypes.c_char)) 
+        res = self.chess_lib.malloc(100 * ctypes.sizeof(ctypes.c_char)) 
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
         self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
         self.c_lib.printf(b"%s\n", res)
@@ -124,3 +127,9 @@ class Chess(object):
         self.chess_lib.board_load_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
         self.chess_lib.board_load_fen(ctypes.byref(self.board), fen)
         return None
+
+    def board_to_fen(self) -> str:
+        fen = ctypes.create_string_buffer(100)
+        self.chess_lib.trans_to_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
+        self.chess_lib.trans_to_fen(ctypes.byref(self.board), fen)
+        return fen.value.decode('utf-8')

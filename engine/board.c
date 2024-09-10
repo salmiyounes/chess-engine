@@ -219,3 +219,112 @@ void board_load_fen(ChessBoard *board, char *fen) {
 
     return ; 
 }
+
+int trans_to_fen(ChessBoard *board, char *result) {
+    char *ptr = result;
+    int file = 0, i = 63;
+
+    for (; i >= 0; i--) {
+        if (board->WhitePawns & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'P';
+        }
+        else if (board->WhiteKnights & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'N';
+        }
+        else if (board->WhiteBishops & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'B';
+        }
+        else if (board->WhiteRooks & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'R';
+        }
+        else if (board->WhiteQueens & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'Q';
+        }
+        else if (board->WhiteKing & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'K';
+        }
+        else if (board->BlackPawns & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'p';
+        } 
+        else if (board->BlackKnights & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'n';
+        }
+        else if (board->BlackBishops & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'b';
+        }
+        else if (board->BlackRooks & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'r';
+        }
+        else if (board->BlackQueens & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'q';
+        }
+        else if (board->BlackKing & BIT(i)) {
+                if (file) {
+                    *result++ = '0' + file;
+                    file = 0;
+                }
+                *result++ = 'k';
+        } 
+        else file ++;
+
+        if (i && i % 8 == 0) {
+            if (file) {
+                *result++ = '0' + file;
+            }
+            *result++ = '/';
+            file = 0;
+        }
+    }
+
+    if (file) {
+        *result++ = '0' + file;
+    }
+
+    *result++ = 0;
+    
+    return result - ptr;
+}
