@@ -26,6 +26,9 @@ class Pieces(ctypes.Structure):
 
 class ChessBoard(ctypes.Structure):
     _fields_ = [
+        ('squares', ctypes.c_int * 64),
+        ('color', ctypes.c_int),
+        
         ('WhitePawns', ctypes.c_uint64),
         ('WhiteRooks', ctypes.c_uint64),
         ('WhiteBishops', ctypes.c_uint64),
@@ -42,7 +45,9 @@ class ChessBoard(ctypes.Structure):
         
         ('AllBlackPieces', ctypes.c_uint64),
         ('AllWhitePieces', ctypes.c_uint64),
-        ('Board', ctypes.c_uint64)
+        ('Board', ctypes.c_uint64),
+
+        ('ep', ctypes.c_uint64)
     ]
 
 class Move(ctypes.Structure):
@@ -61,9 +66,10 @@ class Chess(object):
         self.c_lib     = ctypes.cdll.LoadLibrary("libc.so.6")
         self.board     = ChessBoard()
         self.pieces    = Pieces()
+        self.player    = Color.WHITE.value
     
     def __repr__(self):
-        return f'{self.__class__.__name__} Board({self.board_to_fen()})'
+        return f'{self.__class__.__name__} Board({self.board_to_fen(self.player)})'
 
     def __call__(self):
         self.board_init()
@@ -102,10 +108,6 @@ class Chess(object):
             self.chess_lib.gen_black_moves(ctypes.byref(self.board), moves)
         return moves
 
-    def do_move(self, move) -> None:
-    	self.chess_lib.make_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
-    	self.chess_lib.make_move(ctypes.byref(self.board), ctypes.byref(move))
-    	return None
 
     def reset_board(self) -> None:
     	self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
@@ -128,8 +130,14 @@ class Chess(object):
         self.chess_lib.board_load_fen(ctypes.byref(self.board), fen)
         return None
 
-    def board_to_fen(self) -> str:
+    def board_to_fen(self, color: int) -> str:
         fen = ctypes.create_string_buffer(100)
-        self.chess_lib.trans_to_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
-        self.chess_lib.trans_to_fen(ctypes.byref(self.board), fen)
+        self.chess_lib.trans_to_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char), ctypes.c_int]
+        self.chess_lib.trans_to_fen(ctypes.byref(self.board), fen, color)
         return fen.value.decode('utf-8')
+
+    def do_move(self, move) -> None:
+        self.chess_lib.make_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
+        self.player = Color.BLACK.value if move.color == Color.WHITE.value else Color.WHITE.value
+        self.chess_lib.make_move(ctypes.byref(self.board), ctypes.byref(move))
+        return None

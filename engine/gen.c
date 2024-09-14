@@ -8,17 +8,19 @@
     (m)->promotion = EMPTY; \
     (m)++;
 
-#define EMIT_PROMOTION(m, a, b, p) \
+#define EMIT_PROMOTION(m, a, b, p, c) \
     (m)->src = (a); \
     (m)->dst   = (b); \
+    (m)->piece = PAWN;\
     (m)->promotion = (p); \
+    (m)->color = (c);\
     (m)++;
 
-#define EMIT_PROMOTIONS(m, a, b) \
-    EMIT_PROMOTION(m, a, b, BISHOP) \
-    EMIT_PROMOTION(m, a, b, QUEEN) \
-    EMIT_PROMOTION(m, a, b, ROOK) \
-    EMIT_PROMOTION(m, a, b, KNIGHT)  
+#define EMIT_PROMOTIONS(m, a, b, c) \
+    EMIT_PROMOTION(m, a, b, BISHOP, c) \
+    EMIT_PROMOTION(m, a, b, QUEEN, c) \
+    EMIT_PROMOTION(m, a, b, ROOK, c) \
+    EMIT_PROMOTION(m, a, b, KNIGHT, c)  
 
 /* 
     generic move generators
@@ -102,7 +104,7 @@ int gen_king_moves(Move *moves, bb srcs, bb mask, int color) {
 int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     bb pawns  = board->WhitePawns;
-    bb mask   = board->AllBalckPieces;
+    bb mask   = board->AllBalckPieces | board->ep;
     bb promo  = 0xff00000000000000L;
     bb p1     = (pawns << 8) & ~board->Board;
     bb p2     = ((p1 & 0x0000000000ff0000L) << 8) & ~board->Board;
@@ -113,7 +115,7 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
     while (p1) {
         POP_LSB(sq, p1);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq - 8, sq);
+            EMIT_PROMOTIONS(moves, sq - 8, sq, WHITE);
         } else {
             EMIT_MOVE(moves, sq - 8, sq, PAWN, WHITE);
         }
@@ -127,7 +129,7 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
     while (a1) {
         POP_LSB(sq, a1);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq - 7, sq);
+            EMIT_PROMOTIONS(moves, sq - 7, sq, WHITE);
         } else {
             EMIT_MOVE(moves, sq - 7, sq, PAWN, WHITE);
         }
@@ -136,7 +138,7 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
     while (a2) {
         POP_LSB(sq, a2);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq - 9, sq);
+            EMIT_PROMOTIONS(moves, sq - 9, sq, WHITE);
         } else {
             EMIT_MOVE(moves, sq - 9, sq, PAWN, WHITE);
         }
@@ -190,7 +192,8 @@ int gen_white_moves(ChessBoard *board, Move *moves) {
 int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     bb pawns  = board->BlackPawns;
-    bb mask   = board->AllWhitePieces;
+    bb mask = board->AllWhitePieces | board->ep;
+
     bb promo  = 0x00000000000000ffL;
     bb p1     = (pawns >> 8) & ~board->Board;
     bb p2     = ((p1 & 0x0000ff0000000000L) >> 8) & ~board->Board;
@@ -200,7 +203,7 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     while (p1) {
         POP_LSB(sq, p1);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq + 8, sq);
+            EMIT_PROMOTIONS(moves, sq + 8, sq, BLACK);
         }
         else {
             EMIT_MOVE(moves, sq + 8, sq, PAWN, BLACK);
@@ -213,7 +216,7 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     while (a1) {
         POP_LSB(sq, a1);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq + 7, sq);
+            EMIT_PROMOTIONS(moves, sq + 7, sq, BLACK);
         } 
         else {
             EMIT_MOVE(moves, sq + 7, sq, PAWN, BLACK);
@@ -222,7 +225,7 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     while (a2) {
         POP_LSB(sq, a2);
         if (BIT(sq) & promo) {
-            EMIT_PROMOTIONS(moves, sq + 9, sq);
+            EMIT_PROMOTIONS(moves, sq + 9, sq, BLACK);
         }
         else {
             EMIT_MOVE(moves, sq + 9, sq, PAWN, BLACK);

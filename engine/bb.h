@@ -1,7 +1,6 @@
 #ifndef BB_H
 #define BB_H
 
-#include <stdint.h>
 typedef unsigned long long  bb;
 
 #define BIT(sq) (1L << (sq))

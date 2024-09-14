@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "bb.h"
 
 bb BB_KNIGHT[64];

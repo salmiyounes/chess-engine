@@ -3,7 +3,7 @@ from chess import Chess, Color
 import pygame
 from enum import Enum
 from pygame.locals import MOUSEBUTTONUP
-import sys
+import sys, random
 
 class AllPieces(Enum):
     empty = 0
@@ -34,6 +34,7 @@ class ChessGui:
     pygame.display.set_caption("Chess")
 
     chess_game = Chess()
+    chess_game()
 
     board = [[AllPieces.empty.value for _ in range(8)] for _ in range(8)]
 
@@ -63,6 +64,19 @@ class ChessGui:
             if move.src == 63 - (x_src * 8 + y_src) and move.dst == 63 - (x_dst * 8 + y_dst):
                 return move
         return None
+    @staticmethod
+    def handle_promo(move, color, x_src, y_src, x_dst, y_dst):
+        promo = move.promotion
+        if promo == 2:
+            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, AllPieces.wN.value if color == Color.WHITE.value else AllPieces.bN.value
+        elif promo == 3:
+            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, AllPieces.wB.value if color == Color.WHITE.value else AllPieces.bB.value
+        elif promo == 4:
+            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, AllPieces.wR.value if color == Color.WHITE.value else AllPieces.bR.value
+        else:
+            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, AllPieces.wQ.value if color == Color.WHITE.value else AllPieces.bQ.value
+
+        return None
 
     @staticmethod
     def draw_pieces(board):
@@ -86,7 +100,6 @@ class ChessGui:
 
     @staticmethod
     def make_board():
-        ChessGui.chess_game()
         for i in range(8):
             for j in range(8):
                 pos = i * 8 + j
@@ -161,7 +174,11 @@ class ChessGui:
                         piece = ChessGui.board[x_src][y_src]
                         move = ChessGui.update_board(x_src, y_src, x_dst, y_dst, piece, player)
                         if move:
-                            ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, piece
+                            if move.promotion:
+                                print ('true')
+                                ChessGui.handle_promo(move, player, x_src, y_src, x_dst, y_dst)
+                            else:    
+                                ChessGui.board[x_src][y_src], ChessGui.board[x_dst][y_dst] = AllPieces.empty.value, piece
                             ChessGui.chess_game.notate_move(move)
                             ChessGui.chess_game.do_move(move)
                             ChessGui.play_sound(is_capture)
@@ -173,7 +190,6 @@ class ChessGui:
                     if event.key == pygame.K_RSHIFT or event.key == pygame.K_LSHIFT :
                         pass
             ChessGui.draw_pieces(ChessGui.board)
-
             pygame.display.flip()
 
         pygame.quit()

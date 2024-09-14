@@ -20,14 +20,18 @@ void myFunc(char **grid, bb bstate, char *pt) {
 
 void board_set(ChessBoard *board, int sq, int piece, int color) {
     bb prev    = board->Board & BIT(sq);
-    bb bit = BIT(sq);
-    bb mask = ~bit;
+    bb bit     = BIT(sq);
+    bb mask    = ~bit;
+    board->squares[sq] = piece;
+
     if (prev) {
         board->Board &= mask;
         if (COLOR(color)) {
             board->AllBalckPieces &= mask;
             switch (PIECE(piece)) {
-                case PAWN: board->BlackPawns &= mask; break;
+                case PAWN:
+                    board->BlackPawns &= mask;
+                    break;
                 case KNIGHT: board->BlackKnights &= mask; break;
                 case ROOK: board->BlackRooks &= mask; break;
                 case BISHOP: board->BlackBishops &= mask; break;
@@ -37,7 +41,9 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
         } else {
             board->AllWhitePieces &= mask;
             switch (PIECE(piece)) {
-                case PAWN: board->WhitePawns &= mask; break;
+                case PAWN:
+                    board->WhitePawns &= mask;
+                    break;
                 case KNIGHT: board->WhiteKnights &= mask; break;
                 case ROOK: board->WhiteRooks &= mask; break;
                 case BISHOP: board->WhiteBishops &= mask; break;
@@ -82,6 +88,7 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
         board->WhitePawns |= BIT(RF(1, file));
         board->BlackPawns |= BIT(RF(6, file));
     }
+
     // ROOKS
     board->BlackRooks   = BIT(RF(7, 0)) | BIT(RF(7, 7));
     board->WhiteRooks   = BIT(RF(0, 0)) | BIT(RF(0, 7));
@@ -100,7 +107,6 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
     initializeAllWhitePieces(board);
     initializeAllBlackPieces(board);
     initializeAllBoard(board);
-
     // 
     p->BlackPawns   = "♙ "; 
     p->BlackRooks   = "♖ ";
@@ -170,6 +176,7 @@ void board_load_fen(ChessBoard *board, char *fen) {
     for (; i < n; i++) {
         bool done = false;
         switch(fen[i]) {
+
             // White
             case 'P': board->WhitePawns   |= BIT(RF(rank, file++)); break;
             case 'N': board->WhiteKnights |= BIT(RF(rank, file++)); break;
@@ -212,6 +219,31 @@ void board_load_fen(ChessBoard *board, char *fen) {
             break;
         }
     }
+
+    i++;
+
+    switch(fen[i++]) {
+        case 'w':
+            board->color = WHITE;
+            break;
+        case 'b':
+            board->color = BLACK;
+    }
+
+    i++;
+    if (fen[i] == '-') i++;
+
+    else if (fen[i] >= 'a' && fen[i] <= 'h') {
+        int ep_file = fen[i] - 'a';
+        i++;
+        if (fen[i] >= '1' && fen[i] <= '8') {
+            int ep_rank = fen[i] - '1';
+            board->ep = BIT(RF(ep_rank, ep_file));
+            i++;
+        }
+    }
+
+    i++;
 
     initializeAllBlackPieces(board);
     initializeAllWhitePieces(board);
@@ -324,7 +356,17 @@ int trans_to_fen(ChessBoard *board, char *result) {
         *result++ = '0' + file;
     }
 
-    *result++ = 0;
+    *result++ = ' ';
+    switch(board->color) {
+        case WHITE:
+            *result++ = 'w';
+            break;
+        case BLACK:
+            *result++ = 'b';
+            break;
+    }
+
+    *result = 0;
     
     return result - ptr;
 }

@@ -13,6 +13,7 @@ int gen_white_bishop_moves(ChessBoard *board,Move *moves);
 int gen_white_rook_moves(ChessBoard *board, Move *moves);
 int gen_white_queen_moves(ChessBoard *board,Move *moves);
 int gen_white_king_moves(ChessBoard *board,Move *moves);
+
 //
 int gen_black_moves(ChessBoard *board, Move *moves);
 int gen_black_pawn_moves(ChessBoard *board, Move *moves);
@@ -21,6 +22,8 @@ int gen_black_bishop_moves(ChessBoard *board, Move *moves);
 int gen_black_rook_moves(ChessBoard *board, Move *moves);
 int gen_black_queen_moves(ChessBoard *board, Move *moves);
 int gen_black_king_moves(ChessBoard *board, Move *moves);
+
 //
 int gen_knight_moves(Move *moves, bb srcs, bb mask, int color);
+
 #endif 

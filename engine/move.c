@@ -1,15 +1,9 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include "bb.h"
-#include "board.h"
 #include "move.h"
 #include "gen.h"
 
 void make_move(ChessBoard *board, Move *move) {
-	do_move(board, move);
+	Undo undo;
+	do_move(board, move, &undo);
 }
 
 void notate_move(ChessBoard *board, Move* move, char *result) {
@@ -88,17 +82,25 @@ int get_piece_type(ChessBoard *board, int sq, int color) {
 			break;
 
 	}
-	return EMPTY;
+	return -1;
 }
 
-void do_move(ChessBoard *board, Move *move) {
+void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	int piece     = move->piece;
 	int color     = move->color;
 	int promotion = move->promotion;
+	undo->ep      = board->ep;
 	bb capture;
+
 	CAPTURE(capture, board, color, move);
 	board_set(board, move->src, piece, color);
+
+	board->ep = 0L;
+
 	if (promotion) {
+		if (capture) {
+			board_set(board, move->dst, get_piece_type(board ,move->dst, SWITCH(color)), SWITCH(color));
+		}
 		board_set(board, move->dst, move->promotion, color);
 	}
 	else {
@@ -108,5 +110,32 @@ void do_move(ChessBoard *board, Move *move) {
 		board_set(board, move->dst, piece, color);
 	}
 
+	if (board->squares[move->src] == PAWN) {
+		bb src, dst;
+		switch (PIECE(board->color)) {
+			case BLACK: 
+					src  = BIT(move->src);
+					dst  = BIT(move->dst);
+					if ((src & 0x00ff000000000000L) && (dst & 0x000000ff00000000L)) {
+						board->ep = BIT(move->src - 8);
+					}
+					if (dst == undo->ep) {
+						board_set(board, move->dst + 8, PAWN, WHITE);
+					}
+					break;
+			case WHITE:
+					src    = BIT(move->src);
+					dst    = BIT(move->dst);
+					if ((src &  0x000000000000ff00L) && (dst & 0x00000000ff000000L)) {
+						board->ep = BIT(move->src + 8);
+					}	
+					if (dst == undo->ep) {
+						board_set(board, move->dst - 8, PAWN, BLACK);
+					}
+					break;
+			}
+		}
+
+	board->color ^= BLACK;
 }
 
