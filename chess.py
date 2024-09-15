@@ -56,7 +56,8 @@ class Move(ctypes.Structure):
         ('color', ctypes.c_int),
         ('src', ctypes.c_int),
         ('dst', ctypes.c_int),
-        ('promotion', ctypes.c_int)
+        ('promotion', ctypes.c_int),
+        ('ep', ctypes.c_int)
     ]
 
 class Chess(object):
@@ -116,12 +117,10 @@ class Chess(object):
     	return None
 
     def notate_move(self, move) -> None:
-        self.chess_lib.malloc.restype = ctypes.POINTER(ctypes.c_char)
-        res = self.chess_lib.malloc(100 * ctypes.sizeof(ctypes.c_char)) 
+        res = ctypes.create_string_buffer(100) 
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
         self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
-        self.c_lib.printf(b"%s\n", res)
-        return None
+        return res.value.decode('utf-8')
 
     def load_fen(self, fen: bytes) -> None:
         if not isinstance(fen, bytes):

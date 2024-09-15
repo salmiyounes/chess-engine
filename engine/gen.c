@@ -6,6 +6,7 @@
     (m)->src = (a); \
     (m)->dst   = (b); \
     (m)->promotion = EMPTY; \
+    (m)->ep   = EMPTY; \
     (m)++;
 
 #define EMIT_PROMOTION(m, a, b, p, c) \
@@ -14,6 +15,7 @@
     (m)->piece = PAWN;\
     (m)->promotion = (p); \
     (m)->color = (c);\
+    (m)->ep    = EMPTY; \
     (m)++;
 
 #define EMIT_PROMOTIONS(m, a, b, c) \
@@ -21,6 +23,15 @@
     EMIT_PROMOTION(m, a, b, QUEEN, c) \
     EMIT_PROMOTION(m, a, b, ROOK, c) \
     EMIT_PROMOTION(m, a, b, KNIGHT, c)  
+
+#define EMIT_EN_PASSANT(m , a, b, z, n, k) \
+    (m)->piece = (z); \
+    (m)->color = (n); \
+    (m)->src   = (a); \
+    (m)->dst   = (b); \
+    (m)->ep    = (k); \
+    (m)->promotion = EMPTY; \
+    (m)++; 
 
 /* 
     generic move generators
@@ -128,6 +139,11 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (a1) {
         POP_LSB(sq, a1);
+        if (board->ep) {
+            if (BIT(sq) & board->ep) {
+                EMIT_EN_PASSANT(moves, sq - 7, sq, PAWN ,WHITE, 1);
+            }
+        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq - 7, sq, WHITE);
         } else {
@@ -137,6 +153,11 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (a2) {
         POP_LSB(sq, a2);
+        if (board->ep) {
+            if (BIT(sq) & board->ep) {
+                EMIT_EN_PASSANT(moves, sq - 9, sq, PAWN ,WHITE, 1);
+            }
+        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq - 9, sq, WHITE);
         } else {
@@ -215,6 +236,11 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (a1) {
         POP_LSB(sq, a1);
+        if (board->ep) {
+            if (BIT(sq) & board->ep) {
+                EMIT_EN_PASSANT(moves, sq + 7, sq, PAWN, BLACK, 1);
+            }
+        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq + 7, sq, BLACK);
         } 
@@ -224,6 +250,11 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (a2) {
         POP_LSB(sq, a2);
+        if (board->ep) {
+            if (BIT(sq) & board->ep) {
+                EMIT_EN_PASSANT(moves, sq + 9, sq, PAWN, BLACK, 1);
+            }
+        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq + 9, sq, BLACK);
         }

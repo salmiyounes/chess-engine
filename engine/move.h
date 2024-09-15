@@ -22,6 +22,8 @@ typedef struct {
   int src;
   int dst;
   int promotion;
+  int ep;
+  
 } Move;
 
 void do_move(ChessBoard *board, Move *move, Undo *undo);
