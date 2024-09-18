@@ -19,8 +19,8 @@
     (m)++;
 
 #define EMIT_PROMOTIONS(m, a, b, c) \
-    EMIT_PROMOTION(m, a, b, BISHOP, c) \
     EMIT_PROMOTION(m, a, b, QUEEN, c) \
+    EMIT_PROMOTION(m, a, b, BISHOP, c) \
     EMIT_PROMOTION(m, a, b, ROOK, c) \
     EMIT_PROMOTION(m, a, b, KNIGHT, c)  
 

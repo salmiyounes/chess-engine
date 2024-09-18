@@ -83,6 +83,7 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
 void initializeBoard(ChessBoard *board, Pieces *p) {
 
     board_clear(board);
+
     // PAWNS
     for (int file = 0; file < 8 ; file++) {
         board->WhitePawns |= BIT(RF(1, file));
@@ -233,17 +234,15 @@ void board_load_fen(ChessBoard *board, char *fen) {
     i++;
     if (fen[i] == '-') i++;
 
-    else if (fen[i] >= 'a' && fen[i] <= 'h') {
+    if (fen[i] >= 'a' && fen[i] <= 'h') {
         int ep_file = fen[i] - 'a';
         i++;
         if (fen[i] >= '1' && fen[i] <= '8') {
             int ep_rank = fen[i] - '1';
-            board->ep = BIT(RF(ep_rank, ep_file));
+            board->ep |= BIT(RF(ep_rank, ep_file));
             i++;
         }
     }
-
-    i++;
 
     initializeAllBlackPieces(board);
     initializeAllWhitePieces(board);

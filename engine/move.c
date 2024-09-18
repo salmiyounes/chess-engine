@@ -9,6 +9,7 @@ void make_move(ChessBoard *board, Move *move) {
 void notate_move(ChessBoard *board, Move* move, char *result) {
 	int piece   = move->piece;
 	int color   = move->color;
+	int ep      = move->ep;
 	bb capture;
 	
 	CAPTURE(capture, board, color, move);
@@ -30,7 +31,7 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 	*result++ = file1;
 	*result++ = rank1;
 
-	if (capture) *result++ = 'x';
+	if (capture | ep) *result++ = 'x';
 
 	*result++ = file2;
 	*result++ = ramk2;
