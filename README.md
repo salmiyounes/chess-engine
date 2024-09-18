@@ -5,10 +5,10 @@
 ## build 
 
 ```sh
-git clone https://github.com/salmiyounes/chess-engine.git
-cd engine
-make 
-
+$ git clone https://github.com/salmiyounes/chess-engine.git
+$ cd engine
+$ make 
+```
 
 
 
