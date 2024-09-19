@@ -108,7 +108,13 @@ class Chess(object):
             self.chess_lib.gen_black_moves.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
             self.chess_lib.gen_black_moves(ctypes.byref(self.board), moves)
         return moves
-
+    
+    def gen_legal_moves(self):
+        self.chess_lib.malloc.restype = ctypes.POINTER(Move)
+        moves = self.chess_lib.malloc(MAX_MOVES * ctypes.sizeof(Move))
+        self.chess_lib.gen_legal_moves.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
+        self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
+        return moves
 
     def reset_board(self) -> None:
     	self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
@@ -140,3 +146,4 @@ class Chess(object):
         self.player = Color.BLACK.value if move.color == Color.WHITE.value else Color.WHITE.value
         self.chess_lib.make_move(ctypes.byref(self.board), ctypes.byref(move))
         return None
+

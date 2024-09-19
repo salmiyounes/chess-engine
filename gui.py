@@ -16,35 +16,34 @@ class Gui:
 
     def make_board(self) -> None:
         self.chess_game()
-        self.chess_game.load_fen(b'rnbqkbnr/pppppppp/8/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1')
+        self.chess_game.load_fen(b'rnbqkbnr/ppppp1pp/8/4p3/4K3/8/PPPPPPPP/RNBQ1BNR w KQkq - 0 1')
 
         for i in range(8):
             for j in range(8):
                 pos = i * 8 + j
-
                 if self.chess_game.board.WhitePawns & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wP.value
-                if self.chess_game.board.BlackPawns & (1 << pos):
+                elif self.chess_game.board.BlackPawns & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bP.value
-                if self.chess_game.board.WhiteRooks & (1 << pos):
+                elif self.chess_game.board.WhiteRooks & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wR.value
-                if self.chess_game.board.BlackRooks & (1 << pos):
+                elif self.chess_game.board.BlackRooks & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bR.value
-                if self.chess_game.board.WhiteKnights & (1 << pos):
+                elif self.chess_game.board.WhiteKnights & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wN.value
-                if self.chess_game.board.BlackKnights & (1 << pos):
+                elif self.chess_game.board.BlackKnights & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bN.value
-                if self.chess_game.board.WhiteBishops & (1 << pos):
+                elif self.chess_game.board.WhiteBishops & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wB.value
-                if self.chess_game.board.BlackBishops & (1 << pos):
+                elif self.chess_game.board.BlackBishops & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bB.value
-                if self.chess_game.board.WhiteQueens & (1 << pos):
+                elif self.chess_game.board.WhiteQueens & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wQ.value
-                if self.chess_game.board.BlackQueens & (1 << pos):
+                elif self.chess_game.board.BlackQueens & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bQ.value
-                if self.chess_game.board.WhiteKing & (1 << pos):
+                elif self.chess_game.board.WhiteKing & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.wK.value
-                if self.chess_game.board.BlackKing & (1 << pos):
+                elif self.chess_game.board.BlackKing & (1 << pos):
                     self.board[7 - i][7 - j] = AllPieces.bK.value
         return None
 
@@ -61,24 +60,24 @@ class Gui:
         pygame.draw.rect(self.screen, (YELLOW), pygame.Rect(y * SQ_SIZE, x * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         return None
 
-    def update_board(self, x: int, y: int, z: int, k: int, piece: int, player: int) -> None:
+    def update_board(self, x: int, y: int, z: int, k: int, piece: int, player: int) -> bool:
         moves = self.chess_game.gen_moves(player)
         if not (x - z == 0 and y - k == 0):
             if moves:
                 m_list = [moves[i] for i in range(256) if moves[i].src == (63 - (x * 8 + y)) and moves[i].dst == (63 - (z * 8 + k))]
                 if m_list:
                     move = m_list[0]
-                    if move.promotion:
+                    if move.promotion :
                             promo = move.promotion
                             if promo == 2:
                                 self.board[x][y], self.board[z][k] = AllPieces.empty.value, (AllPieces.wN.value if player == Color.WHITE.value else AllPieces.bN.value)
-                            if promo == 3:
+                            elif promo == 3:
                                 self.board[x][y], self.board[z][k] = AllPieces.empty.value, (AllPieces.wB.value if player == Color.WHITE.value else AllPieces.bB.value)
-                            if promo == 4:
+                            elif promo == 4:
                                 self.board[x][y], self.board[z][k] = AllPieces.empty.value, (AllPieces.wR.value if player == Color.WHITE.value else AllPieces.bR.value)
-                            else:
+                            elif promo == 5:
                                 self.board[x][y], self.board[z][k] = AllPieces.empty.value, (AllPieces.wQ.value if player == Color.WHITE.value else AllPieces.bQ.value)
-                    if move.ep:
+                    elif move.ep:
                             if player == Color.WHITE.value:
                                 self.board[x][y], self.board[z + 1][k], self.board[z][k] = AllPieces.empty.value, AllPieces.empty.value, piece
                             elif player == Color.BLACK.value:
@@ -88,9 +87,7 @@ class Gui:
 
                     print ('- %s : %s\n' % ({0: 'White', 1: 'Black'}[player], self.chess_game.notate_move(move)))
                     self.chess_game.do_move(move)
-
                     return True
-
         return False
 
     def play_soud(self, capture: bool) -> None:
@@ -135,6 +132,12 @@ class Gui:
         x_src, y_src = None, None
 
         while True:
+            
+            self.draw_board()
+            if draw:
+                self.draw_moves(x_src, y_src, player)
+            self.draw_pieces()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -158,10 +161,6 @@ class Gui:
                         src_selected = False
                         draw         = False 
 
-            self.draw_board()
-            if draw:
-                self.draw_moves(x_src, y_src, player)
-            self.draw_pieces()
             pygame.display.flip()
 
 if __name__ == '__main__':

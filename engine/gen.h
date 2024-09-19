@@ -1,6 +1,9 @@
 #ifndef GEN_H
 #define GEN_H
 
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 #include "bb.h"
 #include "board.h"
 #include "move.h"
@@ -25,5 +28,5 @@ int gen_black_king_moves(ChessBoard *board, Move *moves);
 
 //
 int gen_knight_moves(Move *moves, bb srcs, bb mask, int color);
-
+int is_check(ChessBoard *board);
 #endif 

@@ -193,6 +193,7 @@ int gen_white_king_moves(ChessBoard *board, Move *moves) {
         moves, board->WhiteKing, ~board->AllWhitePieces, WHITE);
 }
 
+
 int gen_white_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     moves += gen_white_pawn_moves(board, moves);
@@ -203,6 +204,71 @@ int gen_white_moves(ChessBoard *board, Move *moves) {
     moves += gen_white_king_moves(board, moves);
 
     return moves - ptr;
+}
+
+/*
+    gen white attacks 
+*/
+
+int gen_white_pawn_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    Move *ptr = moves;
+    bb pawns  = board->WhitePawns;
+    bb a1     = ((pawns & 0xfefefefefefefefeL) << 7) & mask;
+    bb a2     = ((pawns & 0x7f7f7f7f7f7f7f7fL) << 9) & mask;
+    int sq;
+
+    while (a1) {
+        POP_LSB(sq, a1);
+        EMIT_MOVE(moves, sq - 7, sq, PAWN, WHITE);
+    }
+
+    while (a2) {
+        POP_LSB(sq, a2);
+        EMIT_MOVE(moves, sq - 9, sq, PAWN, WHITE);
+    }
+
+    return moves - ptr;
+}
+
+int gen_white_knight_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_knight_moves(
+        moves, board->WhiteKnights, mask, WHITE);
+}
+
+int gen_white_bishop_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_bishop_moves(
+        moves, board->WhiteBishops, mask, board->Board, WHITE);
+}
+
+int gen_white_rook_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_rook_moves(
+        moves, board->WhiteRooks, mask, board->Board, WHITE);
+}
+
+int gen_white_queen_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_queen_moves(
+        moves, board->WhiteQueens, mask, board->Board, WHITE);
+}
+
+int gen_white_king_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_king_moves(
+        moves, board->WhiteKing, mask, WHITE);
+}
+
+int gen_white_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    Move *ptr = moves;
+    moves += gen_white_pawn_attacks_against(board, moves, mask);
+    moves += gen_white_knight_attacks_against(board, moves, mask);
+    moves += gen_white_bishop_attacks_against(board, moves, mask);
+    moves += gen_white_rook_attacks_against(board, moves, mask);
+    moves += gen_white_queen_attacks_against(board, moves, mask);
+    moves += gen_white_king_attacks_against(board, moves, mask);
+
+    return moves - ptr;
+}
+
+int gen_white_checks(ChessBoard *board, Move *moves) {
+    return gen_white_attacks_against(board, moves, board->BlackKing);
 }
 
 
@@ -232,7 +298,7 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (p2) {
         POP_LSB(sq, p2);
-        EMIT_MOVE(moves, sq + 16, sq, PAWN,BLACK);
+        EMIT_MOVE(moves, sq + 16, sq, PAWN, BLACK);
     }
     while (a1) {
         POP_LSB(sq, a1);
@@ -293,12 +359,115 @@ int gen_black_king_moves(ChessBoard *board, Move *moves) {
 }
 
 int gen_black_moves(ChessBoard *board, Move *moves) {
-    Move *prt = moves;
+    Move *ptr = moves;
     moves += gen_black_pawn_moves(board, moves);
     moves += gen_black_knight_moves(board, moves);
     moves += gen_black_bishop_moves(board, moves);
     moves += gen_black_rook_moves(board, moves);
     moves += gen_black_queen_moves(board, moves);
     moves += gen_black_king_moves(board, moves);
-    return moves - prt;
+    return moves - ptr;
+}
+
+/*
+    gen black attacks
+*/
+
+int gen_black_pawn_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    Move *ptr = moves;
+    bb pawns  = board->BlackPawns;
+    bb a1     = ((pawns & 0x7f7f7f7f7f7f7f7fL) >> 7) & mask;
+    bb a2     = ((pawns & 0xfefefefefefefefeL) >> 9) & mask;
+    int sq;
+
+    while (a1) {
+        POP_LSB(sq, a1);
+        EMIT_MOVE(moves, sq + 7, sq, PAWN, BLACK);
+    }
+
+    while (a2) {
+        POP_LSB(sq, a2);
+        EMIT_MOVE(moves, sq + 9, sq, PAWN, BLACK);
+    }
+
+    return moves - ptr;
+}
+
+int gen_black_knight_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_knight_moves(
+        moves, board->BlackKnights, mask, BLACK);
+}
+
+int gen_black_bishop_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_bishop_moves(
+        moves, board->BlackBishops, mask, board->Board, BLACK);
+}
+
+int gen_black_rook_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_rook_moves(
+        moves, board->BlackRooks, mask, board->Board, BLACK);
+}
+
+int gen_black_queen_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    return gen_queen_moves(
+        moves, board->BlackQueens, mask, board->Board, BLACK);
+}
+
+int gen_black_king_attacks_agianst(ChessBoard *board, Move *moves, bb mask) {
+    return gen_king_moves(
+        moves, board->BlackKing, mask, BLACK);
+}
+
+int gen_black_attacks_against(ChessBoard *board, Move *moves, bb mask) {
+    Move *ptr = moves;
+    moves += gen_black_pawn_attacks_against(board, moves, mask);
+    moves += gen_black_knight_attacks_against(board, moves, mask);
+    moves += gen_black_bishop_attacks_against(board, moves, mask);
+    moves += gen_black_rook_attacks_against(board, moves, mask);
+    moves += gen_black_queen_attacks_against(board, moves, mask);
+    moves += gen_black_king_attacks_agianst(board, moves, mask);
+
+    return moves - ptr;
+}
+
+int gen_black_checks(ChessBoard *board, Move *moves) {
+    return gen_black_attacks_against(
+        board, moves, board->WhiteKing);
+}
+
+int gen_moves(ChessBoard *board, Move *moves) {
+    if (board->color) {
+        return gen_black_moves(board, moves);
+    } else {
+        return gen_white_moves(board, moves); 
+    }
+    return -1;
+}
+
+int gen_legal_moves(ChessBoard *board, Move *moves) {
+    Move *temp = (Move *) malloc(sizeof(Move) * MAX_MOVES);
+    Move *ptr  = moves;
+    Undo undo;
+    int count  = gen_moves(board, temp);
+    for (int i = 0; i < count; i++) {
+        Move *move = &temp[i];
+        //do_move(board, move, &undo);
+        if (!is_check(board)) {
+            memcpy(moves++, move, sizeof(Move));
+        }
+        //undo_move(board, &undo);
+    }
+
+    free(temp);
+    return moves - ptr;
+}
+
+int is_check(ChessBoard *board) {
+    Move *moves = (Move *) malloc(sizeof(Move) * MAX_MOVES);
+    if (board->color) {
+        return gen_white_checks(board, moves);
+    } else {
+        return gen_black_checks(board, moves);
+    }
+    return -1;
 }

@@ -13,6 +13,9 @@
 typedef struct {
   int piece;
   int color;
+  int src;
+  int dst;
+  int capture;
   bb ep;
 } Undo;
 
@@ -29,5 +32,6 @@ typedef struct {
 void do_move(ChessBoard *board, Move *move, Undo *undo);
 void make_move(ChessBoard *board, Move *move);
 void notate_move(ChessBoard *board, Move* move, char *result);
+void undo_move(ChessBoard *board, Undo *undo);
 
 #endif
