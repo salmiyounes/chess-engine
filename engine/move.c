@@ -90,13 +90,13 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	int piece     = move->piece;
 	int color     = move->color;
 	int promotion = move->promotion;
-	undo->piece   = move->piece;
-	undo->capture = get_piece_type(board, move->dst, SWITCH(color));
 	undo->ep      = board->ep;
 	bb capture;
 
 	CAPTURE(capture, board, color, move);
 	board_set(board, move->src, piece, color);
+
+	undo->capture = get_piece_type(board, move->dst, SWITCH(color));
 
 	board->ep = 0L;
 
@@ -142,9 +142,21 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	board->color ^= BLACK;
 }
 
-void undo_move(ChessBoard *board, Undo *undo) {
-	board_set(board, undo->src, undo->piece, undo->color);
-	board_set(board, undo->dst, undo->capture, SWITCH(undo->color));
-	board->ep = undo->ep;
+void undo_move(ChessBoard *board, Move *move, Undo *undo) {
+	int piece  = move->piece;
+	int color  = board->color;
+	int capture = undo->capture;
+	
+	board_set(board, move->dst, piece, SWITCH(color));
+	board->ep  = undo->ep;
+
+	if (capture) {
+		board_set(board, move->dst, capture, color);
+	} else {
+		board_set(board, move->src, piece, SWITCH(color));
+	}
+
+
+	board->color ^= BLACK;
 	return;
 }

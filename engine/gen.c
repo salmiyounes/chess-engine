@@ -441,25 +441,34 @@ int gen_moves(ChessBoard *board, Move *moves) {
     } else {
         return gen_white_moves(board, moves); 
     }
-    return -1;
 }
 
 int gen_legal_moves(ChessBoard *board, Move *moves) {
     Move *temp = (Move *) malloc(sizeof(Move) * MAX_MOVES);
     Move *ptr  = moves;
+    ChessBoard copy;
+    memcpy(&copy, board, sizeof(ChessBoard));
     Undo undo;
-    int count  = gen_moves(board, temp);
+    int count  = gen_moves(&copy, temp);
     for (int i = 0; i < count; i++) {
         Move *move = &temp[i];
-        //do_move(board, move, &undo);
-        if (!is_check(board)) {
+        do_move(&copy, move, &undo);
+        if (!illegal_to_move(&copy)) {
             memcpy(moves++, move, sizeof(Move));
         }
-        //undo_move(board, &undo);
-    }
 
-    free(temp);
+        undo_move(&copy, move, &undo);
+    }
     return moves - ptr;
+}
+
+int illegal_to_move(ChessBoard *board) {
+    Move *moves = (Move *) malloc(sizeof(Move) * MAX_MOVES);
+    if (board->color) {
+        return gen_black_checks(board, moves);
+    }  else {
+        return gen_white_checks(board, moves);
+    }
 }
 
 int is_check(ChessBoard *board) {
@@ -469,5 +478,4 @@ int is_check(ChessBoard *board) {
     } else {
         return gen_black_checks(board, moves);
     }
-    return -1;
 }

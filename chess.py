@@ -147,3 +147,9 @@ class Chess(object):
         self.chess_lib.make_move(ctypes.byref(self.board), ctypes.byref(move))
         return None
 
+    def is_in_check(self) -> bool:
+        self.chess_lib.is_check.argtypes = [ctypes.POINTER(ChessBoard)]
+        check: int = self.chess_lib.is_check(ctypes.byref(self.board))
+        return True if check else False
+
+

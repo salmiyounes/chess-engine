@@ -28,5 +28,6 @@ int gen_black_king_moves(ChessBoard *board, Move *moves);
 
 //
 int gen_knight_moves(Move *moves, bb srcs, bb mask, int color);
+int illegal_to_move(ChessBoard *board);
 int is_check(ChessBoard *board);
 #endif 

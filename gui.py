@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from typing import Tuple
 from chess import Chess, Color
 from const import *
 import sys, os, pygame
@@ -16,7 +17,7 @@ class Gui:
 
     def make_board(self) -> None:
         self.chess_game()
-        self.chess_game.load_fen(b'rnbqkbnr/ppppp1pp/8/4p3/4K3/8/PPPPPPPP/RNBQ1BNR w KQkq - 0 1')
+        self.chess_game.load_fen(b'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
 
         for i in range(8):
             for j in range(8):
@@ -47,8 +48,14 @@ class Gui:
                     self.board[7 - i][7 - j] = AllPieces.bK.value
         return None
 
+    def search_for_piece(self, piece: int) -> Tuple[int, int]:
+        for row in range(8):
+            for col in range(8):
+                if self.board[row][col] == piece: return (row, col)
+        return (None, None)
+
     def draw_moves(self, x: int, y: int, player: int) -> None:
-        moves = self.chess_game.gen_moves(player)
+        moves = self.chess_game.gen_legal_moves()
         moves = [moves[i].dst for i in range(256) if moves[i].src == ( 63 - (x * 8 + y))]
         for move in moves:
             row, col = divmod(63 - move, 8)
@@ -58,10 +65,11 @@ class Gui:
                 else:
                     pygame.draw.rect(self.screen, HIGHLIGHT_COLOR, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         pygame.draw.rect(self.screen, (YELLOW), pygame.Rect(y * SQ_SIZE, x * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
         return None
 
     def update_board(self, x: int, y: int, z: int, k: int, piece: int, player: int) -> bool:
-        moves = self.chess_game.gen_moves(player)
+        moves = self.chess_game.gen_legal_moves()
         if not (x - z == 0 and y - k == 0):
             if moves:
                 m_list = [moves[i] for i in range(256) if moves[i].src == (63 - (x * 8 + y)) and moves[i].dst == (63 - (z * 8 + k))]
@@ -136,8 +144,12 @@ class Gui:
             self.draw_board()
             if draw:
                 self.draw_moves(x_src, y_src, player)
-            self.draw_pieces()
+            if self.chess_game.is_in_check():
+                piece    = AllPieces.bK.value if player else AllPieces.wK.value
+                row, col = self.search_for_piece(piece)
+                pygame.draw.rect(self.screen, RED, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
+            self.draw_pieces()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
