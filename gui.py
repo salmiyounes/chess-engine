@@ -51,12 +51,14 @@ class Gui:
     def search_for_piece(self, piece: int) -> Tuple[int, int]:
         for row in range(8):
             for col in range(8):
-                if self.board[row][col] == piece: return (row, col)
+                if self.board[row][col] == piece: 
+                    return (row, col)
         return (None, None)
 
     def draw_moves(self, x: int, y: int, player: int) -> None:
-        moves = self.chess_game.gen_legal_moves()
-        moves = [moves[i].dst for i in range(256) if moves[i].src == ( 63 - (x * 8 + y))]
+        m = self.chess_game.gen_legal_moves()
+        moves = [m[i].dst for i in range(256) if m[i].src == ( 63 - (x * 8 + y))]
+        self.chess_game.free_moves(m)
         for move in moves:
             row, col = divmod(63 - move, 8)
             if row in range(0, 8) and col in range(0, 8):
@@ -95,7 +97,9 @@ class Gui:
 
                     print ('- %s : %s\n' % ({0: 'White', 1: 'Black'}[player], self.chess_game.notate_move(move)))
                     self.chess_game.do_move(move)
+                    self.chess_game.free_moves(moves)
                     return True
+        self.chess_game.free_moves(moves)
         return False
 
     def play_soud(self, capture: bool) -> None:

@@ -60,6 +60,13 @@ class Move(ctypes.Structure):
         ('ep', ctypes.c_int)
     ]
 
+class Undo(ctypes.Structure):
+    _fields_ = [
+        ('capture', ctypes.c_int),
+        ('promotion', ctypes.c_int),
+        ('ep', ctypes.c_uint64)
+    ]
+
 class Chess(object):
     
     def __init__(self):
@@ -122,6 +129,10 @@ class Chess(object):
     	self.board_init()
     	return None
 
+    def free_moves(self, moves) -> None:
+        self.chess_lib.free(moves)
+        return None
+
     def notate_move(self, move) -> None:
         res = ctypes.create_string_buffer(100) 
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
@@ -151,5 +162,4 @@ class Chess(object):
         self.chess_lib.is_check.argtypes = [ctypes.POINTER(ChessBoard)]
         check: int = self.chess_lib.is_check(ctypes.byref(self.board))
         return True if check else False
-
 

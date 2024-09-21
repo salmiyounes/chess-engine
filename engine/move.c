@@ -89,7 +89,7 @@ int get_piece_type(ChessBoard *board, int sq, int color) {
 void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	int piece     = move->piece;
 	int color     = move->color;
-	int promotion = move->promotion;
+	int promotion = undo->promotion = move->promotion;
 	undo->ep      = board->ep;
 	bb capture;
 
@@ -156,6 +156,10 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 		board_set(board, move->src, piece, SWITCH(color));
 	}
 
+	if (undo->promotion) {
+		board_set(board, move->dst, undo->promotion, SWITCH(color));
+		board_set(board, move->src, PAWN, SWITCH(color));
+	}
 
 	board->color ^= BLACK;
 	return;

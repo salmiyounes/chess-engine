@@ -2,9 +2,9 @@ CC = gcc
 
 CFLAGS = -Wall -Wextra -std=c11 -fPIC
 
-SRCS = bb.c board.c gen.c move.c 
+SRCS = bb.c board.c gen.c move.c perft.c
 
-HEADERS = bb.h board.h gen.h move.h 
+HEADERS = bb.h board.h gen.h move.h perft.h
 
 OBJS = $(SRCS:.c=.o)
 

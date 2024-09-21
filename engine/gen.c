@@ -459,23 +459,36 @@ int gen_legal_moves(ChessBoard *board, Move *moves) {
 
         undo_move(&copy, move, &undo);
     }
+
+    free(temp);
+
     return moves - ptr;
 }
 
 int illegal_to_move(ChessBoard *board) {
     Move *moves = (Move *) malloc(sizeof(Move) * MAX_MOVES);
+    int count;
+    
     if (board->color) {
-        return gen_black_checks(board, moves);
+        count = gen_black_checks(board, moves);
     }  else {
-        return gen_white_checks(board, moves);
+        count = gen_white_checks(board, moves);
     }
+
+    free(moves);
+    return count;
 }
 
 int is_check(ChessBoard *board) {
     Move *moves = (Move *) malloc(sizeof(Move) * MAX_MOVES);
+    int count;
+    
     if (board->color) {
-        return gen_white_checks(board, moves);
+        count = gen_white_checks(board, moves);;
     } else {
-        return gen_black_checks(board, moves);
+        count = gen_black_checks(board, moves);
     }
+
+    free(moves);
+    return count;
 }
