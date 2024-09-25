@@ -7,8 +7,12 @@
 
 #define MAX_MOVES 0x100
 #define CAPTURE(a, b, c, m) \
-  if (COLOR(c)) { a = b->AllWhitePieces & BIT(m->dst);}\
-  else {a = b->AllBalckPieces & BIT(m->dst);}
+  if (COLOR(c)) { \
+    a = b->AllWhitePieces & BIT(m->dst);\
+  }\
+  else {\
+    a = b->AllBalckPieces & BIT(m->dst);\
+  }\
 
 typedef struct {
   int capture;

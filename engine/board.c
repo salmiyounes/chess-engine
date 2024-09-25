@@ -30,25 +30,69 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
             board->AllBalckPieces &= mask;
             switch (PIECE(piece)) {
                 case PAWN:
-                    board->BlackPawns &= mask;
+                    board->BlackPawns     &= mask;
+                    board->black_material -= PAWN_MATERIAL;
+                    board->black_pos      -= black_pawn_square_values[sq];
                     break;
-                case KNIGHT: board->BlackKnights &= mask; break;
-                case ROOK: board->BlackRooks &= mask; break;
-                case BISHOP: board->BlackBishops &= mask; break;
-                case KING: board->BlackKing &= mask;break;
-                case QUEEN: board->BlackQueens &= mask; break;
+                case KNIGHT: 
+                    board->BlackKnights   &= mask;
+                    board->black_material -= KNIGHT_MATERIAL;
+                    board->black_pos      -= black_knight_square_values[sq]; 
+                    break;
+                case ROOK: 
+                    board->BlackRooks     &= mask; 
+                    board->black_material -= ROOK_MATERIAL;
+                    board->black_pos      -= black_rook_square_values[sq];
+                    break;
+                case BISHOP: 
+                    board->BlackBishops   &= mask;
+                    board->black_material -= BISHOP_MATERIAL;
+                    board->black_pos      -= black_bishop_square_values[sq]; 
+                    break;
+                case KING: 
+                    board->BlackKing      &= mask;
+                    board->black_material -= KING_MATERIAL;
+                    board->black_pos      -= black_king_square_values[sq]; 
+                    break;
+                case QUEEN: 
+                    board->BlackQueens    &= mask; 
+                    board->black_material -= QUEEN_MATERIAL;
+                    board->black_pos      -= black_queen_square_values[sq];
+                    break;
             }
         } else {
             board->AllWhitePieces &= mask;
             switch (PIECE(piece)) {
                 case PAWN:
-                    board->WhitePawns &= mask;
+                    board->WhitePawns     &= mask;
+                    board->white_material -= PAWN_MATERIAL;
+                    board->white_pos      -= white_pawn_square_values[sq];
                     break;
-                case KNIGHT: board->WhiteKnights &= mask; break;
-                case ROOK: board->WhiteRooks &= mask; break;
-                case BISHOP: board->WhiteBishops &= mask; break;
-                case KING: board->WhiteKing &= mask; break;
-                case QUEEN: board->WhiteQueens &= mask; break;
+                case KNIGHT: 
+                    board->WhiteKnights   &= mask;
+                    board->white_material -= KNIGHT_MATERIAL;
+                    board->white_pos      -= white_knight_square_values[sq];
+                    break;
+                case ROOK: 
+                    board->WhiteRooks     &= mask;
+                    board->white_material -= ROOK_MATERIAL;
+                    board->white_pos      -= white_rook_square_values[sq]; 
+                    break;
+                case BISHOP: 
+                    board->WhiteBishops   &= mask;
+                    board->white_material -= BISHOP_MATERIAL;
+                    board->white_pos      -= white_bishop_square_values[sq]; 
+                    break;
+                case KING: 
+                    board->WhiteKing      &= mask;
+                    board->white_material -= KING_MATERIAL;
+                    board->white_pos      -= white_king_square_values[sq]; 
+                    break;
+                case QUEEN: 
+                    board->WhiteQueens &= mask;
+                    board->white_material -= QUEEN_MATERIAL;
+                    board->white_pos      -= white_queen_square_values[sq]; 
+                    break;
             }
         }
     }
@@ -58,22 +102,70 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
         if (COLOR(color)) {
             board->AllBalckPieces |= bit;
             switch (PIECE(piece)) {
-                case PAWN: board->BlackPawns |= bit; break;
-                case KNIGHT: board->BlackKnights |= bit; break;
-                case ROOK: board->BlackRooks |= bit; break;
-                case BISHOP: board->BlackBishops |= bit; break;
-                case KING: board->BlackKing |= bit; break;
-                case QUEEN: board->BlackQueens |= bit; break;
+                case PAWN: 
+                    board->BlackPawns     |= bit;
+                    board->black_material += PAWN_MATERIAL;
+                    board->black_pos      += black_pawn_square_values[sq]; 
+                    break;
+                case KNIGHT: 
+                    board->BlackKnights   |= bit;
+                    board->black_material += KNIGHT_MATERIAL;
+                    board->black_pos      += black_knight_square_values[sq]; 
+                    break;
+                case ROOK: 
+                    board->BlackRooks     |= bit;
+                    board->black_material += ROOK_MATERIAL;
+                    board->black_pos      += black_rook_square_values[sq]; 
+                    break;
+                case BISHOP: 
+                    board->BlackBishops   |= bit; 
+                    board->black_material += BISHOP_MATERIAL;
+                    board->black_pos      += black_bishop_square_values[sq];
+                    break;
+                case KING: 
+                    board->BlackKing      |= bit; 
+                    board->black_material += KING_MATERIAL;
+                    board->black_pos      += black_king_square_values[sq];
+                    break;
+                case QUEEN: 
+                    board->BlackQueens |= bit;
+                    board->black_material += QUEEN_MATERIAL;
+                    board->black_pos      += black_queen_square_values[sq]; 
+                    break;
             }
         } else {
             board->AllWhitePieces |= bit;
             switch (PIECE(piece)) {
-                case PAWN: board->WhitePawns |= bit; break;
-                case KNIGHT: board->WhiteKnights |= bit; break;
-                case ROOK: board->WhiteRooks |= bit; break;
-                case BISHOP: board->WhiteBishops |= bit; break;
-                case KING: board->WhiteKing |= bit; break;
-                case QUEEN: board->WhiteQueens |= bit; break;
+                case PAWN: 
+                    board->WhitePawns     |= bit;
+                    board->white_material += PAWN_MATERIAL;
+                    board->white_pos      += white_pawn_square_values[sq]; 
+                    break;
+                case KNIGHT: 
+                    board->WhiteKnights   |= bit;
+                    board->white_material += KNIGHT_MATERIAL;
+                    board->white_pos      += white_knight_square_values[sq]; 
+                    break;
+                case ROOK: 
+                    board->WhiteRooks     |= bit; 
+                    board->white_material += ROOK_MATERIAL;
+                    board->white_pos      += white_rook_square_values[sq];
+                    break;
+                case BISHOP: 
+                    board->WhiteBishops   |= bit;
+                    board->white_material += BISHOP_MATERIAL;
+                    board->white_pos      += white_bishop_square_values[sq];
+                    break;
+                case KING: 
+                    board->WhiteKing      |= bit;
+                    board->white_material += KING_MATERIAL;
+                    board->white_pos      += white_king_square_values[sq];
+                    break;
+                case QUEEN: 
+                    board->WhiteQueens    |= bit;
+                    board->white_material += QUEEN_MATERIAL;
+                    board->white_pos      += white_queen_square_values[sq];
+                    break;
             }
         }
     }
@@ -369,3 +461,138 @@ int trans_to_fen(ChessBoard *board, char *result) {
     
     return result - ptr;
 }
+
+const int   white_pawn_square_values[64] = {
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10,-20,-20, 10, 10,  5,
+      5, -5,-10,  0,  0,-10, -5,  5,
+      0,  0,  0, 20, 20,  0,  0,  0,
+      5,  5, 10, 25, 25, 10,  5,  5,
+     10, 10, 20, 30, 30, 20, 10, 10,
+     50, 50, 50, 50, 50, 50, 50, 50,
+      0,  0,  0,  0,  0,  0,  0,  0,
+};
+
+const int white_knight_square_values[64] = {
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50,
+};
+
+const int white_bishop_square_values[64] = {
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20,
+};
+
+const int   white_rook_square_values[64] = {
+      0,  0,  0,  5,  5,  0,  0,  0,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      5, 10, 10, 10, 10, 10, 10,  5,
+      0,  0,  0,  0,  0,  0,  0,  0,
+};
+
+const int   white_king_square_values[64] = {
+     20, 30, 10,  0,  0, 10, 30, 20,
+     20, 20,  0,  0,  0,  0, 20, 20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+};
+
+
+const int  white_queen_square_values[64] = {
+    -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+      0,  0,  5,  5,  5,  5,  0, -5,
+     -5,  0,  5,  5,  5,  5,  0, -5,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20,
+};
+
+
+
+const int black_pawn_square_values[64] = {
+      0,  0,  0,  0,  0,  0,  0,  0,
+     50, 50, 50, 50, 50, 50, 50, 50,
+     10, 10, 20, 30, 30, 20, 10, 10,
+      5,  5, 10, 25, 25, 10,  5,  5,
+      0,  0,  0, 20, 20,  0,  0,  0,
+      5, -5,-10,  0,  0,-10, -5,  5,
+      5, 10, 10,-20,-20, 10, 10,  5,
+      0,  0,  0,  0,  0,  0,  0,  0,
+};
+
+const int black_knight_square_values[64] = {
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50,
+};
+
+const int black_bishop_square_values[64] = {
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20,
+};
+
+const int   black_rook_square_values[64] = {
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10, 10, 10, 10, 10,  5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      0,  0,  0,  5,  5,  0,  0,  0,
+};
+
+const int   black_king_square_values[64] = {
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+     20, 20,  0,  0,  0,  0, 20, 20,
+     20, 30, 10,  0,  0, 10, 30, 20,
+};
+
+const int  black_queen_square_values[64] = {
+  -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+     -5,  0,  5,  5,  5,  5,  0, -5,
+      0,  0,  5,  5,  5,  5,  0, -5,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20,
+};

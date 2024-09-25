@@ -467,7 +467,7 @@ int gen_legal_moves(ChessBoard *board, Move *moves) {
 
 int illegal_to_move(ChessBoard *board) {
     Move *moves = (Move *) malloc(sizeof(Move) * MAX_MOVES);
-    int count;
+    int count = 0;
     
     if (board->color) {
         count = gen_black_checks(board, moves);

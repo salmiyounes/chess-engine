@@ -102,13 +102,13 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 
 	if (promotion) {
 		if (capture) {
-			board_set(board, move->dst, get_piece_type(board ,move->dst, SWITCH(color)), SWITCH(color));
+			board_set(board, move->dst, undo->capture, SWITCH(color));
 		}
 		board_set(board, move->dst, move->promotion, color);
 	}
 	else {
 		if (capture) {
-			board_set(board, move->dst, get_piece_type(board ,move->dst, SWITCH(color)), SWITCH(color));
+			board_set(board, move->dst, undo->capture, SWITCH(color));
 		}
 		board_set(board, move->dst, piece, color);
 	}
@@ -143,22 +143,41 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 }
 
 void undo_move(ChessBoard *board, Move *move, Undo *undo) {
-	int piece  = move->piece;
-	int color  = board->color;
-	int capture = undo->capture;
+	int piece     = move->piece;
+	int color     = board->color;
+	int capture   = undo->capture;
+	int promotion = move->promotion;
 	
 	board_set(board, move->dst, piece, SWITCH(color));
+	board_set(board, move->src, piece, SWITCH(color));
 	board->ep  = undo->ep;
+
+	
+	if (promotion && piece == PAWN) {
+		board_set(board, move->dst, promotion, SWITCH(color));
+		board_set(board, move->src, PAWN, SWITCH(color));
+	}
+
+	if (piece == PAWN) {
+		bb bit = BIT(move->dst);
+		switch(move->color) {
+			case BLACK:
+				if (bit == undo->ep) {
+					board_set(board, move->dst + 8, piece, WHITE);
+				}
+				break;
+			case WHITE:
+				if (bit == undo->ep) {
+					board_set(board, move->dst - 8, piece, BLACK);
+				}
+				break;
+			default: 
+				break;
+		}
+	}
 
 	if (capture) {
 		board_set(board, move->dst, capture, color);
-	} else {
-		board_set(board, move->src, piece, SWITCH(color));
-	}
-
-	if (undo->promotion) {
-		board_set(board, move->dst, undo->promotion, SWITCH(color));
-		board_set(board, move->src, PAWN, SWITCH(color));
 	}
 
 	board->color ^= BLACK;

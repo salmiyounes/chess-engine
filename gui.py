@@ -10,6 +10,7 @@ class Gui:
 
         self.screen     = pygame.display.set_mode((WIDTH, HEIGHT))
         self.board      = [[AllPieces.empty.value for _ in range(8)] for _ in range(8)]
+        self.player     = None
         self.chess_game = Chess()
 
         self.sounds     = {}
@@ -56,8 +57,8 @@ class Gui:
         return (None, None)
 
     def draw_moves(self, x: int, y: int, player: int) -> None:
-        m = self.chess_game.gen_legal_moves()
-        moves = [m[i].dst for i in range(256) if m[i].src == ( 63 - (x * 8 + y))]
+        m, count = self.chess_game.gen_legal_moves()
+        moves = [m[i].dst for i in range(count) if m[i].src == ( 63 - (x * 8 + y))]
         self.chess_game.free_moves(m)
         for move in moves:
             row, col = divmod(63 - move, 8)
@@ -71,10 +72,10 @@ class Gui:
         return None
 
     def update_board(self, x: int, y: int, z: int, k: int, piece: int, player: int) -> bool:
-        moves = self.chess_game.gen_legal_moves()
+        moves, count = self.chess_game.gen_legal_moves()
         if not (x - z == 0 and y - k == 0):
             if moves:
-                m_list = [moves[i] for i in range(256) if moves[i].src == (63 - (x * 8 + y)) and moves[i].dst == (63 - (z * 8 + k))]
+                m_list = [moves[i] for i in range(count) if moves[i].src == (63 - (x * 8 + y)) and moves[i].dst == (63 - (z * 8 + k))]
                 if m_list:
                     move = m_list[0]
                     if move.promotion :
@@ -119,64 +120,75 @@ class Gui:
         return None
 
     def draw_board(self) -> None:
-        for row  in range(8):
+        for row in range(8):
             for col in range(8):
                 color =  LIGHT_BROWN if (row + col) % 2 == 0 else DARK_BROWN
                 pygame.draw.rect(self.screen, color, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         return None
 
     def preload_assets(self):
-        self.pieces = {num: pygame.image.load(os.path.join(os.getcwd(), f'img/{piece}.png')) for num, piece in enumerate(
-                 ['bP', 'bR', 'bN', 'bB', 'bQ', 'bK', 'wP', 'wR', 'wN', 'wB', 'wQ', 'wK'], start=1)}
-
+        self.pieces = {
+        num: pygame.image.load(os.path.join(os.getcwd(), f'img/{piece}.png')) 
+        for num, piece in enumerate(
+                 ['bP', 'bR', 'bN', 'bB', 'bQ', 'bK', 'wP', 'wR', 'wN', 'wB', 'wQ', 'wK'], start=1)
+        }
         self.sounds['move']    = pygame.mixer.Sound(os.path.join(os.getcwd(), f'sound/assets_sounds_move.wav'))
         self.sounds['capture'] = pygame.mixer.Sound(os.path.join(os.getcwd(), f'sound/assets_sounds_capture.wav'))
 
         return None
 
+    def do_stuff(self, x: int, y: int, k: int, z: int) -> None:
+        capture = self.board[k][z] != AllPieces.empty.value
+        flag    = self.update_board(x, y, k, z, self.board[x][y], self.player)
+        if flag:
+            self.play_soud(capture)
+            self.chess_game.print_board()
+            self.player ^= Color.BLACK.value
+        return None 
+
     def mainloop(self):
         self.make_board()
         self.preload_assets()
-
-        player       = self.chess_game.board.color
+        self.player       = Color.WHITE.value
         src_selected = False
         draw         = False
         x_src, y_src = None, None
 
         while True:
-            
+            if self.player == Color.WHITE.value:            
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        y, x        = pygame.mouse.get_pos()
+                        x, y        = x // SQ_SIZE, y // SQ_SIZE
+                        if not src_selected:
+                            if self.board[x][y] != AllPieces.empty.value:
+                                x_src, y_src = x, y
+                                src_selected = True
+                                draw         = True
+                        else:
+                            x_dst, y_dst = x, y
+                            self.do_stuff(x_src, y_src, x_dst, y_dst)
+                            player = Color.BLACK.value
+                            src_selected = False
+                            draw         = False
+            else:
+                move = self.chess_game.computer_move()
+                x_src, y_src = divmod(63 - move.src, 8)
+                x_dst, y_dst = divmod(63 - move.dst, 8)
+                self.do_stuff(x_src, y_src, x_dst, y_dst)
+                player = Color.WHITE.value
+
             self.draw_board()
             if draw:
-                self.draw_moves(x_src, y_src, player)
+                self.draw_moves(x_src, y_src, self.player)
             if self.chess_game.is_in_check():
-                piece    = AllPieces.bK.value if player else AllPieces.wK.value
+                piece = AllPieces.bK.value if self.player else AllPieces.wK.value
                 row, col = self.search_for_piece(piece)
                 pygame.draw.rect(self.screen, RED, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-
             self.draw_pieces()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONUP:
-                    y, x        = pygame.mouse.get_pos()
-                    x, y        = x // SQ_SIZE, y // SQ_SIZE
-                    if not src_selected:
-                        if self.board[x][y] != AllPieces.empty.value:
-                            x_src, y_src = x, y
-                            src_selected = True
-                            draw         = True
-                    else:
-                        x_dst, y_dst = x, y
-                        capture = self.board[x_dst][y_dst] != AllPieces.empty.value
-                        m = self.update_board(x_src, y_src, x_dst, y_dst, self.board[x_src][y_src], player)
-                        if m:
-                            self.play_soud(capture)
-                            player = Color.BLACK.value if player == Color.WHITE.value else Color.WHITE.value
-                            self.chess_game.print_board()
-                        src_selected = False
-                        draw         = False 
-
             pygame.display.flip()
 
 if __name__ == '__main__':

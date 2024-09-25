@@ -33,6 +33,10 @@ typedef struct {
 	
 	int squares[64];
 	int color;
+	int white_material;
+	int black_material;
+	int white_pos;
+	int black_pos;
 
     bb WhitePawns;
     bb WhiteRooks;
@@ -93,6 +97,28 @@ int   trans_to_fen(ChessBoard *state, char *result);
 #define BLACK_ROOK 0x14
 #define BLACK_QUEEN 0x15
 #define BLACK_KING 0x16
+
+#define PAWN_MATERIAL   100
+#define KNIGHT_MATERIAL 320
+#define BISHOP_MATERIAL 330
+#define ROOK_MATERIAL   500
+#define QUEEN_MATERIAL  900
+#define KING_MATERIAL   20000
+
+extern const int   white_pawn_square_values[64];
+extern const int white_knight_square_values[64];
+extern const int white_bishop_square_values[64];
+extern const int   white_rook_square_values[64];
+extern const int   white_king_square_values[64];
+extern const int  white_queen_square_values[64];
+
+extern const int   black_pawn_square_values[64];
+extern const int black_knight_square_values[64];
+extern const int black_bishop_square_values[64];
+extern const int   black_rook_square_values[64];
+extern const int   black_king_square_values[64];
+extern const int  black_queen_square_values[64];
+
 
 #define PIECE(x) ((x) & (bb)0x0f)
 #define COLOR(x) ((x) & (bb)0x1)

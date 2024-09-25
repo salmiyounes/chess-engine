@@ -1,5 +1,6 @@
 from enum import Enum
 import ctypes
+import time
 
 MAX_MOVES = 256
 
@@ -28,7 +29,11 @@ class ChessBoard(ctypes.Structure):
     _fields_ = [
         ('squares', ctypes.c_int * 64),
         ('color', ctypes.c_int),
-        
+        ('white_material', ctypes.c_int),
+        ('black_material', ctypes.c_int),
+        ('white_pos', ctypes.c_int),
+        ('black_pos', ctypes.c_int),
+
         ('WhitePawns', ctypes.c_uint64),
         ('WhiteRooks', ctypes.c_uint64),
         ('WhiteBishops', ctypes.c_uint64),
@@ -77,7 +82,7 @@ class Chess(object):
         self.player    = Color.WHITE.value
     
     def __repr__(self):
-        return f'{self.__class__.__name__} Board({self.board_to_fen(self.player)})'
+        return f'{self.__class__.__name__} State({self.board_to_fen(self.player)})'
 
     def __call__(self):
         self.board_init()
@@ -120,8 +125,8 @@ class Chess(object):
         self.chess_lib.malloc.restype = ctypes.POINTER(Move)
         moves = self.chess_lib.malloc(MAX_MOVES * ctypes.sizeof(Move))
         self.chess_lib.gen_legal_moves.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
-        self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
-        return moves
+        count : int = self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
+        return moves, count
 
     def reset_board(self) -> None:
     	self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
@@ -134,7 +139,7 @@ class Chess(object):
         return None
 
     def notate_move(self, move) -> None:
-        res = ctypes.create_string_buffer(100) 
+        res = ctypes.create_string_buffer(16) 
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
         self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
         return res.value.decode('utf-8')
@@ -163,3 +168,18 @@ class Chess(object):
         check: int = self.chess_lib.is_check(ctypes.byref(self.board))
         return True if check else False
 
+    def undo_move(self, move) -> None:
+        self.chess_lib.undo_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(Undo)]
+        self.chess_lib.undo_move(ctypes.byref(self.board), ctypes.byref(move), ctypes.byref(self.undo))
+        return None
+
+    def perft_test(self, depth: int) -> int:
+
+        self.chess_lib.perft_test.argtypes = [ctypes.POINTER(ChessBoard), ctypes.c_int]
+        return self.chess_lib.perft_test(ctypes.byref(self.board), depth)
+
+    def computer_move(self):
+        self.chess_lib.best_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
+        move = Move()
+        self.chess_lib.best_move(ctypes.byref(self.board), ctypes.byref(move))
+        return move

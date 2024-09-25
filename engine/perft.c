@@ -1,17 +1,21 @@
 #include "perft.h"
 
 bb perft_test(ChessBoard *board, int depth) {
-	Move *moves = (Move *) malloc(sizeof(Move) * 256);
-	int n_moves , i = 0;
-	bb nodes = 0;
-	Undo undo;
+	if (illegal_to_move(board)) {
+		return 0L;
+	}
 	if (depth == 0) {
-		return 1ULL;
+		return 1L;
 	}
 
-	n_moves = gen_legal_moves(board, moves);
+	Move moves[256];
+	Undo undo;
+	int n_moves = 0;
+	bb nodes    = 0;
 
-	for (; i < n_moves; i++) {
+
+	n_moves = gen_moves(board, moves);
+	for (int i = 0; i < n_moves; i++) {
 		do_move(board, &moves[i], &undo);
 		nodes += perft_test(board, depth - 1);
 		undo_move(board, &moves[i], &undo);
