@@ -2,7 +2,7 @@
 from typing import Tuple
 from chess import Chess, Color
 from const import *
-import sys, os, pygame
+import sys, os, pygame, time
 
 class Gui:
     def __init__(self):
@@ -155,7 +155,7 @@ class Gui:
         x_src, y_src = None, None
 
         while True:
-            if self.player == Color.WHITE.value:            
+            if self.player == Color.WHITE.value:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
@@ -179,8 +179,6 @@ class Gui:
                 x_src, y_src = divmod(63 - move.src, 8)
                 x_dst, y_dst = divmod(63 - move.dst, 8)
                 self.do_stuff(x_src, y_src, x_dst, y_dst)
-                player = Color.WHITE.value
-
             self.draw_board()
             if draw:
                 self.draw_moves(x_src, y_src, self.player)

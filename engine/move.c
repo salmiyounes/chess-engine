@@ -45,7 +45,6 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
             case QUEEN:  *result++ = 'Q'; break;
         }
 	}
-
 	*result++ = 0;
 }
 
@@ -182,4 +181,136 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 
 	board->color ^= BLACK;
 	return;
+}
+
+int score_move(ChessBoard *board, Move *move) {
+	int score            = 0;
+	int capture_material = 0;
+	int src   			 = move->src;
+	int dst   			 = move->dst;
+	int color 			 = move->color;
+	int piece 			 = move->piece;
+	bb capture;
+	CAPTURE(capture, board, color, move);
+	if (COLOR(color)) {
+		switch(PIECE(piece)) {
+			case PAWN:
+				score -= black_pawn_square_values[src];
+				score += black_pawn_square_values[dst];
+				break; 
+			case KNIGHT:
+				score -= black_knight_square_values[src];
+				score += black_knight_square_values[dst];
+				break;
+			case BISHOP:
+				score -= black_bishop_square_values[src];
+				score += black_bishop_square_values[dst];
+				break;
+			case ROOK:
+				score -= black_rook_square_values[src];
+				score += black_rook_square_values[dst];
+				break;
+			case KING:
+				score -= black_king_square_values[src];
+				score += black_king_square_values[dst];
+				break;
+			case QUEEN:
+				score -= black_queen_square_values[src];
+				score += black_queen_square_values[dst];
+				break;
+			default:
+				break;
+		}
+	} else {
+		switch(PIECE(piece)) {
+			case PAWN:
+				score -= white_pawn_square_values[src];
+				score += white_pawn_square_values[dst];
+				break;
+			case KNIGHT:
+				score -= white_knight_square_values[src];
+				score += white_knight_square_values[dst];
+				break;
+			case BISHOP:
+				score -= white_bishop_square_values[src];
+				score += white_bishop_square_values[dst];
+				break;
+			case ROOK:
+				score -= white_rook_square_values[src];
+				score += white_rook_square_values[dst];
+				break;
+			case KING:
+				score -= white_king_square_values[src];
+				score += white_king_square_values[dst];
+				break;
+			case QUEEN:
+				score -= white_queen_square_values[src];
+				score += white_queen_square_values[dst];
+				break; 
+			default:
+				break;
+		}
+	}
+
+	if (capture) {
+		if (COLOR(color)) {
+			switch(PIECE(piece)) {
+				case PAWN:
+					capture_material = PAWN_MATERIAL;
+					score            += black_pawn_square_values[dst];
+					break;
+				case KNIGHT:
+					capture_material = KNIGHT_MATERIAL;
+					score          	 += black_knight_square_values[dst];
+					break;
+				case BISHOP:
+					capture_material = BISHOP_MATERIAL;
+					score 			 += black_bishop_square_values[dst];
+					break;
+				case ROOK:
+					capture_material = ROOK_MATERIAL;
+					score  			 += black_rook_square_values[dst];
+					break;
+				case KING:
+					capture_material = KING_MATERIAL;
+					score 			 += black_king_square_values[dst];
+					break;
+				case QUEEN:
+					capture_material = QUEEN_MATERIAL;
+					score  			 += black_queen_square_values[dst];
+					break; 
+			}
+		} else {
+			switch(PIECE(piece)) {
+				case PAWN:
+					capture_material = PAWN_MATERIAL;
+					score 			 += white_pawn_square_values[dst];
+					break;
+				case KNIGHT:
+					capture_material = KNIGHT_MATERIAL;
+					score 			 += white_knight_square_values[dst];
+					break;
+				case BISHOP:
+					capture_material = BISHOP_MATERIAL;
+					score 			 += white_bishop_square_values[dst];
+					break;
+				case ROOK:
+					capture_material = ROOK_MATERIAL;
+					score            += white_rook_square_values[dst];
+					break;
+				case KING:
+					capture_material = KING_MATERIAL;
+					score 			 += white_king_square_values[dst];
+					break;
+				case QUEEN:
+					capture_material = QUEEN_MATERIAL;
+					score 			 += white_queen_square_values[dst];
+					break; 
+			}
+
+		}
+		score += capture_material;
+	}
+
+	return score;
 }

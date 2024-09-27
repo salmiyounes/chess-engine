@@ -8,7 +8,14 @@
 #include "gen.h"
 #include "move.h"
 
-#define INF 10000000
+#define INF 100000000
+#define MAX(x, y) (x ^ ((x ^ y) & -(x < y)))
+#define MIN(x, y) (y ^ ((x ^ y) & -(x < y)))
+
+typedef struct {
+	signed int score;
+	signed int index;
+} Score;
 
 void best_move(ChessBoard *board, Move *result);
 

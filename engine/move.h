@@ -34,5 +34,6 @@ void do_move(ChessBoard *board, Move *move, Undo *undo);
 void make_move(ChessBoard *board, Move *move);
 void notate_move(ChessBoard *board, Move* move, char *result);
 void undo_move(ChessBoard *board, Move *move ,Undo *undo);
+int score_move(ChessBoard *board, Move *move);
 
 #endif

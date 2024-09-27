@@ -1,8 +1,5 @@
 #include "search.h"
 
-#define MAX(a, b) ((a > b) ? a:b)
-#define MIN(a, b) ((a > b) ? b:a)
-
 int eval(ChessBoard *board) {
 
 	int score = 0;
@@ -13,15 +10,43 @@ int eval(ChessBoard *board) {
 	return board->color ? -score : score;
 }
 
+int _cmp_int_(const void *p, const void *q) {
+	int x = ( (const Score *) p)->score;
+	int y = ( (const Score *) q)->score;
+	
+	return (x >= y) ? -1 : 1;
+}
+
+void sort_moves(ChessBoard *board, Move *moves, int count) {
+	Move temp[count];
+	Score scores[count];
+
+	for (int i = 0; i < count; i++) {
+		Move *move = moves + i;
+		scores[i]  = (Score) {.score=  score_move(board, move), 
+		 					  .index = i};
+	}
+
+	qsort(scores, count, sizeof(Score), _cmp_int_);
+
+	memcpy(temp, moves, sizeof(Move) * count);
+	for (int i = 0; i < count; i++) {
+		memcpy(moves + i, temp + scores[i].index, sizeof(Move));
+	}
+
+}
+
 int minimax(ChessBoard *state, int depth, int maxi, int alpha, int beta) {
 	Move moves[256];
 	Undo undo;
 	int score;
 	int count = gen_legal_moves(state, moves);
 
-	if (depth == 0 || count == 0) {
+	if (depth <= 0) {
 		return eval(state);
 	}
+
+	sort_moves(state, moves, count);
 
 	if (maxi) {
 		int max = -INF;
@@ -65,6 +90,7 @@ void best_move(ChessBoard *board, Move *result) {
 	ChessBoard copy;
 	memcpy(&copy, board, sizeof(ChessBoard));
 	int count = gen_legal_moves(&copy, moves);
+	sort_moves(board, moves, count);
 	int best_score = -INF; 
 	Undo undo;
 	
@@ -78,5 +104,4 @@ void best_move(ChessBoard *board, Move *result) {
 			memcpy(result, move, sizeof(Move));
 		} 
 	}
-	return;
 }
