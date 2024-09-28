@@ -128,14 +128,13 @@ class Gui:
 
     def preload_assets(self):
         self.pieces = {
-        num: pygame.image.load(os.path.join(os.getcwd(), f'img/{piece}.png')) 
+        num: pygame.image.load(f'script/img/{piece}.png') 
         for num, piece in enumerate(
                  ['bP', 'bR', 'bN', 'bB', 'bQ', 'bK', 'wP', 'wR', 'wN', 'wB', 'wQ', 'wK'], start=1)
         }
-        self.sounds['move']    = pygame.mixer.Sound(os.path.join(os.getcwd(), f'sound/assets_sounds_move.wav'))
-        self.sounds['capture'] = pygame.mixer.Sound(os.path.join(os.getcwd(), f'sound/assets_sounds_capture.wav'))
+        self.sounds['move']    = pygame.mixer.Sound(f'script/sound/assets_sounds_move.wav')
+        self.sounds['capture'] = pygame.mixer.Sound(f'script/sound/assets_sounds_capture.wav')
 
-        return None
 
     def do_stuff(self, x: int, y: int, k: int, z: int) -> None:
         capture = self.board[k][z] != AllPieces.empty.value

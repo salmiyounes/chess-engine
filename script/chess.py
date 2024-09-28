@@ -1,6 +1,6 @@
 from enum import Enum
 import ctypes
-import time
+import os, time
 
 MAX_MOVES = 256
 
@@ -75,7 +75,7 @@ class Undo(ctypes.Structure):
 class Chess(object):
     
     def __init__(self):
-        self.chess_lib = ctypes.CDLL('./engine/libchess.so')
+        self.chess_lib = ctypes.CDLL(os.path.join(os.getcwd(), 'engine/libchess.so'))
         self.c_lib     = ctypes.cdll.LoadLibrary("libc.so.6")
         self.board     = ChessBoard()
         self.pieces    = Pieces()
