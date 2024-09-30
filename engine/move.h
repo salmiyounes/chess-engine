@@ -17,6 +17,7 @@
 typedef struct {
   int capture;
   int promotion;
+  int castle;
   bb ep;
 } Undo;
 
@@ -26,6 +27,7 @@ typedef struct {
   int src;
   int dst;
   int promotion;
+  int castle;
   int ep;
   
 } Move;

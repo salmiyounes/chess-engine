@@ -23,8 +23,10 @@ void sort_moves(ChessBoard *board, Move *moves, int count) {
 
 	for (int i = 0; i < count; i++) {
 		Move *move = moves + i;
-		scores[i]  = (Score) {.score=  score_move(board, move), 
-		 					  .index = i};
+		scores[i]  = (Score) {
+			.score=  score_move(board, move), 
+		 	.index = i
+		};
 	}
 
 	qsort(scores, count, sizeof(Score), _cmp_int_);

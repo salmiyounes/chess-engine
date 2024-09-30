@@ -7,6 +7,7 @@
     (m)->dst   = (b); \
     (m)->promotion = EMPTY; \
     (m)->ep   = EMPTY; \
+    (m)->castle = EMPTY;\
     (m)++;
 
 #define EMIT_PROMOTION(m, a, b, p, c) \
@@ -16,6 +17,7 @@
     (m)->promotion = (p); \
     (m)->color = (c);\
     (m)->ep    = EMPTY; \
+    (m)->castle = EMPTY;\
     (m)++;
 
 #define EMIT_PROMOTIONS(m, a, b, c) \
@@ -31,7 +33,19 @@
     (m)->dst   = (b); \
     (m)->ep    = (k); \
     (m)->promotion = EMPTY; \
+    (m)->castle    = EMPTY;\
     (m)++; 
+
+#define EMIT_CASTLE(m , a, b, z, n, k) \
+    (m)->piece  = (z); \
+    (m)->color  = (n); \
+    (m)->src    = (a); \
+    (m)->dst    = (b); \
+    (m)->castle = (k); \
+    (m)->promotion = EMPTY;\
+    (m)->ep = EMPTY; \
+    (m)++;
+
 
 /* 
     generic move generators
@@ -193,6 +207,35 @@ int gen_white_king_moves(ChessBoard *board, Move *moves) {
         moves, board->WhiteKing, ~board->AllWhitePieces, WHITE);
 }
 
+int gen_white_king_castle(ChessBoard *board, Move *moves) {
+    Move *ptr = moves;
+    if (board->castle & CASTLE_WHITE_KING_SIDE) {
+        /*
+            Check if there is any piece in the way
+        */
+        if (!(board->Board & 0x0000000000000060L)) {
+            /*
+                check if the king is not under check
+            */ 
+            Move dummy[MAX_MOVES];
+            bb mask = 0x0000000000000030L;
+            if (!(gen_black_attacks_against(board, dummy, mask))) {
+                EMIT_CASTLE(moves, 4, 6, KING, WHITE, 1);
+            }
+        }
+    }
+    if (board->castle & CASTLE_WHITE_QUEEN_SIDE) {
+        if (!(board->Board & 0x000000000000000eL)) {
+            Move dummy[MAX_MOVES];
+            bb mask = 0x0000000000000018L;
+            if (!(gen_black_attacks_against(board, dummy, mask))) {
+                EMIT_CASTLE(moves, 4, 2, KING, WHITE, 1);
+            }
+        }
+    }
+    return moves - ptr;
+}
+
 
 int gen_white_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
@@ -202,6 +245,7 @@ int gen_white_moves(ChessBoard *board, Move *moves) {
     moves += gen_white_rook_moves(board, moves);
     moves += gen_white_queen_moves(board, moves);
     moves += gen_white_king_moves(board, moves);
+    moves += gen_white_king_castle(board, moves);
 
     return moves - ptr;
 }
@@ -358,6 +402,29 @@ int gen_black_king_moves(ChessBoard *board, Move *moves) {
         moves, board->BlackKing, ~board->AllBalckPieces, BLACK);
 }
 
+int gen_black_king_castle(ChessBoard *board, Move *moves) {
+    Move *ptr = moves;
+    if (board->castle & CASTLE_BLACK_KING_SIDE) {
+        if (!(board->Board & 0x6000000000000000L)) {
+            Move dummy[MAX_MOVES];
+            bb mask = 0x3000000000000000L;
+            if (!(gen_white_attacks_against(board, dummy, mask))) {
+                EMIT_CASTLE(moves, 60, 62, KING, BLACK, 1);
+            }
+        }
+    }
+    if (board->castle & CASTLE_BLACK_QUEEN_SIDE) {
+            if (!(board->Board & 0x0e00000000000000L)) {
+                Move dummy[MAX_MOVES];
+                bb mask =  0x1800000000000000L;
+                if (!(gen_white_attacks_against(board, dummy, mask))) {
+                    EMIT_CASTLE(moves, 60, 58, KING, BLACK, 1);
+                }           
+        }
+    }
+    return moves - ptr;
+}
+
 int gen_black_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     moves += gen_black_pawn_moves(board, moves);
@@ -366,6 +433,8 @@ int gen_black_moves(ChessBoard *board, Move *moves) {
     moves += gen_black_rook_moves(board, moves);
     moves += gen_black_queen_moves(board, moves);
     moves += gen_black_king_moves(board, moves);
+    moves += gen_black_king_castle(board, moves);
+
     return moves - ptr;
 }
 

@@ -31,7 +31,7 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 	*result++ = file1;
 	*result++ = rank1;
 
-	if (capture | ep) *result++ = 'x';
+	if (capture || ep) *result++ = 'x';
 
 	*result++ = file2;
 	*result++ = ramk2;
@@ -90,6 +90,7 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	int color     = move->color;
 	int promotion = undo->promotion = move->promotion;
 	undo->ep      = board->ep;
+	undo->castle  = board->castle;
 	bb capture;
 
 	CAPTURE(capture, board, color, move);
@@ -112,7 +113,7 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 		board_set(board, move->dst, piece, color);
 	}
 
-	if (board->squares[move->src] == PAWN) {
+	if (piece == PAWN) {
 		bb src, dst;
 		switch (PIECE(board->color)) {
 			case BLACK: 
@@ -136,7 +137,43 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 					}
 					break;
 			}
+	} 
+	if (piece == KING) {
+		switch(COLOR(board->color)) {
+			case WHITE:
+					board->castle &= ~CASTLE_WHITE;
+					if (move->src == 4 && move->dst == 6) {
+						board_set(board, 7, ROOK, WHITE);
+						board_set(board, 5, ROOK, WHITE);
+					} else if (move->src == 4 && move->dst == 2) {
+						board_set(board, 0, ROOK, WHITE);
+						board_set(board, 3, ROOK, WHITE);
+					}
+				break;
+			case BLACK:
+					board->castle &= ~CASTLE_BLACK;
+					if (move->src == 60 && move->dst == 62) {
+						board_set(board, 63, ROOK, BLACK);
+						board_set(board, 61, ROOK, BLACK);
+					} else if (move->src == 60 && move->dst == 58) {
+						board_set(board, 56, ROOK, BLACK);
+						board_set(board, 59, ROOK, BLACK);
+					}
+				break; 
 		}
+	}
+	if (move->src == 0 || move->dst == 0) {
+		board->castle &= ~CASTLE_WHITE_QUEEN_SIDE;
+	}
+	if (move->src == 7 || move->dst == 7) {
+		board->castle &= ~CASTLE_WHITE_KING_SIDE;
+	}
+	if (move->src == 56 || move->dst == 56) {
+		board->castle &= ~CASTLE_BLACK_QUEEN_SIDE;
+	}
+	if (move->src == 63 || move->dst == 63) {
+		board->castle &= ~CASTLE_BLACK_KING_SIDE;
+	}
 
 	board->color ^= BLACK;
 }
@@ -147,19 +184,19 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 	int capture   = undo->capture;
 	int promotion = move->promotion;
 	
-	board_set(board, move->dst, piece, SWITCH(color));
 	board_set(board, move->src, piece, SWITCH(color));
-	board->ep  = undo->ep;
+	board_set(board, move->dst, piece, SWITCH(color));
+	board->ep  	  = undo->ep;
+	board->castle = undo->castle;
 
 	
-	if (promotion && piece == PAWN) {
+	if (promotion) {
 		board_set(board, move->dst, promotion, SWITCH(color));
-		board_set(board, move->src, PAWN, SWITCH(color));
 	}
 
 	if (piece == PAWN) {
 		bb bit = BIT(move->dst);
-		switch(move->color) {
+		switch(COLOR(move->color)) {
 			case BLACK:
 				if (bit == undo->ep) {
 					board_set(board, move->dst + 8, piece, WHITE);
@@ -171,6 +208,27 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 				}
 				break;
 			default: 
+				break;
+		}
+	} else if (piece == KING) {
+		switch(COLOR(move->color)) {
+			case WHITE:
+				if (move->src == 4 && move->dst == 6) {
+					board_set(board, 7, ROOK, WHITE);
+					board_set(board, 5, ROOK, WHITE);
+				} else if (move->src == 4 && move->dst == 2) {
+					board_set(board, 0, ROOK, WHITE);
+					board_set(board, 3, ROOK, WHITE);
+				}
+				break;
+			case BLACK:
+				if (move->src == 60 && move->dst == 62) {
+					board_set(board, ROOK, 63, BLACK);
+					board_set(board, ROOK, 61, BLACK);
+				} else if (move->src == 60 && move->dst == 58) {
+					board_set(board, ROOK, 56, BLACK);
+					board_set(board, ROOK, 59, BLACK);
+				}
 				break;
 		}
 	}

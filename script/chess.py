@@ -28,7 +28,8 @@ class Pieces(ctypes.Structure):
 class ChessBoard(ctypes.Structure):
     _fields_ = [
         ('squares', ctypes.c_int * 64),
-        ('color', ctypes.c_int),
+        ('color',  ctypes.c_int),
+        ('castle', ctypes.c_int),
         ('white_material', ctypes.c_int),
         ('black_material', ctypes.c_int),
         ('white_pos', ctypes.c_int),
@@ -62,6 +63,7 @@ class Move(ctypes.Structure):
         ('src', ctypes.c_int),
         ('dst', ctypes.c_int),
         ('promotion', ctypes.c_int),
+        ('castle', ctypes.c_int),
         ('ep', ctypes.c_int)
     ]
 
@@ -69,6 +71,7 @@ class Undo(ctypes.Structure):
     _fields_ = [
         ('capture', ctypes.c_int),
         ('promotion', ctypes.c_int),
+        ('castle', ctypes.c_int),
         ('ep', ctypes.c_uint64)
     ]
 

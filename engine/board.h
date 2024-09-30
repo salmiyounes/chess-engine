@@ -33,6 +33,7 @@ typedef struct {
 	
 	int squares[64];
 	int color;
+	int castle;
 	int white_material;
 	int black_material;
 	int white_pos;
@@ -104,6 +105,14 @@ int   trans_to_fen(ChessBoard *state, char *result);
 #define ROOK_MATERIAL   500
 #define QUEEN_MATERIAL  900
 #define KING_MATERIAL   20000
+
+#define CASTLE_ALL 15
+#define CASTLE_WHITE 3
+#define CASTLE_BLACK 12
+#define CASTLE_WHITE_KING_SIDE 1
+#define CASTLE_WHITE_QUEEN_SIDE 2
+#define CASTLE_BLACK_KING_SIDE 4
+#define CASTLE_BLACK_QUEEN_SIDE 8 
 
 extern const int   white_pawn_square_values[64];
 extern const int white_knight_square_values[64];

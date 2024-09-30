@@ -1,3 +1,4 @@
+
 #! /usr/bin/env python3
 from typing import Tuple
 from chess import Chess, Color
@@ -93,6 +94,18 @@ class Gui:
                                 self.board[x][y], self.board[z + 1][k], self.board[z][k] = AllPieces.empty.value, AllPieces.empty.value, piece
                             elif player == Color.BLACK.value:
                                 self.board[x][y], self.board[z - 1][k], self.board[z][k] = AllPieces.empty.value, AllPieces.empty.value, piece
+                    elif move.castle:
+                        if player == Color.WHITE.value:
+                            if move.src == 4 and move.dst == 2:
+                                (self.board[7][3], self.board[7][5] , self.board[7][7], self.board[7][4]) = (AllPieces.empty.value, AllPieces.wK.value, AllPieces.empty.value, AllPieces.wR.value) 
+                            else :
+                                (self.board[7][3], self.board[7][1], self.board[7][0],  self.board[7][2]) = (AllPieces.empty.value, AllPieces.wK.value, AllPieces.empty.value, AllPieces.wR.value)
+                        else :
+                            if move.src == 60 and move.dst == 58 :
+                                (self.board[0][3], self.board[0][5], self.board[0][7], self.board[0][4])  = (AllPieces.empty.value, AllPieces.bK.value, AllPieces.empty.value, AllPieces.bR.value) 
+                            else :
+                                (self.board[0][3], self.board[0][1], self.board[0][0], self.board[0][2])  = (AllPieces.empty.value, AllPieces.bK.value, AllPieces.empty.value, AllPieces.bR.value)
+
                     else:
                             self.board[x][y], self.board[z][k] = AllPieces.empty.value, piece
 
@@ -122,7 +135,7 @@ class Gui:
     def draw_board(self) -> None:
         for row in range(8):
             for col in range(8):
-                color =  LIGHT_BROWN if (row + col) % 2 == 0 else DARK_BROWN
+                color =  LIGHT_GREY if (row + col) % 2 == 0 else DARK_GREY
                 pygame.draw.rect(self.screen, color, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         return None
 
@@ -170,7 +183,6 @@ class Gui:
                         else:
                             x_dst, y_dst = x, y
                             self.do_stuff(x_src, y_src, x_dst, y_dst)
-                            player = Color.BLACK.value
                             src_selected = False
                             draw         = False
             else:

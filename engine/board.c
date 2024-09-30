@@ -6,6 +6,7 @@
 
 void board_clear(ChessBoard *board) {
     memset(board, 0, sizeof(ChessBoard));
+    board->castle = CASTLE_ALL;
 }
 
 void myFunc(char **grid, bb bstate, char *pt) {
@@ -175,13 +176,11 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
 void initializeBoard(ChessBoard *board, Pieces *p) {
 
     board_clear(board);
-
     // PAWNS
     for (int file = 0; file < 8 ; file++) {
         board->WhitePawns |= BIT(RF(1, file));
         board->BlackPawns |= BIT(RF(6, file));
     }
-
     // ROOKS
     board->BlackRooks   = BIT(RF(7, 0)) | BIT(RF(7, 7));
     board->WhiteRooks   = BIT(RF(0, 0)) | BIT(RF(0, 7));
