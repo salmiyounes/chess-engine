@@ -39,7 +39,6 @@ void sort_moves(ChessBoard *board, Move *moves, int count) {
 }
 
 int negamax(ChessBoard *state, int depth, int alpha, int beta) {
-	
 	if (illegal_to_move(state)) {
 		return (state->color) ? -INF : INF;
 	}

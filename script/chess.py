@@ -179,7 +179,10 @@ class Chess(object):
     def perft_test(self, depth: int) -> int:
 
         self.chess_lib.perft_test.argtypes = [ctypes.POINTER(ChessBoard), ctypes.c_int]
-        return self.chess_lib.perft_test(ctypes.byref(self.board), depth)
+        self.chess_lib.perft_test.restype  = ctypes.c_uint64
+        result : ctypes.c_uint64           = self.chess_lib.perft_test(ctypes.byref(self.board), depth)
+
+        return result
 
     def computer_move(self):
         self.chess_lib.best_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]

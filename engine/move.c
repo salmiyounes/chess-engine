@@ -20,30 +20,56 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 	char ramk2 = '1' + move->dst / 8;
 	char file2 = 'a' + move->dst % 8;
 
-	switch(PIECE(piece)) {
-		case KNIGHT: *result++ = 'N'; break;
-		case BISHOP: *result++ = 'B'; break;
-		case ROOK:   *result++ = 'R'; break;
-		case QUEEN:	 *result++ = 'Q'; break;
-		case KING:   *result++ = 'K'; break;
+	bool castle = false;
+	if (piece == KING) {
+		castle = true;
+		if (move->src == 4 && move->dst == 6) {
+			strcpy(result, "O-O");
+			result += 3;
+		}
+		else if (move->src == 4 && move->dst == 2) {
+			strcpy(result, "O-O-O");
+			result += 5;
+		}
+		else if (move->src == 60 && move->dst == 62)  {
+			strcpy(result, "O-O");
+			result += 3;
+		}
+		else if (move->src == 60 && move->dst == 58) {
+			strcpy(result, "O-O-O");
+			result += 5;
+		}
+		else {
+			castle = false;
+		}
 	}
 
-	*result++ = file1;
-	*result++ = rank1;
+	if (!castle) {	
+		switch(PIECE(piece)) {
+			case KNIGHT: *result++ = 'N'; break;
+			case BISHOP: *result++ = 'B'; break;
+			case ROOK:   *result++ = 'R'; break;
+			case QUEEN:	 *result++ = 'Q'; break;
+			case KING:   *result++ = 'K'; break;
+		}
 
-	if (capture || ep) *result++ = 'x';
+		*result++ = file1;
+		*result++ = rank1;
 
-	*result++ = file2;
-	*result++ = ramk2;
+		if (capture || ep) *result++ = 'x';
 
-	if (move->promotion) {
-		*result++ = '=';
-		switch (move->promotion) {
-            case KNIGHT: *result++ = 'N'; break;
-            case BISHOP: *result++ = 'B'; break;
-            case ROOK:   *result++ = 'R'; break;
-            case QUEEN:  *result++ = 'Q'; break;
-        }
+		*result++ = file2;
+		*result++ = ramk2;
+
+		if (move->promotion) {
+			*result++ = '=';
+			switch (move->promotion) {
+	            case KNIGHT: *result++ = 'N'; break;
+	            case BISHOP: *result++ = 'B'; break;
+	            case ROOK:   *result++ = 'R'; break;
+	            case QUEEN:  *result++ = 'Q'; break;
+	        }
+		}
 	}
 	*result++ = 0;
 }
