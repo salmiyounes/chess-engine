@@ -38,6 +38,38 @@ void sort_moves(ChessBoard *board, Move *moves, int count) {
 
 }
 
+int negamax(ChessBoard *state, int depth, int alpha, int beta) {
+	
+	if (illegal_to_move(state)) {
+		return (state->color) ? -INF : INF;
+	}
+
+	if (depth <= 0) {
+		return eval(state);
+	}
+
+	int value = -INF;
+
+	Move moves[MAX_MOVES];
+	Undo undo;
+	int count = gen_legal_moves(state, moves);
+	sort_moves(state, moves, count);
+
+	for (int i = 0; i < count; i++) {
+		Move *move = &moves[i];
+		do_move(state, move, &undo);
+		value = MAX(value, -negamax(state, depth - 1, -beta, -alpha));
+		alpha = MAX(alpha, value);
+		undo_move(state, move, &undo);
+		if (alpha >= beta) {
+			break;
+		}
+	}
+
+	return value;
+
+}
+
 int minimax(ChessBoard *state, int depth, int maxi, int alpha, int beta) {
 	Move moves[256];
 	Undo undo;
@@ -99,7 +131,7 @@ void best_move(ChessBoard *board, Move *result) {
 	for (int i = 0; i < count; i++) {
 		Move *move = &moves[i];
 		do_move(&copy, move, &undo);
-		int score = minimax(&copy, 3, 0, -INF, INF);
+		int score = -negamax(&copy, 4, -INF, INF);
 		undo_move(&copy, move, &undo);
 		if (score > best_score) {
 			best_score = score;
