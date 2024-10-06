@@ -182,17 +182,17 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 	int piece     = move->piece;
 	int color     = board->color;
 	int capture   = undo->capture;
-	int promotion = move->promotion;
+	int promotion = undo->promotion;
 	
 	board_set(board, move->src, piece, SWITCH(color));
-	board_set(board, move->dst, piece, SWITCH(color));
+	if (promotion) {
+		board_set(board, move->dst, promotion, SWITCH(color));
+	} else {
+		board_set(board, move->dst, piece, SWITCH(color));
+	}
 	board->ep  	  = undo->ep;
 	board->castle = undo->castle;
 
-	
-	if (promotion) {
-		board_set(board, move->dst, promotion, SWITCH(color));
-	}
 
 	if (piece == PAWN) {
 		bb bit = BIT(move->dst);

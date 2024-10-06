@@ -321,11 +321,41 @@ void board_load_fen(ChessBoard *board, char *fen) {
         case 'b':
             board->color = BLACK;
     }
+    i++;
+    board->castle = 0;
+    for (; i < n; i++) {
+        bool done = false;
+        switch(fen[i]) {
+            case 'K':
+                board->castle |= CASTLE_WHITE_KING_SIDE;
+                break; 
+            case 'Q':
+                board->castle |= CASTLE_WHITE_QUEEN_SIDE;
+                break;
+            case 'k':
+                board->castle |= CASTLE_BLACK_KING_SIDE;
+                break;
+            case 'q':
+                board->castle |= CASTLE_BLACK_QUEEN_SIDE;
+                break;
+            case '-':
+                done = true;
+                break;
+            case ' ':
+                done = true;
+                break;
+            default:
+                return;
+        }
+        if (done) {
+            break;
+        }
+    }
 
     i++;
     if (fen[i] == '-') i++;
 
-    if (fen[i] >= 'a' && fen[i] <= 'h') {
+    else if (fen[i] >= 'a' && fen[i] <= 'h') {
         int ep_file = fen[i] - 'a';
         i++;
         if (fen[i] >= '1' && fen[i] <= '8') {

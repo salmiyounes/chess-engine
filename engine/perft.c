@@ -1,5 +1,7 @@
 #include "perft.h"
 
+Pieces p;
+
 bb perft_test(ChessBoard *board, int depth) {
 	if (illegal_to_move(board)) {
 		return 0L;
@@ -23,3 +25,13 @@ bb perft_test(ChessBoard *board, int depth) {
 
 	return nodes;
 }
+
+int main() {
+	ChessBoard board;
+    initializeBoard(&board, &p);
+    bb_init();
+    bb result = perft_test(&board, 7);
+    printf("%lld\n", result);
+	return 0;
+}
+

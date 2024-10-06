@@ -153,29 +153,29 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (a1) {
         POP_LSB(sq, a1);
-        if (board->ep) {
-            if (BIT(sq) & board->ep) {
-                EMIT_EN_PASSANT(moves, sq - 7, sq, PAWN ,WHITE, 1);
-            }
-        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq - 7, sq, WHITE);
-        } else {
-            EMIT_MOVE(moves, sq - 7, sq, PAWN, WHITE);
+        }
+         else {
+            if ((bb)BIT(sq) == board->ep) {
+                EMIT_EN_PASSANT(moves, sq - 7, sq, PAWN, WHITE, 1);
+            } else {
+                EMIT_MOVE(moves, sq - 7, sq, PAWN, WHITE);
+            }
         }
     }
 
     while (a2) {
         POP_LSB(sq, a2);
-        if (board->ep) {
-            if (BIT(sq) & board->ep) {
-                EMIT_EN_PASSANT(moves, sq - 9, sq, PAWN ,WHITE, 1);
-            }
-        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq - 9, sq, WHITE);
-        } else {
-            EMIT_MOVE(moves, sq - 9, sq, PAWN, WHITE);
+        }
+        else {
+            if ((bb)BIT(sq) == board->ep) {
+                EMIT_EN_PASSANT(moves, sq - 9, sq, PAWN, WHITE, 1);
+            } else {
+                EMIT_MOVE(moves, sq - 9, sq, PAWN, WHITE);
+            }
         }
     }
 
@@ -346,30 +346,28 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (a1) {
         POP_LSB(sq, a1);
-        if (board->ep) {
-            if (BIT(sq) & board->ep) {
-                EMIT_EN_PASSANT(moves, sq + 7, sq, PAWN, BLACK, 1);
-            }
-        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq + 7, sq, BLACK);
-        } 
+        }
         else {
-            EMIT_MOVE(moves, sq + 7, sq, PAWN, BLACK);
+            if ((bb)BIT(sq) == board->ep) {
+                EMIT_EN_PASSANT(moves, sq + 7, sq, PAWN, BLACK, 1);
+            } else {
+               EMIT_MOVE(moves, sq + 7, sq, PAWN, BLACK);
+            }
         } 
     }
     while (a2) {
         POP_LSB(sq, a2);
-        if (board->ep) {
-            if (BIT(sq) & board->ep) {
-                EMIT_EN_PASSANT(moves, sq + 9, sq, PAWN, BLACK, 1);
-            }
-        }
         if (BIT(sq) & promo) {
             EMIT_PROMOTIONS(moves, sq + 9, sq, BLACK);
         }
         else {
-            EMIT_MOVE(moves, sq + 9, sq, PAWN, BLACK);
+            if ((bb)BIT(sq) == board->ep) {
+                EMIT_EN_PASSANT(moves, sq + 9, sq, PAWN, BLACK, 1);
+            } else {
+                EMIT_MOVE(moves, sq + 9, sq, PAWN, BLACK);
+            }
         }
     }
 
