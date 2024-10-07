@@ -236,7 +236,7 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 			default: 
 				break;
 		}
-	} else if (piece == KING) {
+	} if (piece == KING) {
 		switch(COLOR(move->color)) {
 			case WHITE:
 				if (move->src == 4 && move->dst == 6) {
@@ -249,12 +249,14 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 				break;
 			case BLACK:
 				if (move->src == 60 && move->dst == 62) {
-					board_set(board, ROOK, 63, BLACK);
-					board_set(board, ROOK, 61, BLACK);
+					board_set(board, 63, ROOK, BLACK);
+					board_set(board, 61, ROOK,BLACK);
 				} else if (move->src == 60 && move->dst == 58) {
-					board_set(board, ROOK, 56, BLACK);
-					board_set(board, ROOK, 59, BLACK);
+					board_set(board, 56, ROOK, BLACK);
+					board_set(board, 59, ROOK, BLACK);
 				}
+				break;
+			default:
 				break;
 		}
 	}

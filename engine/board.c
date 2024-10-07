@@ -184,18 +184,23 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
     // ROOKS
     board->BlackRooks   = BIT(RF(7, 0)) | BIT(RF(7, 7));
     board->WhiteRooks   = BIT(RF(0, 0)) | BIT(RF(0, 7));
+
     // BISHOPS
     board->WhiteBishops = BIT(RF(0, 5)) | BIT(RF(0, 2));
     board->BlackBishops = BIT(RF(7, 5)) | BIT(RF(7, 2));
+    
     //KNIGHTS
     board->WhiteKnights = BIT(RF(0, 1)) | BIT(RF(0, 6));
     board->BlackKnights = BIT(RF(7, 1)) | BIT(RF(7, 6));
+    
     //KINGS
     board->WhiteKing    = BIT(RF(0, 4));
     board->BlackKing    = BIT(RF(7, 4));
+    
     //QUEENS
     board->WhiteQueens  = BIT(RF(0, 3));
     board->BlackQueens  = BIT(RF(7, 3));
+
     initializeAllWhitePieces(board);
     initializeAllBlackPieces(board);
     initializeAllBoard(board);
