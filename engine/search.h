@@ -4,19 +4,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include "bb.h"
 #include "board.h"
 #include "gen.h"
 #include "move.h"
+#include "table.h"
+#include "eval.h"
 
-#define INF 100000000
-#define MAX(x, y) (x ^ ((x ^ y) & -(x < y)))
-#define MIN(x, y) (y ^ ((x ^ y) & -(x < y)))
+#define INF 1000000
 
 typedef struct {
-	signed int score;
-	signed int index;
+	int score;
+	int index;
 } Score;
 
-void best_move(ChessBoard *board, Move *result);
+typedef struct {
+	int nodes;
+
+	Move move;
+	
+	Table table;
+} Search;
+
+int best_move(Search *search, ChessBoard *board, Move *result);
 
 #endif

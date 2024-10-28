@@ -30,7 +30,7 @@ int gen_black_attacks_against(ChessBoard *board, Move *moves, bb mask);
 
 //
 int gen_knight_moves(Move *moves, bb srcs, bb mask, int color);
-
+int gen_attacks(ChessBoard *board, Move *moves);
 int gen_legal_moves(ChessBoard *board, Move *moves);
 int gen_moves(ChessBoard *board, Move *moves);
 int illegal_to_move(ChessBoard *board);

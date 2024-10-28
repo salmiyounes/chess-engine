@@ -240,10 +240,10 @@ int gen_white_king_castle(ChessBoard *board, Move *moves) {
 int gen_white_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     moves += gen_white_pawn_moves(board, moves);
-    moves += gen_white_knight_moves(board, moves);
-    moves += gen_white_bishop_moves(board, moves);
-    moves += gen_white_rook_moves(board, moves);
-    moves += gen_white_queen_moves(board, moves);
+    moves += board->white_knight_mob = gen_white_knight_moves(board, moves);
+    moves += board->white_bishop_mob = gen_white_bishop_moves(board, moves);
+    moves += board->white_rook_mob   = gen_white_rook_moves(board, moves);
+    moves += board->white_queen_mob  = gen_white_queen_moves(board, moves);
     moves += gen_white_king_moves(board, moves);
     moves += gen_white_king_castle(board, moves);
 
@@ -426,10 +426,10 @@ int gen_black_king_castle(ChessBoard *board, Move *moves) {
 int gen_black_moves(ChessBoard *board, Move *moves) {
     Move *ptr = moves;
     moves += gen_black_pawn_moves(board, moves);
-    moves += gen_black_knight_moves(board, moves);
-    moves += gen_black_bishop_moves(board, moves);
-    moves += gen_black_rook_moves(board, moves);
-    moves += gen_black_queen_moves(board, moves);
+    moves += board->black_knight_mob = gen_black_knight_moves(board, moves);
+    moves += board->black_bishop_mob = gen_black_bishop_moves(board, moves);
+    moves += board->black_rook_mob   = gen_black_rook_moves(board, moves);
+    moves += board->black_queen_mob  = gen_black_queen_moves(board, moves);
     moves += gen_black_king_moves(board, moves);
     moves += gen_black_king_castle(board, moves);
 
@@ -530,6 +530,15 @@ int gen_legal_moves(ChessBoard *board, Move *moves) {
     free(temp);
 
     return moves - ptr;
+}
+
+int gen_attacks(ChessBoard *board, Move *moves) {
+    if (board->color) {
+        return gen_black_attacks_against(board, moves, board->AllWhitePieces);
+    }
+    else {
+        return gen_white_attacks_against(board, moves, board->AllBalckPieces);
+    }
 }
 
 int illegal_to_move(ChessBoard *board) {
