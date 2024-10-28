@@ -1,6 +1,6 @@
 from enum import Enum
 import ctypes
-import os, time
+import os
 
 MAX_MOVES = 256
 
@@ -10,19 +10,19 @@ class Color(Enum) :
 
 class Pieces(ctypes.Structure):
     _fields_ = [
-        ('WhitePawns', ctypes.POINTER(ctypes.c_char)),
-        ('WhiteRooks', ctypes.POINTER(ctypes.c_char)),
-        ('WhiteBishops', ctypes.POINTER(ctypes.c_char)),
-        ('WhiteKnights', ctypes.POINTER(ctypes.c_char)),
-        ('WhiteQueens', ctypes.POINTER(ctypes.c_char)),
-        ('WhiteKing', ctypes.POINTER(ctypes.c_char)),
-        ('BlackPawns', ctypes.POINTER(ctypes.c_char)),
-        ('BlackRooks', ctypes.POINTER(ctypes.c_char)),
-        ('BlackBishops', ctypes.POINTER(ctypes.c_char)),
-        ('BlackKnights', ctypes.POINTER(ctypes.c_char)),
-        ('BlackQueens', ctypes.POINTER(ctypes.c_char)),
-        ('BlackKing', ctypes.POINTER(ctypes.c_char)),
-        ('Empty', ctypes.POINTER(ctypes.c_char))
+        ('WhitePawns',       ctypes.POINTER(ctypes.c_char)),
+        ('WhiteRooks',       ctypes.POINTER(ctypes.c_char)),
+        ('WhiteBishops',     ctypes.POINTER(ctypes.c_char)),
+        ('WhiteKnights',     ctypes.POINTER(ctypes.c_char)),
+        ('WhiteQueens',      ctypes.POINTER(ctypes.c_char)),
+        ('WhiteKing',        ctypes.POINTER(ctypes.c_char)),
+        ('BlackPawns',       ctypes.POINTER(ctypes.c_char)),
+        ('BlackRooks',       ctypes.POINTER(ctypes.c_char)),
+        ('BlackBishops',     ctypes.POINTER(ctypes.c_char)),
+        ('BlackKnights',     ctypes.POINTER(ctypes.c_char)),
+        ('BlackQueens',      ctypes.POINTER(ctypes.c_char)),
+        ('BlackKing',        ctypes.POINTER(ctypes.c_char)),
+        ('Empty',            ctypes.POINTER(ctypes.c_char))
     ]
 
 class ChessBoard(ctypes.Structure):
@@ -30,10 +30,21 @@ class ChessBoard(ctypes.Structure):
         ('squares', ctypes.c_int * 64),
         ('color',  ctypes.c_int),
         ('castle', ctypes.c_int),
+
         ('white_material', ctypes.c_int),
         ('black_material', ctypes.c_int),
+
         ('white_pos', ctypes.c_int),
         ('black_pos', ctypes.c_int),
+
+        ('white_knight_mob', ctypes.c_int),
+        ('black_knight_mob', ctypes.c_int),
+        ('white_bishop_mob', ctypes.c_int),
+        ('black_bishop_mob', ctypes.c_int),
+        ('white_rook_mob', ctypes.c_int),
+        ('black_rook_mob', ctypes.c_int),
+        ('white_queen_mob', ctypes.c_int),
+        ('black_queen_mob', ctypes.c_int),
 
         ('WhitePawns', ctypes.c_uint64),
         ('WhiteRooks', ctypes.c_uint64),
@@ -53,7 +64,8 @@ class ChessBoard(ctypes.Structure):
         ('AllWhitePieces', ctypes.c_uint64),
         ('Board', ctypes.c_uint64),
 
-        ('ep', ctypes.c_uint64)
+        ('ep', ctypes.c_uint64),
+        ('hash', ctypes.c_uint64)
     ]
 
 class Move(ctypes.Structure):
@@ -75,6 +87,30 @@ class Undo(ctypes.Structure):
         ('ep', ctypes.c_uint64)
     ]
 
+class Entry(ctypes.Structure):
+    _fields_ = [
+        ('key', ctypes.c_uint64),
+        ('score', ctypes.c_int),
+        ('depth', ctypes.c_int),
+        ('flag', ctypes.c_int),
+        ('move', Move)
+    ]
+
+class Table(ctypes.Structure):
+    _fields_ = [
+        ('size', ctypes.c_int),
+        ('mask', ctypes.c_int),
+        ('entry', ctypes.POINTER(Entry))
+    ]
+
+class Search(ctypes.Structure):
+    _fields_ = [
+        ('nodes', ctypes.c_int),
+        ('move',       Move),
+        ('num', ctypes.c_int),
+        ('table',      Table)
+    ]
+
 class Chess(object):
     
     def __init__(self):
@@ -82,6 +118,7 @@ class Chess(object):
         self.c_lib     = ctypes.cdll.LoadLibrary("libc.so.6")
         self.board     = ChessBoard()
         self.pieces    = Pieces()
+        self.__call__()
         self.player    = Color.WHITE.value
     
     def __repr__(self):
@@ -131,12 +168,6 @@ class Chess(object):
         count : int = self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
         return moves, count
 
-    def reset_board(self) -> None:
-    	self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
-    	self.chess_lib.board_clear(ctypes.byref(self.board))
-    	self.board_init()
-    	return None
-
     def free_moves(self, moves) -> None:
         self.chess_lib.free(moves)
         return None
@@ -185,7 +216,8 @@ class Chess(object):
         return result
 
     def computer_move(self):
-        self.chess_lib.best_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
-        move = Move()
-        self.chess_lib.best_move(ctypes.byref(self.board), ctypes.byref(move))
+        self.chess_lib.best_move.argtypes = [ctypes.POINTER(Search), ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
+        move   = Move()
+        search = Search()
+        self.chess_lib.best_move(ctypes.byref(search), ctypes.byref(self.board), ctypes.byref(move), )
         return move
