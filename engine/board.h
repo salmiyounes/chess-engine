@@ -10,6 +10,8 @@
 #define initializeAllBlackPieces(b) ((b->AllBalckPieces = (b->BlackPawns | b->BlackRooks | b->BlackBishops | b->BlackKnights | b->BlackQueens | b->BlackKing)))
 #define initializeAllBoard(b) ( ( b->Board) = (board->AllBalckPieces) | (board->AllWhitePieces))
 
+#define MAX(x, y) (x ^ ((x ^ y) & -(x < y)))
+#define MIN(x, y) (y ^ ((x ^ y) & -(x < y)))
 
 typedef struct {
 	char *WhitePawns;
@@ -34,10 +36,21 @@ typedef struct {
 	int squares[64];
 	int color;
 	int castle;
+	
 	int white_material;
 	int black_material;
+
 	int white_pos;
 	int black_pos;
+
+	int white_knight_mob;
+	int black_knight_mob;
+	int white_bishop_mob;
+	int black_bishop_mob;
+	int white_rook_mob;
+	int black_rook_mob;
+	int white_queen_mob;
+	int black_queen_mob;
 
     bb WhitePawns;
     bb WhiteRooks;
@@ -58,6 +71,8 @@ typedef struct {
     bb Board;
 
     bb ep;
+
+    bb hash;
 
 } ChessBoard;
 

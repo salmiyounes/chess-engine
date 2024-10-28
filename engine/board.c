@@ -34,31 +34,37 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
                     board->BlackPawns     &= mask;
                     board->black_material -= PAWN_MATERIAL;
                     board->black_pos      -= black_pawn_square_values[sq];
+                    board->hash           ^= HASH_BLACK_PAWN[sq];
                     break;
                 case KNIGHT: 
                     board->BlackKnights   &= mask;
                     board->black_material -= KNIGHT_MATERIAL;
-                    board->black_pos      -= black_knight_square_values[sq]; 
+                    board->black_pos      -= black_knight_square_values[sq];
+                    board->hash           ^= HASH_BLACK_KNIGHT[sq];
                     break;
                 case ROOK: 
                     board->BlackRooks     &= mask; 
                     board->black_material -= ROOK_MATERIAL;
                     board->black_pos      -= black_rook_square_values[sq];
+                    board->hash           ^= HASH_BLACK_ROOK[sq];
                     break;
                 case BISHOP: 
                     board->BlackBishops   &= mask;
                     board->black_material -= BISHOP_MATERIAL;
-                    board->black_pos      -= black_bishop_square_values[sq]; 
+                    board->black_pos      -= black_bishop_square_values[sq];
+                    board->hash            ^= HASH_BLACK_BISHOP[sq]; 
                     break;
                 case KING: 
                     board->BlackKing      &= mask;
                     board->black_material -= KING_MATERIAL;
-                    board->black_pos      -= black_king_square_values[sq]; 
+                    board->black_pos      -= black_king_square_values[sq];
+                    board->hash            ^= HASH_BLACK_KING[sq]; 
                     break;
                 case QUEEN: 
                     board->BlackQueens    &= mask; 
                     board->black_material -= QUEEN_MATERIAL;
                     board->black_pos      -= black_queen_square_values[sq];
+                    board->hash            ^= HASH_BLACK_QUEEN[sq];
                     break;
             }
         } else {
@@ -68,31 +74,37 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
                     board->WhitePawns     &= mask;
                     board->white_material -= PAWN_MATERIAL;
                     board->white_pos      -= white_pawn_square_values[sq];
+                    board->hash             ^= HASH_WHITE_PAWN[sq];
                     break;
                 case KNIGHT: 
                     board->WhiteKnights   &= mask;
                     board->white_material -= KNIGHT_MATERIAL;
                     board->white_pos      -= white_knight_square_values[sq];
+                    board->hash            ^= HASH_WHITE_KNIGHT[sq];
                     break;
                 case ROOK: 
                     board->WhiteRooks     &= mask;
                     board->white_material -= ROOK_MATERIAL;
-                    board->white_pos      -= white_rook_square_values[sq]; 
+                    board->white_pos      -= white_rook_square_values[sq];
+                    board->hash             ^= HASH_WHITE_ROOK[sq]; 
                     break;
                 case BISHOP: 
                     board->WhiteBishops   &= mask;
                     board->white_material -= BISHOP_MATERIAL;
-                    board->white_pos      -= white_bishop_square_values[sq]; 
+                    board->white_pos      -= white_bishop_square_values[sq];
+                    board->hash            ^= HASH_WHITE_BISHOP[sq]; 
                     break;
                 case KING: 
                     board->WhiteKing      &= mask;
                     board->white_material -= KING_MATERIAL;
-                    board->white_pos      -= white_king_square_values[sq]; 
+                    board->white_pos      -= white_king_square_values[sq];
+                    board->hash             ^= HASH_WHITE_KING[sq]; 
                     break;
                 case QUEEN: 
                     board->WhiteQueens &= mask;
                     board->white_material -= QUEEN_MATERIAL;
-                    board->white_pos      -= white_queen_square_values[sq]; 
+                    board->white_pos      -= white_queen_square_values[sq];
+                    board->hash             ^= HASH_WHITE_QUEEN[sq]; 
                     break;
             }
         }
@@ -106,32 +118,38 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
                 case PAWN: 
                     board->BlackPawns     |= bit;
                     board->black_material += PAWN_MATERIAL;
-                    board->black_pos      += black_pawn_square_values[sq]; 
+                    board->black_pos      += black_pawn_square_values[sq];
+                    board->hash             ^= HASH_BLACK_PAWN[sq]; 
                     break;
                 case KNIGHT: 
                     board->BlackKnights   |= bit;
                     board->black_material += KNIGHT_MATERIAL;
-                    board->black_pos      += black_knight_square_values[sq]; 
+                    board->black_pos      += black_knight_square_values[sq];
+                    board->hash             ^= HASH_BLACK_KNIGHT[sq]; 
                     break;
                 case ROOK: 
                     board->BlackRooks     |= bit;
                     board->black_material += ROOK_MATERIAL;
-                    board->black_pos      += black_rook_square_values[sq]; 
+                    board->black_pos      += black_rook_square_values[sq];
+                    board->hash             ^= HASH_BLACK_ROOK[sq]; 
                     break;
                 case BISHOP: 
                     board->BlackBishops   |= bit; 
                     board->black_material += BISHOP_MATERIAL;
                     board->black_pos      += black_bishop_square_values[sq];
+                    board->hash             ^= HASH_BLACK_BISHOP[sq];
                     break;
                 case KING: 
                     board->BlackKing      |= bit; 
                     board->black_material += KING_MATERIAL;
                     board->black_pos      += black_king_square_values[sq];
+                    board->hash             ^= HASH_BLACK_KING[sq];
                     break;
                 case QUEEN: 
                     board->BlackQueens |= bit;
                     board->black_material += QUEEN_MATERIAL;
-                    board->black_pos      += black_queen_square_values[sq]; 
+                    board->black_pos      += black_queen_square_values[sq];
+                    board->hash            ^= HASH_BLACK_QUEEN[sq];  
                     break;
             }
         } else {
@@ -140,32 +158,38 @@ void board_set(ChessBoard *board, int sq, int piece, int color) {
                 case PAWN: 
                     board->WhitePawns     |= bit;
                     board->white_material += PAWN_MATERIAL;
-                    board->white_pos      += white_pawn_square_values[sq]; 
+                    board->white_pos      += white_pawn_square_values[sq];
+                    board->hash             ^= HASH_WHITE_PAWN[sq]; 
                     break;
                 case KNIGHT: 
                     board->WhiteKnights   |= bit;
                     board->white_material += KNIGHT_MATERIAL;
-                    board->white_pos      += white_knight_square_values[sq]; 
+                    board->white_pos      += white_knight_square_values[sq];
+                    board->hash             ^= HASH_WHITE_KNIGHT[sq]; 
                     break;
                 case ROOK: 
                     board->WhiteRooks     |= bit; 
                     board->white_material += ROOK_MATERIAL;
                     board->white_pos      += white_rook_square_values[sq];
+                    board->hash             ^= HASH_WHITE_ROOK[sq];
                     break;
                 case BISHOP: 
                     board->WhiteBishops   |= bit;
                     board->white_material += BISHOP_MATERIAL;
                     board->white_pos      += white_bishop_square_values[sq];
+                    board->hash             ^= HASH_WHITE_BISHOP[sq];
                     break;
                 case KING: 
                     board->WhiteKing      |= bit;
                     board->white_material += KING_MATERIAL;
                     board->white_pos      += white_king_square_values[sq];
+                    board->hash             ^= HASH_WHITE_KING[sq];
                     break;
                 case QUEEN: 
                     board->WhiteQueens    |= bit;
                     board->white_material += QUEEN_MATERIAL;
                     board->white_pos      += white_queen_square_values[sq];
+                    board->hash             ^= HASH_WHITE_QUEEN[sq];
                     break;
             }
         }
@@ -227,9 +251,9 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
 void printBoard(ChessBoard *b, const Pieces *p) {
     
 
-    char **grid = (char **) malloc(sizeof(char *) * GRID_SIZE);
+    char **grid = (char **) malloc(sizeof(char *) * (GRID_SIZE));
     for (int i = 0; i < GRID_SIZE; i++) {
-        grid[i] = (char *) malloc(sizeof(char) * strlen(p->Empty));
+        grid[i] = (char *) malloc(sizeof(char) * (strlen(p->Empty) + 1));
         strcpy(grid[i], p->Empty);
     }
     // Pawns 
@@ -322,9 +346,13 @@ void board_load_fen(ChessBoard *board, char *fen) {
     switch(fen[i++]) {
         case 'w':
             board->color = WHITE;
+            board->hash ^= HASH_COLOR;
             break;
         case 'b':
             board->color = BLACK;
+            board->hash  ^= HASH_COLOR;
+            break;
+        default: return;
     }
     i++;
     board->castle = 0;
@@ -357,6 +385,9 @@ void board_load_fen(ChessBoard *board, char *fen) {
         }
     }
 
+    board->hash ^= HASH_CASTLE[CASTLE_ALL];
+    board->hash ^= HASH_CASTLE[board->castle];
+
     i++;
     if (fen[i] == '-') i++;
 
@@ -366,9 +397,11 @@ void board_load_fen(ChessBoard *board, char *fen) {
         if (fen[i] >= '1' && fen[i] <= '8') {
             int ep_rank = fen[i] - '1';
             board->ep |= BIT(RF(ep_rank, ep_file));
+            board->hash ^= HASH_EP[LSB(board->ep) % 8];
             i++;
         }
     }
+    i++;
 
     initializeAllBlackPieces(board);
     initializeAllWhitePieces(board);

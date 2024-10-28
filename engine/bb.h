@@ -36,10 +36,28 @@ extern bb BB_BISHOP[64];
 extern bb BB_ROOK[64];
 extern bb BB_KING[64];
 
+extern bb HASH_WHITE_PAWN[64];
+extern bb HASH_BLACK_PAWN[64];
+extern bb HASH_WHITE_KNIGHT[64];
+extern bb HASH_BLACK_KNIGHT[64];
+extern bb HASH_WHITE_BISHOP[64];
+extern bb HASH_BLACK_BISHOP[64];
+extern bb HASH_WHITE_ROOK[64];
+extern bb HASH_BLACK_ROOK[64];
+extern bb HASH_WHITE_QUEEN[64];
+extern bb HASH_BLACK_QUEEN[64];
+extern bb HASH_WHITE_KING[64];
+extern bb HASH_BLACK_KING[64];
+extern bb HASH_CASTLE[16];
+extern bb HASH_EP[8];
+extern bb HASH_COLOR;
+
+
 void bb_init();
 bb bb_bishop(int sq, bb obs);
 bb bb_rook(int sq, bb obs);
 bb bb_queen(int sq, bb obs);
+bb bb_random();
 
 #endif
 

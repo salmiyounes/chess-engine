@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "bb.h"
 
 bb BB_KNIGHT[64];
@@ -83,6 +84,22 @@ int OFFSET_ROOK[64];
 
 bb ATTACK_BISHOP[5248];
 bb ATTACK_ROOK[102400];
+
+bb HASH_WHITE_PAWN[64];
+bb HASH_BLACK_PAWN[64];
+bb HASH_WHITE_KNIGHT[64];
+bb HASH_BLACK_KNIGHT[64];
+bb HASH_WHITE_BISHOP[64];
+bb HASH_BLACK_BISHOP[64];
+bb HASH_WHITE_ROOK[64];
+bb HASH_BLACK_ROOK[64];
+bb HASH_WHITE_QUEEN[64];
+bb HASH_BLACK_QUEEN[64];
+bb HASH_WHITE_KING[64];
+bb HASH_BLACK_KING[64];
+bb HASH_CASTLE[16];
+bb HASH_EP[8];
+bb HASH_COLOR;
 
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
@@ -232,6 +249,32 @@ void bb_init() {
         }
     }
 
+    HASH_COLOR = bb_random();
+
+    for (int i = 0; i < 8; i++) {
+    	HASH_EP[i] = bb_random();
+    }
+
+    for (int i = 0 ; i < 16; i++) {
+    	HASH_CASTLE[i] = bb_random(); 
+    }
+
+    for (int i = 0 ; i < 64; i++) {
+        
+        HASH_WHITE_PAWN[i] 	= bb_random();
+        HASH_BLACK_PAWN[i] 	= bb_random();
+        HASH_WHITE_KNIGHT[i] 	= bb_random();
+        HASH_BLACK_KNIGHT[i] 	= bb_random();
+        HASH_WHITE_BISHOP[i] 	= bb_random();
+        HASH_BLACK_BISHOP[i] 	= bb_random();
+        HASH_WHITE_ROOK[i] 	= bb_random();
+        HASH_BLACK_ROOK[i] 	= bb_random();
+        HASH_WHITE_QUEEN[i] 	= bb_random();
+        HASH_BLACK_QUEEN[i] 	= bb_random();
+        HASH_WHITE_KING[i] 	= bb_random();
+        HASH_BLACK_KING[i] 	= bb_random();
+    }
+
 }
 
 bb bb_bishop(int sq, bb obs) {
@@ -248,4 +291,13 @@ bb bb_rook(int sq, bb obs) {
 
 bb bb_queen(int sq, bb obs) {
 	return bb_bishop(sq, obs) | bb_rook(sq, obs);
+}
+
+bb bb_random() {
+	bb a = (bb)(rand() % 0x10000);
+	bb b = (bb)(rand() % 0x10000);
+	bb c = (bb)(rand() % 0x10000);
+	bb d = (bb)(rand() % 0x10000);
+
+	return (bb)( a << 48 | b << 32 | c << 16 | d) ;
 }
