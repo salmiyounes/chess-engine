@@ -1,6 +1,23 @@
 #include "move.h"
 #include "gen.h"
 
+#define TOGGLE_HASH(board) \
+    board->hash ^= HASH_CASTLE[board->castle]; \
+    if (board->ep) { \
+        board->hash ^= HASH_EP[LSB(board->ep) % 8]; \
+    }
+
+const int MVV_LVA[8][8] = {
+    {0, 0, 0, 0, 0, 0, 0},       
+    {50, 51, 52, 53, 54, 55, 0}, 
+    {40, 41, 42, 43, 44, 45, 0}, 
+    {30, 31, 32, 33, 34, 35, 0}, 
+    {20, 21, 22, 23, 24, 25, 0}, 
+    {10, 11, 12, 13, 14, 15, 0}, 
+    {0, 0, 0, 0, 0, 0, 0},       
+};
+
+
 void make_move(ChessBoard *board, Move *move) {
 	Undo undo;
 	do_move(board, move, &undo);
@@ -112,6 +129,7 @@ int get_piece_type(ChessBoard *board, int sq, int color) {
 }
 
 void do_move(ChessBoard *board, Move *move, Undo *undo) {
+	TOGGLE_HASH(board); 
 	int piece     = move->piece;
 	int color     = move->color;
 	int promotion = undo->promotion = move->promotion;
@@ -202,9 +220,12 @@ void do_move(ChessBoard *board, Move *move, Undo *undo) {
 	}
 
 	board->color ^= BLACK;
+	board->hash   ^= HASH_COLOR;
+	TOGGLE_HASH(board);
 }
 
 void undo_move(ChessBoard *board, Move *move, Undo *undo) {
+	TOGGLE_HASH(board);
 	int piece     = move->piece;
 	int color     = board->color;
 	int capture   = undo->capture;
@@ -266,6 +287,8 @@ void undo_move(ChessBoard *board, Move *move, Undo *undo) {
 	}
 
 	board->color ^= BLACK;
+	board->hash  ^= HASH_COLOR;
+	TOGGLE_HASH(board);
 	return;
 }
 
@@ -397,6 +420,16 @@ int score_move(ChessBoard *board, Move *move) {
 		}
 		score += capture_material;
 	}
+
+	return score;
+}
+
+
+int mvv_lva(ChessBoard *state,  Move *move) {
+	int attacker   = move->piece;
+	int victim     = get_piece_type(state, move->dst, SWITCH(move->color));
+
+	int score = MVV_LVA[attacker][victim];
 
 	return score;
 }

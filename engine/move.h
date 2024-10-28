@@ -14,6 +14,8 @@
     a = b->AllBalckPieces & BIT(m->dst);\
   }\
 
+extern const int MVV_LVA[8][8];
+
 typedef struct {
   int capture;
   int promotion;
@@ -37,5 +39,6 @@ void make_move(ChessBoard *board, Move *move);
 void notate_move(ChessBoard *board, Move* move, char *result);
 void undo_move(ChessBoard *board, Move *move ,Undo *undo);
 int score_move(ChessBoard *board, Move *move);
+int mvv_lva(ChessBoard *state,  Move *move);
 
 #endif
