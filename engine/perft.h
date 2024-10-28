@@ -9,4 +9,13 @@
 
 bb perft_test(ChessBoard *board, int depth);
 
+#define SIZE (1 << 20)
+#define MASK ((SIZE) - 1)
+
+typedef struct {
+    bb key;
+    bb value;
+    int depth;
+} Entry;
+
 #endif
