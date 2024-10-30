@@ -40,5 +40,6 @@ void notate_move(ChessBoard *board, Move* move, char *result);
 void undo_move(ChessBoard *board, Move *move ,Undo *undo);
 int score_move(ChessBoard *board, Move *move);
 int mvv_lva(ChessBoard *state,  Move *move);
-
+void undo_null_move_pruning(ChessBoard *board, Undo *undo);
+void do_null_move_pruning(ChessBoard *board, Undo *undo);
 #endif

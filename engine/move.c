@@ -411,7 +411,7 @@ int score_move(ChessBoard *board, Move *move) {
 					capture_material = KING_MATERIAL;
 					score 			 += white_king_square_values[dst];
 					break;
-				case QUEEN:
+				case QUEEN: 
 					capture_material = QUEEN_MATERIAL;
 					score 			 += white_queen_square_values[dst];
 					break; 
@@ -424,6 +424,22 @@ int score_move(ChessBoard *board, Move *move) {
 	return score;
 }
 
+void do_null_move_pruning(ChessBoard *board, Undo *undo) {
+	TOGGLE_HASH(board);
+	undo->ep  		= board->ep;
+	board->ep  		= 0L;
+	board->color 	^= BLACK;
+	board->hash 	^= HASH_COLOR;
+	TOGGLE_HASH(board);
+}
+
+void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
+	TOGGLE_HASH(board);
+	board->ep 		= undo->ep;
+	board->color 	^= BLACK;
+	board->hash 	^= HASH_COLOR;
+	TOGGLE_HASH(board); 
+}
 
 int mvv_lva(ChessBoard *state,  Move *move) {
 	int attacker   = move->piece;

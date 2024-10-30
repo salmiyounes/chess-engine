@@ -1,6 +1,7 @@
 #include "search.h"
 
 #define  XOR_SWAP(a, b) a = a ^ b; b = a ^ b; a = a ^ b;
+#define R 2
 
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
 	Move temp[MAX_MOVES];
@@ -48,7 +49,7 @@ Move *pick_move(ChessBoard *state, Move *moves, int count) {
 	return result;
 }
 
-int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
+inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	if (illegal_to_move(board)) {
 		return INF;
 	}
@@ -101,6 +102,13 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 		return value;
 	}
 	Undo undo;
+	do_null_move_pruning(state, &undo);
+	int score = -negamax(search, state, depth - 1 - R, -beta, -beta + 1);
+	undo_null_move_pruning(state, &undo);
+	if (score >= beta) {
+		table_set(&search->table, state->hash, depth, beta, BETA);
+		return beta;
+	}
 	Move moves[MAX_MOVES];
 	int count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count);
@@ -151,7 +159,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 	for (int i = 0; i < count; i++) {
 			Move *move = &moves[i];
 			do_move(board, move, &undo);
-			int score = -negamax(search , board, 3, -INF, INF);
+			int score = -negamax(search , board, 5, -INF, INF);
 			undo_move(board, move, &undo);
 			if (score > best_score) {
 				best_score = score;
