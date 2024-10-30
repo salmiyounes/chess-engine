@@ -9,13 +9,13 @@ void board_clear(ChessBoard *board) {
     board->castle = CASTLE_ALL;
 }
 
-void myFunc(char **grid, bb bstate, char *pt) {
-    for (int i = GRID_SIZE - 1; i >= 0; i--) {
-        bool flag = (bstate & BIT(i));
-        if (flag) {
-            grid[i] = (char *) malloc(sizeof(char) * (strlen(pt) + 1));
-            strcpy(grid[i], pt);
-        }
+void build_board(char **grid, bb bbit, char *pt) {
+    bb bit = bbit;
+    int sq;
+    while (bit) {
+        POP_LSB(sq, bit);
+        grid[sq] = (char *) malloc(sizeof(char) * (strlen(pt) + 1));
+        strcpy(grid[sq], pt);
     }
 }
 
@@ -251,31 +251,31 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
 void printBoard(ChessBoard *b, const Pieces *p) {
     
 
-    char **grid = (char **) malloc(sizeof(char *) * (GRID_SIZE));
+    char **grid = (char **) malloc(sizeof(char *) * GRID_SIZE);
     for (int i = 0; i < GRID_SIZE; i++) {
         grid[i] = (char *) malloc(sizeof(char) * (strlen(p->Empty) + 1));
         strcpy(grid[i], p->Empty);
     }
     // Pawns 
-    myFunc(grid, b->WhitePawns, p->WhitePawns);
-    myFunc(grid, b->BlackPawns, p->BlackPawns);
+    build_board(grid, b->WhitePawns, p->WhitePawns);
+    build_board(grid, b->BlackPawns, p->BlackPawns);
     // Rooks
-    myFunc(grid, b->WhiteRooks, p->WhiteRooks);
-    myFunc(grid, b->BlackRooks, p->BlackRooks);
+    build_board(grid, b->WhiteRooks, p->WhiteRooks);
+    build_board(grid, b->BlackRooks, p->BlackRooks);
     // Bishops
-    myFunc(grid, b->WhiteBishops, p->WhiteBishops);
-    myFunc(grid, b->BlackBishops, p->BlackBishops);
+    build_board(grid, b->WhiteBishops, p->WhiteBishops);
+    build_board(grid, b->BlackBishops, p->BlackBishops);
     // Knights
-    myFunc(grid, b->WhiteKnights, p->WhiteKnights);
-    myFunc(grid, b->BlackKnights, p->BlackKnights);
+    build_board(grid, b->WhiteKnights, p->WhiteKnights);
+    build_board(grid, b->BlackKnights, p->BlackKnights);
     // Queen
-    myFunc(grid, b->WhiteQueens, p->WhiteQueens);
-    myFunc(grid, b->BlackQueens, p->WhiteQueens);
+    build_board(grid, b->WhiteQueens, p->WhiteQueens);
+    build_board(grid, b->BlackQueens, p->WhiteQueens);
     // king
-    myFunc(grid, b->WhiteKing, p->WhiteKing);
-    myFunc(grid, b->BlackKing, p->BlackKing);
+    build_board(grid, b->WhiteKing, p->WhiteKing);
+    build_board(grid, b->BlackKing, p->BlackKing);
 
-    for (int i = 63; i >= 0; i--) {
+    for (int i = GRID_SIZE - 1; i >= 0; i--) {
         printf("%s", grid[i]);
         if (i % 8 == 0) {
             printf("\n");

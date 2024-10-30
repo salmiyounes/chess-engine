@@ -15,11 +15,6 @@
 #define INF 1000000
 
 typedef struct {
-	int score;
-	int index;
-} Score;
-
-typedef struct {
 	int nodes;
 
 	Move move;
