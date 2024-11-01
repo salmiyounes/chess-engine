@@ -1,6 +1,34 @@
 #include "eval.h"
 
-int eval(ChessBoard *board) {
+inline int pesto_eval(ChessBoard *board) {
+    int mg[2];
+    int eg[2];
+    int gamePhase = 0;
+    int side2move = board->color;
+
+    mg[WHITE] = 0;
+    mg[BLACK] = 0;
+    eg[WHITE] = 0;
+    eg[BLACK] = 0;
+
+    for (int sq = 0; sq < 64; ++sq) {
+        int pc  = board->squares[sq];
+        if (pc != NONE) {
+            mg[PCOLOR(pc)] += mg_table[pc][sq];
+            eg[PCOLOR(pc)] += eg_table[pc][sq];
+            gamePhase += gamephaseInc[pc];
+        }
+    }
+
+    int mgScore = mg[side2move] - mg[OTHER(side2move)];
+    int egScore = eg[side2move] - eg[OTHER(side2move)];
+    int mgPhase = gamePhase;
+    if (mgPhase > 24) mgPhase = 24;
+    int egPhase = 24 - mgPhase;
+    return (mgScore * mgPhase + egScore * egPhase) / 24;
+}
+
+inline int eval(ChessBoard *board) {
 
 	int score = 0;
 	
@@ -20,7 +48,7 @@ int eval(ChessBoard *board) {
 
     score += ROOK_MATERIAL * board->white_rook_mob;
     score -= ROOK_MATERIAL * board->black_rook_mob;
-/*
+
     if (board->WhiteRooks || board->BlackRooks) {
         bb pawns = board->WhitePawns | board->BlackPawns;
         bb b1    = board->WhiteRooks;
@@ -56,7 +84,6 @@ int eval(ChessBoard *board) {
             score -= BISHOP_MATERIAL * bishop_on_large(sq);
         }
     }
-*/
     score += BISHOP_MATERIAL * bishop_pair(board->WhiteBishops);
     score -= BISHOP_MATERIAL * bishop_pair(board->BlackBishops);
 	return board->color ? -score : score;

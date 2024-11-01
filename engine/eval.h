@@ -2,8 +2,8 @@
 #define EVAL_H
 #include <stdlib.h>
 #include "board.h"
-#include "gen.h"
 
+int pesto_eval(ChessBoard *board);
 int eval(ChessBoard *board);
 int calc_out_post(bb knight);
 int calc_center_pawns(bb pawns);
