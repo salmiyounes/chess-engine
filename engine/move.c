@@ -7,13 +7,13 @@
         board->hash ^= HASH_EP[LSB(board->ep) % 8]; \
     }
 
-const int MVV_LVA[8][8] = {
-    {0, 0, 0, 0, 0, 0, 0},       
-    {50, 51, 52, 53, 54, 55, 0}, 
-    {40, 41, 42, 43, 44, 45, 0}, 
-    {30, 31, 32, 33, 34, 35, 0}, 
+const int MVV_LVA[7][7] = {
+    {0, 0, 0, 0, 0, 0, 0},
+	{10, 11, 12, 13, 14, 15, 0}, 
     {20, 21, 22, 23, 24, 25, 0}, 
-    {10, 11, 12, 13, 14, 15, 0}, 
+	{30, 31, 32, 33, 34, 35, 0}, 
+	{40, 41, 42, 43, 44, 45, 0}, 
+    {50, 51, 52, 53, 54, 55, 0}, 
     {0, 0, 0, 0, 0, 0, 0},       
 };
 
@@ -442,10 +442,13 @@ void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
 }
 
 int mvv_lva(ChessBoard *state,  Move *move) {
-	int attacker   = move->piece;
-	int victim     = get_piece_type(state, move->dst, SWITCH(move->color));
-
-	int score = MVV_LVA[attacker][victim];
+	int score = 0;
+	int piece = state->squares[move->dst];
+	if (piece != NONE) {
+		int attacker   = move->piece;
+		int victim     = get_piece_type(state, move->dst, OTHER(move->color));
+		score = MVV_LVA[attacker][victim];
+	}
 
 	return score;
 }
