@@ -18,7 +18,7 @@ A chess engine written in C.
 - [Transposition Table](https://www.chessprogramming.org/Transposition_Table)
 
 ### Evaluation
-- ~~[Simplified Evaluation Function](https://www.chessprogramming.org/Simplified_Evaluation_Function)
+- ~~[Simplified Evaluation Function](https://www.chessprogramming.org/Simplified_Evaluation_Function)~~
 - [PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)
 
 ## Build 
