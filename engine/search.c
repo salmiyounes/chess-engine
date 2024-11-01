@@ -177,11 +177,11 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 
 	table_alloc(&search->table, 20);
 	sort_moves(search, board, moves, count);
-	
+
 	for (int i = 0; i < count; i++) {
 			Move *move = &moves[i];
 			do_move(board, move, &undo);
-			int score = -negamax(search , board, 15, -INF, INF);
+			int score = -negamax(search , board, 5, -INF, INF);
 			undo_move(board, move, &undo);
 			if (score > best_score) {
 				best_score = score;
