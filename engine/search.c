@@ -3,6 +3,11 @@
 #define  XOR_SWAP(a, b) a = a ^ b; b = a ^ b; a = a ^ b;
 #define R 2
 
+typedef struct {
+	int score;
+	int index;
+} Score;
+
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
 	Move temp[MAX_MOVES];
 	int scores[MAX_MOVES];
@@ -34,19 +39,31 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
 
 }
 
-Move *pick_move(ChessBoard *state, Move *moves, int count) {
-	Move *result = NULL;
-	int best_score = -INF;
+int _cmp_int_(const void *p, const void *q) {
+	int x = ( (const Score *) p)->score;
+	int y = ( (const Score *) q)->score;
+	
+	return (x >= y) ? -1 : 1;
+}
+
+void sort_captures(ChessBoard *board, Move *moves, int count) {
+	Move temp[count];
+	Score scores[count];
 
 	for (int i = 0; i < count; i++) {
 		Move *move = moves + i;
-		int score = mvv_lva(state, move);
-		if (score > best_score) {
-			best_score = score;
-			result = move;
-		}
+		scores[i]  = (Score) {
+			.score=  mvv_lva(board, move), 
+		 	.index = i
+		};
 	}
-	return result;
+
+	qsort(scores, count, sizeof(Score), _cmp_int_);
+
+	memcpy(temp, moves, sizeof(Move) * count);
+	for (int i = 0; i < count; i++) {
+		memcpy(moves + i, temp + scores[i].index, sizeof(Move));
+	}
 }
 
 inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
@@ -54,7 +71,7 @@ inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int b
 		return INF;
 	}
 
-	int score = eval(board);
+	int score = pesto_eval(board);
 
 	if (score >= beta) {
 		return beta;
@@ -65,8 +82,10 @@ inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int b
 	Undo undo;
 	Move moves[MAX_MOVES];
 	int count = gen_attacks(board, moves);
+	sort_captures(board, moves, count);
+	
 	for (int i = 0; i < count; i++) {
-		Move *move = pick_move(board, moves, count);
+		Move *move = &moves[i];
 		do_move(board, move, &undo);
 		int score = -quiescence_search(search, board, -beta, -alpha);
 		undo_move(board, move, &undo);
@@ -77,6 +96,7 @@ inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int b
 			alpha = score;
 		}
 	}
+
 	return alpha;
 }
 
@@ -91,6 +111,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	if ((table_get(&search->table, state->hash, depth, alpha, beta, &value))) {
 		return value;
 	}
+
 	if (depth <= 0) {
 		int value = quiescence_search(
 			search,
@@ -156,10 +177,11 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 
 	table_alloc(&search->table, 20);
 	sort_moves(search, board, moves, count);
+	
 	for (int i = 0; i < count; i++) {
 			Move *move = &moves[i];
 			do_move(board, move, &undo);
-			int score = -negamax(search , board, 5, -INF, INF);
+			int score = -negamax(search , board, 15, -INF, INF);
 			undo_move(board, move, &undo);
 			if (score > best_score) {
 				best_score = score;
