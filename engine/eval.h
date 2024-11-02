@@ -1,4 +1,4 @@
-#ifndef EVAL_h
+#ifndef EVAL_H
 #define EVAL_H
 #include <stdlib.h>
 #include "board.h"
