@@ -166,7 +166,8 @@ class Chess(object):
         moves = self.chess_lib.malloc(MAX_MOVES * ctypes.sizeof(Move))
         self.chess_lib.gen_legal_moves.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
         count : int = self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
-        return moves, count
+        res = LegalMoveGenerater(moves, count)
+        return res
 
     def free_moves(self, moves) -> None:
         self.chess_lib.free(moves)
@@ -200,11 +201,13 @@ class Chess(object):
     def is_in_check(self) -> bool:
         self.chess_lib.is_check.argtypes = [ctypes.POINTER(ChessBoard)]
         check: int = self.chess_lib.is_check(ctypes.byref(self.board))
+        
         return True if check else False
 
     def undo_move(self, move) -> None:
+        undo = Undo()
         self.chess_lib.undo_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(Undo)]
-        self.chess_lib.undo_move(ctypes.byref(self.board), ctypes.byref(move), ctypes.byref(self.undo))
+        self.chess_lib.undo_move(ctypes.byref(self.board), ctypes.byref(move), ctypes.byref(undo))
         return None
 
     def perft_test(self, depth: int) -> int:
@@ -221,3 +224,14 @@ class Chess(object):
         search = Search()
         self.chess_lib.best_move(ctypes.byref(search), ctypes.byref(self.board), ctypes.byref(move), )
         return move
+
+
+class LegalMoveGenerater(object):
+    def __init__(self, moves, count: int) -> None:
+        self.count = count
+        self.moves = {
+            Chess().notate_move(moves[i]) : moves[i] for i in range(self.count) 
+        }
+
+    def __repr__(self) -> str:
+        return f'<LegalMoveGenerater "{self.moves.keys()}">'

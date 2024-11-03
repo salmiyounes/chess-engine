@@ -1,5 +1,5 @@
 from typing import Dict, Tuple
-from script.chess import Chess
+from chess import Chess
 from colorama import Fore, Style
 
 def test_move_gen(data: Dict[bytes, Tuple[int, int]]) -> None:
