@@ -59,6 +59,17 @@ c.undo_move(move) # Unmake the move
 ```python
 n = c.gen_legal_moves()
 <LegalMoveGenerater "dict_keys(['a7a6', 'b7b6', 'c7c6', 'd7d6', 'e7e6', 'f7f6', 'g7g6', 'h7h6', 'a7a5', 'b7b5', 'c7c5', 'd7d5', 'e7e5', 'f7f5', 'g7g5', 'h7h5', 'Nb8a6', 'Nb8c6', 'Ng8f6', 'Ng8h6'])">
+m = n.moves['a2a3']
+c.do_move(m)
+c.print_board()
+♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖ 
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙ 
+. . . . . . . . 
+. . . . . . . . 
+. . . . . . . . 
+. . . . . . . ♟ 
+♟ ♟ ♟ ♟ ♟ ♟ ♟ . 
+♜ ♞ ♝ ♚ ♛ ♝ ♞ ♜ 
 ```
 
 * Fen Parser
