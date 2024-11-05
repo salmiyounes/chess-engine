@@ -2,7 +2,7 @@
 
 A chess engine written in C and Python.
 
-<img src="https://github.com/salmiyounes/chess-engine/blob/master/chess.png" alt="alt nice image" width="400"/>
+<img src="https://github.com/salmiyounes/chess-engine/blob/master/chess.png" alt="alt nice image" width="600"/>
 
 ## Details
 
