@@ -8,11 +8,12 @@
 #define MAX_MOVES 0x100
 
 #define CAPTURE(a, b, c, m) \
+  bb bit = BIT(m->dst); \
   if (COLOR(c)) { \
-    a = b->AllWhitePieces & BIT(m->dst);\
+    a = b->AllWhitePieces & bit;\
   }\
   else {\
-    a = b->AllBalckPieces & BIT(m->dst);\
+    a = b->AllBalckPieces & bit;\
   }\
 
 extern const int MVV_LVA[7][7];

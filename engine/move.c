@@ -92,34 +92,35 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 }
 
 int get_piece_type(ChessBoard *board, int sq, int color) {
+	bb bit = BIT(sq);
 	switch (color) {
 		case BLACK: 
-			if (BIT(sq) & board->BlackPawns) {
+			if (bit & board->BlackPawns) {
 				return PAWN;
-			} else if (BIT(sq) & board->BlackKnights) {
+			} else if (bit & board->BlackKnights) {
 				return KNIGHT;
-			} else if (BIT(sq) & board->BlackBishops) {
+			} else if (bit & board->BlackBishops) {
 				return BISHOP;
-			} else if (BIT(sq) & board->BlackQueens) {
+			} else if (bit & board->BlackQueens) {
 				return QUEEN;
-			} else if (BIT(sq) & board->BlackKing) {
+			} else if (bit & board->BlackKing) {
 				return KING;
-			} else if (BIT(sq) & board->BlackRooks) {
+			} else if (bit & board->BlackRooks) {
 				return ROOK;
 			}
 			break;
 		case WHITE:
-			if (BIT(sq) & board->WhitePawns) {
+			if (bit & board->WhitePawns) {
 				return PAWN;
-			} else if (BIT(sq) & board->WhiteKnights) {
+			} else if (bit & board->WhiteKnights) {
 				return KNIGHT;
-			} else if (BIT(sq) & board->WhiteBishops) {
+			} else if (bit & board->WhiteBishops) {
 				return BISHOP;
-			} else if (BIT(sq) & board->WhiteQueens) {
+			} else if (bit & board->WhiteQueens) {
 				return QUEEN;
-			} else if (BIT(sq) & board->WhiteKing) {
+			} else if (bit & board->WhiteKing) {
 				return KING;
-			} else if (BIT(sq) & board->WhiteRooks) {
+			} else if (bit & board->WhiteRooks) {
 				return ROOK;
 			}
 			break;
