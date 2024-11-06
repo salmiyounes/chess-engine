@@ -2,11 +2,22 @@
 
 #define  XOR_SWAP(a, b) a = a ^ b; b = a ^ b; a = a ^ b;
 #define R 2
+#define FullDepthMoves 4
+#define ReductionLimit 3
 
 typedef struct {
 	int score;
 	int index;
 } Score;
+
+inline int ok_to_reduce(ChessBoard *board, Move *move) {
+	int result = 0;
+
+	result |= move->promotion;
+	result |= (board->squares[move->dst] != NONE) ? 1 : 0;
+
+	return result;
+} 
 
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
 	Move temp[MAX_MOVES];
@@ -66,7 +77,7 @@ void sort_captures(ChessBoard *board, Move *moves, int count) {
 	}
 }
 
-inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
+int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	if (illegal_to_move(board)) {
 		return INF;
 	}
@@ -102,7 +113,7 @@ inline int quiescence_search(Search *search, ChessBoard *board, int alpha, int b
 
 int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	int flag = ALPHA;
-	int value;
+	int value, moves_searched = 0;
 
 	if (illegal_to_move(state)) {
 		return INF;
@@ -136,7 +147,23 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	for (int i = 0; i < count; i++) {
 		Move *move = &moves[i];
 		do_move(state, move, &undo);
-		value = -negamax(search, state, depth - 1, -beta, -alpha);
+		if (moves_searched == 0) {
+			value = -negamax(search, state, depth - 1, -beta, -alpha);
+		} else {
+			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(state, move) == 0) {
+				value = -negamax(search, state, depth - 2, -alpha - 1, -alpha);
+			} else {
+				value = alpha + 1;
+			} 
+
+			if (value > alpha) {
+				value = -negamax(search, state, depth - 1, -alpha - 1, -alpha);
+				if (value > alpha && value < beta) {
+					value = -negamax(search, state, depth - 1, -beta, -alpha);
+				}
+			}
+
+		}
 		undo_move(state, move, &undo);
 		if (value >= beta) {
 			table_set(
@@ -154,6 +181,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 			);
 			return beta;
 		}
+
 		if (value > alpha) {
 			flag = EXACT;
 			alpha = value;
@@ -164,6 +192,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 				move
 			);
 		}
+		moves_searched ++;
 	}
 	table_set(&search->table, state->hash, depth, alpha, flag);
 	return alpha;
