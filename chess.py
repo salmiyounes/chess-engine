@@ -132,11 +132,13 @@ class Chess(object):
 
     def board_init(self) -> None:
         self.chess_lib.initializeBoard.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Pieces)]
+        self.chess_lib.initializeBoard.restype  = []
         self.chess_lib.initializeBoard(ctypes.byref(self.board), ctypes.byref(self.pieces))
         return None
     
     def board_reset(self) -> None:
         self.chess_lib.board_clear.argtypes = [ctypes.POINTER(ChessBoard)]
+        self.chess_lib.board_clear.restype  = []
         self.chess_lib.board_clear(ctypes.byref(self.board))
         self.__call__()
         return None
@@ -148,6 +150,7 @@ class Chess(object):
 
     def print_board(self) -> None:
         self.chess_lib.printBoard.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Pieces)]
+        self.chess_lib.printBoard.restype  = []
         self.chess_lib.printBoard(ctypes.byref(self.board), ctypes.byref(self.pieces))
         return None
 
@@ -167,7 +170,8 @@ class Chess(object):
         self.chess_lib.malloc.restype = ctypes.POINTER(Move)
         moves = self.chess_lib.malloc(MAX_MOVES * ctypes.sizeof(Move))
         self.chess_lib.gen_legal_moves.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
-        count : int = self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
+        self.chess_lib.gen_legal_moves.restype  = ctypes.c_int
+        count : ctypes.c_int = self.chess_lib.gen_legal_moves(ctypes.byref(self.board), moves)
         return LegalMoveGenerater(moves, count)
 
     def free_moves(self, moves) -> None:
@@ -177,6 +181,7 @@ class Chess(object):
     def notate_move(self, move) -> None:
         res = ctypes.create_string_buffer(16) 
         self.chess_lib.notate_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(Move), ctypes.POINTER(ctypes.c_char)]
+        self.chess_lib.notate_move.restype  = []
         self.chess_lib.notate_move(ctypes.byref(self.board), ctypes.byref(move), res)
         return res.value.decode('utf-8')
 
@@ -184,6 +189,7 @@ class Chess(object):
         if not isinstance(fen, bytes):
             raise TypeError(f"Expected bytes-like object, got '{type(fen).__name__}'")
         self.chess_lib.board_load_fen.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
+        self.chess_lib.board_load_fen.argtypes = []
         self.chess_lib.board_load_fen(ctypes.byref(self.board), fen)
         return None
 
