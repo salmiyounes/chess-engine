@@ -1,9 +1,9 @@
 #include "search.h"
 
 #define  XOR_SWAP(a, b) a = a ^ b; b = a ^ b; a = a ^ b;
-#define R 2
-#define FullDepthMoves 4
-#define ReductionLimit 3
+#define MAX_R 4
+#define MIN_R 3
+#define DR    4 
 
 typedef struct {
 	int score;
@@ -15,7 +15,7 @@ inline int ok_to_reduce(ChessBoard *board, Move *move) {
 
 	result |= move->promotion;
 	result |= (board->squares[move->dst] != NONE) ? 1 : 0;
-
+	
 	return result;
 } 
 
@@ -113,7 +113,7 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 
 int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	int flag = ALPHA;
-	int value, moves_searched = 0;
+	int value = 0;
 
 	if (illegal_to_move(state)) {
 		return INF;
@@ -133,38 +133,33 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 		table_set(&search->table, state->hash, depth, value, EXACT);
 		return value;
 	}
+
 	Undo undo;
-	do_null_move_pruning(state, &undo);
-	int score = -negamax(search, state, depth - 1 - R, -beta, -beta + 1);
-	undo_null_move_pruning(state, &undo);
-	if (score >= beta) {
-		table_set(&search->table, state->hash, depth, beta, BETA);
-		return beta;
+	if (is_check(state) == 0) {
+		do_null_move_pruning(state, &undo);
+		int R = depth > 6 ? MAX_R : MIN_R;
+		int score = -negamax(search, state, depth - 1 - R, -beta, -beta + 1);
+		undo_null_move_pruning(state, &undo);
+		if (score >= beta) {
+			depth -= DR;
+			if (depth <= 0) {
+				return pesto_eval(state);
+			}
+			table_set(&search->table, state->hash, depth, beta, BETA);
+			return beta;
+		}
 	}
+
 	Move moves[MAX_MOVES];
 	int count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count);
+	int moves_searched = 0;
 	for (int i = 0; i < count; i++) {
 		Move *move = &moves[i];
 		do_move(state, move, &undo);
-		if (moves_searched == 0) {
-			value = -negamax(search, state, depth - 1, -beta, -alpha);
-		} else {
-			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(state, move) == 0) {
-				value = -negamax(search, state, depth - 2, -alpha - 1, -alpha);
-			} else {
-				value = alpha + 1;
-			} 
-
-			if (value > alpha) {
-				value = -negamax(search, state, depth - 1, -alpha - 1, -alpha);
-				if (value > alpha && value < beta) {
-					value = -negamax(search, state, depth - 1, -beta, -alpha);
-				}
-			}
-
-		}
+		value = -negamax(search, state, depth - 1, -beta, -alpha);
 		undo_move(state, move, &undo);
+
 		if (value >= beta) {
 			table_set(
 				&search->table,
@@ -210,7 +205,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 	for (int i = 0; i < count; i++) {
 			Move *move = &moves[i];
 			do_move(board, move, &undo);
-			int score = -negamax(search , board, 4, -INF, INF);
+			int score = -negamax(search , board, 5, -INF, INF);
 			undo_move(board, move, &undo);
 			if (score > best_score) {
 				best_score = score;
