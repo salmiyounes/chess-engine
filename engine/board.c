@@ -18,6 +18,9 @@ void init_table() {
 
 void board_clear(ChessBoard *board) {
     memset(board, 0, sizeof(ChessBoard));
+    for (int i = 0; i < 64; i++) {
+        board->squares[i] = NONE;
+    }
     board->castle = CASTLE_ALL;
 }
 
@@ -32,10 +35,10 @@ void build_board(char **grid, bb bbit, char *pt) {
 }
 
 void board_set(ChessBoard *board, int sq, int piece, int color) {
-    bb prev    = board->Board & BIT(sq);
     bb bit     = BIT(sq);
+    bb prev    = bit & board->Board;
     bb mask    = ~bit;
-
+    
     if (prev) {
         board->Board &= mask;
         board->squares[sq] = NONE;
@@ -230,27 +233,46 @@ void initializeBoard(ChessBoard *board, Pieces *p) {
     // PAWNS
     for (int file = 0; file < 8 ; file++) {
         board->WhitePawns |= BIT(RF(1, file));
+        board->squares[RF(1, file)] = WHITE_PAWN;
         board->BlackPawns |= BIT(RF(6, file));
+        board->squares[RF(6, file)] = BLACK_PAWN;
     }
+    
     // ROOKS
     board->BlackRooks   = BIT(RF(7, 0)) | BIT(RF(7, 7));
+    board->squares[RF(7, 0)] = BLACK_ROOK;
+    board->squares[RF(7, 7)] = BLACK_ROOK;
     board->WhiteRooks   = BIT(RF(0, 0)) | BIT(RF(0, 7));
+    board->squares[RF(0, 7)] = WHITE_ROOK;
+    board->squares[RF(0, 0)] = WHITE_ROOK;
 
     // BISHOPS
     board->WhiteBishops = BIT(RF(0, 5)) | BIT(RF(0, 2));
+    board->squares[RF(0, 2)] = WHITE_BISHOP;
+    board->squares[RF(0, 5)] = WHITE_BISHOP;
     board->BlackBishops = BIT(RF(7, 5)) | BIT(RF(7, 2));
+    board->squares[RF(7, 2)] = BLACK_BISHOP;
+    board->squares[RF(7, 5)] = BLACK_BISHOP;
     
     //KNIGHTS
     board->WhiteKnights = BIT(RF(0, 1)) | BIT(RF(0, 6));
+    board->squares[RF(0, 6)] = WHITE_KNIGHT;
+    board->squares[RF(0, 1)] = WHITE_KNIGHT;
     board->BlackKnights = BIT(RF(7, 1)) | BIT(RF(7, 6));
+    board->squares[RF(7, 6)] = BLACK_KNIGHT;
+    board->squares[RF(7, 1)] = BLACK_KNIGHT;
     
     //KINGS
     board->WhiteKing    = BIT(RF(0, 4));
+    board->squares[RF(0, 4)] = WHITE_KING;
     board->BlackKing    = BIT(RF(7, 4));
+    board->squares[RF(7, 4)] = BLACK_KING;
     
     //QUEENS
     board->WhiteQueens  = BIT(RF(0, 3));
+    board->squares[RF(0, 3)] = WHITE_QUEEN;
     board->BlackQueens  = BIT(RF(7, 3));
+    board->squares[RF(7, 3)] = BLACK_QUEEN;
 
     initializeAllWhitePieces(board);
     initializeAllBlackPieces(board);
@@ -326,20 +348,20 @@ void board_load_fen(ChessBoard *board, char *fen) {
         switch(fen[i]) {
 
             // White
-            case 'P': board->WhitePawns   |= BIT(RF(rank, file++)); break;
-            case 'N': board->WhiteKnights |= BIT(RF(rank, file++)); break;
-            case 'B': board->WhiteBishops |= BIT(RF(rank, file++)); break;
-            case 'Q': board->WhiteQueens  |= BIT(RF(rank, file++)); break;
-            case 'K': board->WhiteKing    |= BIT(RF(rank, file++)); break;
-            case 'R': board->WhiteRooks   |= BIT(RF(rank, file++)); break;
+            case 'P': board->WhitePawns   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_PAWN;   break;
+            case 'N': board->WhiteKnights |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_KNIGHT; break;
+            case 'B': board->WhiteBishops |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_BISHOP; break;
+            case 'Q': board->WhiteQueens  |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_QUEEN;  break;
+            case 'K': board->WhiteKing    |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_KING;   break;
+            case 'R': board->WhiteRooks   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_ROOK;   break;
 
             // Black
-            case 'p': board->BlackPawns   |= BIT(RF(rank, file++)); break;
-            case 'n': board->BlackKnights |= BIT(RF(rank, file++)); break;
-            case 'b': board->BlackBishops |= BIT(RF(rank, file++)); break;
-            case 'q': board->BlackQueens  |= BIT(RF(rank, file++)); break;
-            case 'k': board->BlackKing    |= BIT(RF(rank, file++)); break;
-            case 'r': board->BlackRooks   |= BIT(RF(rank, file++)); break;
+            case 'p': board->BlackPawns   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_PAWN;   break;
+            case 'n': board->BlackKnights |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_KNIGHT; break;
+            case 'b': board->BlackBishops |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_BISHOP; break;
+            case 'q': board->BlackQueens  |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_QUEEN;  break;
+            case 'k': board->BlackKing    |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_KING;   break;
+            case 'r': board->BlackRooks   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_ROOK;   break;
 
             //
             case '1': file += 1; break;
