@@ -135,7 +135,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	}
 
 	Undo undo;
-	if (is_check(state) == 0) {
+	if (is_check(state) == 0 && depth >= 3) {
 		do_null_move_pruning(state, &undo);
 		int R = depth > 6 ? MAX_R : MIN_R;
 		int score = -negamax(search, state, depth - 1 - R, -beta, -beta + 1);
@@ -143,13 +143,18 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 		if (score >= beta) {
 			depth -= DR;
 			if (depth <= 0) {
-				return pesto_eval(state);
+				return quiescence_search(
+					search,
+					state,
+					alpha,
+					beta
+				);
 			}
+
 			table_set(&search->table, state->hash, depth, beta, BETA);
 			return beta;
 		}
 	}
-
 	Move moves[MAX_MOVES];
 	int count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count);
