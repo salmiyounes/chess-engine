@@ -327,9 +327,15 @@ void printBoard(ChessBoard *b, const Pieces *p) {
     for (int i = GRID_SIZE - 1; i >= 0; i--) {
         printf("%s", grid[i]);
         if (i % 8 == 0) {
+            printf(" %c", '1' + (i / 8));
             printf("\n");
         }
     }
+
+    for (int i = 7; i >= 0; i--) {
+        printf("%c ", 'a' + i);
+    }
+
     printf("\n");
 
     for (int i = 0; i < GRID_SIZE; i++) {
