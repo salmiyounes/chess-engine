@@ -1,19 +1,24 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -fPIC -O3 
-SRCS = bb.c board.c gen.c move.c perft.c search.c table.c eval.c
-HEADERS = bb.h board.h gen.h move.h perft.h search.h table.h eval.h
+LINK_FLAGS = -pthread
+
+SRCS = random.c bb.c board.c gen.c move.c perft.c search.c table.c eval.c C-Thread-Pool/thpool.c
+HEADERS = random.h bb.h board.h gen.h move.h perft.h search.h table.h eval.h C-Thread-Pool/thpool.h
+INCLUDES = -I. -I C-Thread-Pool
+
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
+
 TARGET = libchess.so.1
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) -shared -Wl,-soname,libchess.so.1 -o $@ $(OBJS)
+	$(CC) -shared -Wl,-soname,libchess.so.1 -o $@ $(OBJS) $(LINK_FLAGS)
 	ln -sf $@ libchess.so
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 -include $(DEPS)
 
