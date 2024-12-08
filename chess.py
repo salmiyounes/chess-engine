@@ -106,6 +106,7 @@ class Table(ctypes.Structure):
 class Search(ctypes.Structure):
     _fields_ = [
         ('nodes', ctypes.c_int),
+        ('stop', ctypes.c_bool),
         ('move',       Move),
         ('num', ctypes.c_int),
         ('table',      Table)
@@ -229,12 +230,12 @@ class Chess(object):
         return result
 
     def computer_move(self):
-        self.chess_lib.best_move.argtypes = [ctypes.POINTER(Search), ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
-        move   = Move()
+        move = Move()
         search = Search()
-        self.chess_lib.best_move(ctypes.byref(search), ctypes.byref(self.board), ctypes.byref(move), )
+        self.chess_lib.thread_init.argtypes = [ctypes.POINTER(Search), ctypes.POINTER(ChessBoard), ctypes.POINTER(Move)]
+        self.chess_lib.thread_init.restype  = ctypes.c_int
+        score: ctypes.c_int = self.chess_lib.thread_init(ctypes.byref(search), ctypes.byref(self.board), ctypes.byref(move))
         return move
-
 
 class LegalMoveGenerater(object):
     def __init__(self, moves, count: int) -> None:
