@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <pthread.h>
+#include "thpool.h"
 #include "bb.h"
 #include "board.h"
 #include "gen.h"
@@ -15,12 +18,21 @@
 #define INF 1000000
 
 typedef struct {
-	int nodes;
+	int   nodes;
 
-	Move move;
+	bool   stop;
 	
-	Table table;
+	Move   move;
+	
+	Table  table;
 } Search;
+
+typedef struct {
+	int 		score;
+	Search 	  *search;
+	ChessBoard *board;
+	Move 		*move;
+} Thread_d;
 
 int best_move(Search *search, ChessBoard *board, Move *result);
 

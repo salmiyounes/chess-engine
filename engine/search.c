@@ -57,9 +57,11 @@ int _cmp_int_(const void *p, const void *q) {
 	return (x >= y) ? -1 : 1;
 }
 
-void sort_captures(ChessBoard *board, Move *moves, int count) {
+void sort_captures(Search *search, ChessBoard *board, Move *moves, int count) {
 	Move temp[count];
 	Score scores[count];
+
+	Move *best = table_get_move(&search->table, board->hash);
 
 	for (int i = 0; i < count; i++) {
 		Move *move = moves + i;
@@ -67,6 +69,10 @@ void sort_captures(ChessBoard *board, Move *moves, int count) {
 			.score=  mvv_lva(board, move), 
 		 	.index = i
 		};
+
+		if (best && best->src == move->src && best->dst == move->dst) {
+			scores[i].score += INF;
+		}
 	}
 
 	qsort(scores, count, sizeof(Score), _cmp_int_);
@@ -82,7 +88,7 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 		return INF;
 	}
 
-	int score = pesto_eval(board);
+	int score = eval(board);
 
 	if (score >= beta) {
 		return beta;
@@ -93,13 +99,18 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	Undo undo;
 	Move moves[MAX_MOVES];
 	int count = gen_attacks(board, moves);
-	sort_captures(board, moves, count);
+	sort_captures(search, board, moves, count);
 	
 	for (int i = 0; i < count; i++) {
 		Move *move = &moves[i];
 		do_move(board, move, &undo);
 		int score = -quiescence_search(search, board, -beta, -alpha);
 		undo_move(board, move, &undo);
+		
+		if (search->stop) {
+			break;
+		}
+
 		if (score >= beta) {
 			return beta;
 		}
@@ -158,12 +169,15 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 	Move moves[MAX_MOVES];
 	int count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count);
-	int moves_searched = 0;
 	for (int i = 0; i < count; i++) {
 		Move *move = &moves[i];
 		do_move(state, move, &undo);
 		value = -negamax(search, state, depth - 1, -beta, -alpha);
 		undo_move(state, move, &undo);
+
+		if (search->stop) {
+			break;
+		}
 
 		if (value >= beta) {
 			table_set(
@@ -192,31 +206,89 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 				move
 			);
 		}
-		moves_searched ++;
 	}
 	table_set(&search->table, state->hash, depth, alpha, flag);
 	return alpha;
 }
 
-int best_move(Search *search, ChessBoard *board, Move *result) {
-	Move moves[MAX_MOVES];
-	int count = gen_legal_moves(board, moves);
-	int best_score = -INF; 
-	Undo undo;
+#define MAX_DEPTH 5
 
-	table_alloc(&search->table, 20);
+int root_search(Search *search, ChessBoard *board, int depth, Move *result) {
+	int best_score = -INF;
+	
+	Move moves[MAX_MOVES];
+	Undo undo;
+	int count = gen_legal_moves(board, moves);
 	sort_moves(search, board, moves, count);
 
 	for (int i = 0; i < count; i++) {
-			Move *move = &moves[i];
-			do_move(board, move, &undo);
-			int score = -negamax(search , board, 5, -INF, INF);
-			undo_move(board, move, &undo);
-			if (score > best_score) {
-				best_score = score;
-				memcpy(result, move, sizeof(Move));
-		}	 
-	}	
+		Move *move = &moves[i];
+		
+		do_move(board, move, &undo);
+		int score = -negamax(search , board, depth, -INF, INF);
+		undo_move(board, move, &undo);
+
+		if (search->stop) {
+			break;
+		}
+
+		if (score > best_score) {
+			best_score = score;
+			memcpy(result, move, sizeof(Move));
+		}
+	}
+
+	return best_score;
+} 
+
+void *thread_start(void *arg) {
+	Thread_d *thread_d = (Thread_d *) arg;
+
+	thread_d->score = best_move(thread_d->search, thread_d->board, thread_d->move);
+
+	return NULL;
+}
+
+void thread_stop(Search *search) {
+	search->stop = true;
+}
+
+#define DURATION 2
+
+int thread_init(Search *search, ChessBoard *board, Move *result) {
+	Thread_d *thread_d = (Thread_d *) malloc(sizeof(Thread_d));
+	if (thread_d == NULL) {
+		fprintf(stderr, "thread_init(): Could not allocate memory for thread_d .\n");
+		return 0;
+	}
+	thread_d->board  =  board;
+	thread_d->search = search;
+	thread_d->move   = result;
+	thread_d->score = 	 -INF;
+
+	threadpool thpool_p = thpool_init(1);
+
+	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
+	thpool_wait(thpool_p);
+	
+	thpool_destroy(thpool_p);
+
+	int score = thread_d->score;
+
+	free(thread_d);
+
+	return score;
+}
+
+int best_move(Search *search, ChessBoard *board, Move *result) {
+
+	table_alloc(&search->table, 20);
+	search->stop = false;
+	int best_score = -INF;
+
+	for (int depth = 1; depth <= MAX_DEPTH; depth++) {
+			best_score = root_search(search, board, depth, result);
+	}
 
 	table_free(&search->table);
 	return best_score;
