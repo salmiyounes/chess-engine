@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "bb.h"
+#include "random.h"
 
 bb BB_KNIGHT[64];
 bb BB_BISHOP[64];
@@ -151,6 +152,9 @@ bb bb_slide_rook(int sq, int truncate, bb obs) {
 }
 
 void bb_init() {
+
+    seed_random(0);
+
 	// bb_knight
 
 	const int knight_offsets[8][2] = {
@@ -294,10 +298,10 @@ bb bb_queen(int sq, bb obs) {
 }
 
 bb bb_random() {
-	bb a = (bb)(rand() % 0x10000);
-	bb b = (bb)(rand() % 0x10000);
-	bb c = (bb)(rand() % 0x10000);
-	bb d = (bb)(rand() % 0x10000);
+	bb a = (bb)(random_magic() % 0x10000);
+	bb b = (bb)(random_magic() % 0x10000);
+	bb c = (bb)(random_magic() % 0x10000);
+	bb d = (bb)(random_magic() % 0x10000);
 
 	return (bb)( a << 48 | b << 32 | c << 16 | d) ;
 }
