@@ -26,8 +26,43 @@ A chess engine written in C and Python.
 
 ```bash
 git clone https://github.com/salmiyounes/chess-engine.git
-cd engine
-make 
+cd chess-engine/engine/ ; make
+```
+
+# Run Simple UI
+```bash
+python3 ui.py
+
+You want to play [w]hite of [b]lack: w
+
+	Your move (e.g: Ng1h3): g1h3
+
+
+♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖  8
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙  7
+. . . . . . . .  6
+. . . . . . . .  5
+. . . . . . . .  4
+♞ . . . . . . .  3
+♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟  2
+♜ . ♝ ♚ ♛ ♝ ♞ ♜  1
+h g f e d c b a 
+
+	Best move: Nb8c6, in 0.122 .
+
+♖ ♘ ♗ ♔ ♛ ♗ . ♖  8
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙  7
+. . . . . ♘ . .  6
+. . . . . . . .  5
+. . . . . . . .  4
+♞ . . . . . . .  3
+♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟  2
+♜ . ♝ ♚ ♛ ♝ ♞ ♜  1
+h g f e d c b a 
+
+
+
+	Your move (e.g: Rh1g1):
 ```
 ## Features
 
@@ -36,15 +71,15 @@ make
 from chess import Chess
 c = Chess()
 c.print_board()
-♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖ 
-♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙ 
-. . . . . . . . 
-. . . . . . . . 
-. . . . . . . . 
-. . . . . . . . 
-♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟ 
-♜ ♞ ♝ ♚ ♛ ♝ ♞ ♜ 
-
+♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖  8
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙  7
+. . . . . . . .  6
+. . . . . . . .  5
+. . . . . . . .  4
+. . . . . . . .  3
+♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟  2
+♜ ♞ ♝ ♚ ♛ ♝ ♞ ♜  1
+h g f e d c b a 
 ```
 
 * Make and Unmake moves
@@ -68,14 +103,15 @@ c.do_move(m)
 
 c.print_board()
 
-♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖ 
-♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙ 
-. . . . . . . . 
-. . . . . . . . 
-. . . . . . . . 
-. . . . . . . ♟ 
-♟ ♟ ♟ ♟ ♟ ♟ ♟ . 
-♜ ♞ ♝ ♚ ♛ ♝ ♞ ♜ 
+♖ ♘ ♗ ♔ ♛ ♗ ♘ ♖  8
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙  7
+. . . . . . . .  6
+. . . . . . . .  5
+. . . . . . . .  4
+. . . . . . . ♟  3
+♟ ♟ ♟ ♟ ♟ ♟ ♟ .  2
+♜ ♞ ♝ ♚ ♛ ♝ ♞ ♜  1
+h g f e d c b a 
 ```
 
 * Fen Parser
@@ -84,14 +120,15 @@ c.load_fen(b'8/k/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1')
 
 c.print_board()
 
-. . . . . . . . 
-. . . . . . . ♔ 
-. . . . ♙ . . . 
-. . ♙ . ♟ . . ♙ 
-. . ♟ . ♟ . . ♟ 
-. . . . . . . . 
-. . . . . . . . 
-. . . . . . . ♚ 
+. . . . . . . .  8
+. . . . . . . ♔  7
+. . . . ♙ . . .  6
+. . ♙ . ♟ . . ♙  5
+. . ♟ . ♟ . . ♟  4
+. . . . . . . .  3
+. . . . . . . .  2
+. . . . . . . ♚  1
+h g f e d c b a 
 ```
 
 ### Contribution
