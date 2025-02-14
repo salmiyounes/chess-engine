@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "stdbool.h": "c",
+        "move.h": "c",
+        "random": "cpp",
+        "random.h": "c",
+        "stdlib.h": "c",
+        "search.h": "c"
+    }
+}

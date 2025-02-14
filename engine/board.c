@@ -1,332 +1,177 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
 #include "board.h"
+
+#define DURATION 2.0
+
+static const char *PIECE_SYMBOLS[13] = {
+    [WHITE_PAWN]    = "♟ ",
+    [WHITE_KNIGHT]  = "♞ ",
+    [WHITE_BISHOP]  = "♝ ",
+    [WHITE_ROOK]    = "♜ ",
+    [WHITE_QUEEN]   = "♛ ",
+    [WHITE_KING]    = "♚ ",
+    
+    [BLACK_PAWN]    = "♙ ",
+    [BLACK_KNIGHT]  = "♘ ",
+    [BLACK_BISHOP]  = "♗ ",
+    [BLACK_ROOK]    = "♖ ",
+    [BLACK_QUEEN]   = "♕ ",
+    [BLACK_KING]    = "♔ ",
+    
+    [NONE]          = ". "
+};
+
+void *thread_start(void *arg) {
+	Thread_d *thread_d = (Thread_d *) arg;
+
+	thread_d->score = best_move(thread_d->search, thread_d->board, thread_d->move);
+
+	return NULL;
+}
+
+void thread_stop(Search *search) {
+	search->stop = true;
+    //sleep(1);
+}
+
+int thread_init(Search *search, ChessBoard *board, Move *result) {
+	Thread_d *thread_d = (Thread_d *) malloc(sizeof(Thread_d));
+	if (thread_d == NULL) {
+		fprintf(stderr, "thread_init(): Could not allocate memory for thread_d .\n");
+		return 0;
+	}
+    
+	thread_d->board  =  board;
+	thread_d->search = search;
+	thread_d->move   = result;
+	thread_d->score = 	 -INF;
+
+    threadpool thpool_p;
+	thpool_p = thpool_init(1);
+
+	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
+    time_t start, end;
+	double diff = 0.0;
+	time(&start);
+
+	while (diff < DURATION) {
+		time(&end);
+		diff = difftime(end, start);
+	}
+
+    thread_stop(search);
+    thpool_destroy(thpool_p);
+
+	int score = thread_d->score;
+
+	free(thread_d);
+
+	return score;
+}
 
 void init_table() {
     int pc, p, sq;
-    for (p = PAWN - 1, pc = WHITE_PAWN; p <= KING - 1; pc += 2, p++) {
+    for (p = PAWN, pc = WHITE_PAWN; p <= KING; pc += 2, p++) {
         for (sq = 0; sq < 64; sq++) {
-            mg_table[pc]  [sq] = mg_value[p] + mg_pesto_table[p][sq];
-            eg_table[pc]  [sq] = eg_value[p] + eg_pesto_table[p][sq];
-            mg_table[pc+1][sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
-            eg_table[pc+1][sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
+            mg_table[pc]  [sq] = mg_value[p] + mg_pesto_table[p][(FLIP(sq))];
+            eg_table[pc]  [sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
+            mg_table[pc+1][sq] = mg_value[p] + mg_pesto_table[p][(sq)];
+            eg_table[pc+1][sq] = eg_value[p] + eg_pesto_table[p][(sq)];
         }
     }
 }
 
 void board_clear(ChessBoard *board) {
     memset(board, 0, sizeof(ChessBoard));
+    
     for (int i = 0; i < 64; i++) {
         board->squares[i] = NONE;
     }
-    board->castle = CASTLE_ALL;
+
+    board->castle       = CASTLE_ALL;
+    castling_rights[0]  = CASTLE_WHITE_QUEEN_SIDE; 
+    castling_rights[7]  = CASTLE_WHITE_KING_SIDE;
+    castling_rights[56] = CASTLE_BLACK_QUEEN_SIDE;
+    castling_rights[63] = CASTLE_BLACK_KING_SIDE;
+
+    board->hash         =                    0ULL;
+    board->pawn_hash    =                    0ULL;
+    board->mg[WHITE] = board->mg[BLACK] = 0;
+    board->eg[WHITE] = board->eg[BLACK] = 0;
 }
 
-void build_board(char **grid, bb bbit, char *pt) {
-    bb bit = bbit;
-    int sq;
-    while (bit) {
-        POP_LSB(sq, bit);
-        grid[sq] = (char *) malloc(sizeof(char) * (strlen(pt) + 1));
-        strcpy(grid[sq], pt);
-    }
-}
+void  board_update(ChessBoard *board, int sq, int piece) {
+        int prev = board->squares[sq];
+        board->squares[sq] = piece;   
 
-void board_set(ChessBoard *board, int sq, int piece, int color) {
-    bb bit     = BIT(sq);
-    bb prev    = bit & board->Board;
-    bb mask    = ~bit;
-    
-    if (prev) {
-        board->Board &= mask;
-        board->squares[sq] = NONE;
-        if (COLOR(color)) {
-            board->AllBalckPieces &= mask;
-            switch (PIECE(piece)) {
-                case PAWN:
-                    board->BlackPawns     &= mask;
-                    board->black_material -= PAWN_MATERIAL;
-                    board->black_pos      -= black_pawn_square_values[sq];
-                    board->hash           ^= HASH_BLACK_PAWN[sq];
-                    break;
-                case KNIGHT: 
-                    board->BlackKnights   &= mask;
-                    board->black_material -= KNIGHT_MATERIAL;
-                    board->black_pos      -= black_knight_square_values[sq];
-                    board->hash           ^= HASH_BLACK_KNIGHT[sq];
-                    break;
-                case ROOK: 
-                    board->BlackRooks     &= mask; 
-                    board->black_material -= ROOK_MATERIAL;
-                    board->black_pos      -= black_rook_square_values[sq];
-                    board->hash           ^= HASH_BLACK_ROOK[sq];
-                    break;
-                case BISHOP: 
-                    board->BlackBishops   &= mask;
-                    board->black_material -= BISHOP_MATERIAL;
-                    board->black_pos      -= black_bishop_square_values[sq];
-                    board->hash            ^= HASH_BLACK_BISHOP[sq];
-                    break;
-                case KING: 
-                    board->BlackKing      &= mask;
-                    board->black_material -= KING_MATERIAL;
-                    board->black_pos      -= black_king_square_values[sq];
-                    board->hash            ^= HASH_BLACK_KING[sq];
-                    break;
-                case QUEEN: 
-                    board->BlackQueens    &= mask; 
-                    board->black_material -= QUEEN_MATERIAL;
-                    board->black_pos      -= black_queen_square_values[sq];
-                    board->hash            ^= HASH_BLACK_QUEEN[sq];
-                    break;
-            }
-        } else {
-            board->AllWhitePieces &= mask;
-            switch (PIECE(piece)) {
-                case PAWN:
-                    board->WhitePawns     &= mask;
-                    board->white_material -= PAWN_MATERIAL;
-                    board->white_pos      -= white_pawn_square_values[sq];
-                    board->hash             ^= HASH_WHITE_PAWN[sq];
-                    break;
-                case KNIGHT: 
-                    board->WhiteKnights   &= mask;
-                    board->white_material -= KNIGHT_MATERIAL;
-                    board->white_pos      -= white_knight_square_values[sq];
-                    board->hash            ^= HASH_WHITE_KNIGHT[sq];
-                    break;
-                case ROOK: 
-                    board->WhiteRooks     &= mask;
-                    board->white_material -= ROOK_MATERIAL;
-                    board->white_pos      -= white_rook_square_values[sq];
-                    board->hash             ^= HASH_WHITE_ROOK[sq]; 
-                    break;
-                case BISHOP: 
-                    board->WhiteBishops   &= mask;
-                    board->white_material -= BISHOP_MATERIAL;
-                    board->white_pos      -= white_bishop_square_values[sq];
-                    board->hash            ^= HASH_WHITE_BISHOP[sq]; 
-                    break;
-                case KING: 
-                    board->WhiteKing      &= mask;
-                    board->white_material -= KING_MATERIAL;
-                    board->white_pos      -= white_king_square_values[sq];
-                    board->hash             ^= HASH_WHITE_KING[sq]; 
-                    break;
-                case QUEEN: 
-                    board->WhiteQueens &= mask;
-                    board->white_material -= QUEEN_MATERIAL;
-                    board->white_pos      -= white_queen_square_values[sq];
-                    board->hash             ^= HASH_WHITE_QUEEN[sq]; 
-                    break;
-            }
+        if (prev != NONE) {                                           
+            CLEAR_BIT(board->occ[BOTH], sq);                                    
+            CLEAR_BIT(board->bb_squares[prev], sq);                   
+            if (COLOR(prev)) {                                        
+                CLEAR_BIT(board->occ[BLACK], sq);                       
+            } else {                                                        
+                CLEAR_BIT(board->occ[WHITE], sq);                       
+            }                                                               
+            board->hash ^= HASH_PIECES[prev][sq];
+            board->mg[COLOR(prev)] -=    mg_table[prev][sq];  
+            board->eg[COLOR(prev)] -=    eg_table[prev][sq];
+            board->gamePhase       -=    gamephaseInc[prev];               
+
+        }                                                                   
+
+        if (piece != NONE) {                                                 
+            SET_BIT(board->occ[BOTH], (sq));                                      
+            SET_BIT(board->bb_squares[(piece)], (sq));                           
+            if (COLOR(piece)) {                                                
+                SET_BIT(board->occ[BLACK], (sq));                         
+            } else {                                                        
+                SET_BIT(board->occ[WHITE], (sq));                         
+            }                                                               
+            board->hash ^= HASH_PIECES[(piece)][(sq)];                           
+            board->mg[COLOR(piece)] +=    mg_table[piece][sq];  
+            board->eg[COLOR(piece)] +=    eg_table[piece][sq];
+            board->gamePhase        +=    gamephaseInc[piece];               
         }
-    }
-    
-    else if (piece) {
-        board->Board |= bit;
-        if (COLOR(color)) {
-            board->AllBalckPieces |= bit;
-            switch (PIECE(piece)) {
-                case PAWN: 
-                    board->BlackPawns     |= bit;
-                    board->black_material += PAWN_MATERIAL;
-                    board->black_pos      += black_pawn_square_values[sq];
-                    board->hash             ^= HASH_BLACK_PAWN[sq]; 
-                    board->squares[sq] = BLACK_PAWN;
-                    break;
-                case KNIGHT: 
-                    board->BlackKnights   |= bit;
-                    board->black_material += KNIGHT_MATERIAL;
-                    board->black_pos      += black_knight_square_values[sq];
-                    board->hash             ^= HASH_BLACK_KNIGHT[sq];
-                    board->squares[sq] = BLACK_KNIGHT; 
-                    break;
-                case ROOK: 
-                    board->BlackRooks     |= bit;
-                    board->black_material += ROOK_MATERIAL;
-                    board->black_pos      += black_rook_square_values[sq];
-                    board->hash             ^= HASH_BLACK_ROOK[sq];
-                    board->squares[sq] = BLACK_ROOK; 
-                    break;
-                case BISHOP: 
-                    board->BlackBishops   |= bit; 
-                    board->black_material += BISHOP_MATERIAL;
-                    board->black_pos      += black_bishop_square_values[sq];
-                    board->hash             ^= HASH_BLACK_BISHOP[sq];
-                    board->squares[sq] = BLACK_BISHOP;
-                    break;
-                case KING: 
-                    board->BlackKing      |= bit; 
-                    board->black_material += KING_MATERIAL;
-                    board->black_pos      += black_king_square_values[sq];
-                    board->hash             ^= HASH_BLACK_KING[sq];
-                    board->squares[sq] = BLACK_KING;
-                    break;
-                case QUEEN: 
-                    board->BlackQueens |= bit;
-                    board->black_material += QUEEN_MATERIAL;
-                    board->black_pos      += black_queen_square_values[sq];
-                    board->hash            ^= HASH_BLACK_QUEEN[sq];
-                    board->squares[sq] = BLACK_QUEEN;  
-                    break;
-            }
-        } else {
-            board->AllWhitePieces |= bit;
-            switch (PIECE(piece)) {
-                case PAWN: 
-                    board->WhitePawns     |= bit;
-                    board->white_material += PAWN_MATERIAL;
-                    board->white_pos      += white_pawn_square_values[sq];
-                    board->hash             ^= HASH_WHITE_PAWN[sq];
-                    board->squares[sq] = WHITE_PAWN; 
-                    break;
-                case KNIGHT: 
-                    board->WhiteKnights   |= bit;
-                    board->white_material += KNIGHT_MATERIAL;
-                    board->white_pos      += white_knight_square_values[sq];
-                    board->hash             ^= HASH_WHITE_KNIGHT[sq];
-                    board->squares[sq] = WHITE_KNIGHT; 
-                    break;
-                case ROOK: 
-                    board->WhiteRooks     |= bit; 
-                    board->white_material += ROOK_MATERIAL;
-                    board->white_pos      += white_rook_square_values[sq];
-                    board->hash             ^= HASH_WHITE_ROOK[sq];
-                    board->squares[sq] = WHITE_ROOK;
-                    break;
-                case BISHOP: 
-                    board->WhiteBishops   |= bit;
-                    board->white_material += BISHOP_MATERIAL;
-                    board->white_pos      += white_bishop_square_values[sq];
-                    board->hash             ^= HASH_WHITE_BISHOP[sq];
-                    board->squares[sq] = WHITE_BISHOP;
-                    break;
-                case KING: 
-                    board->WhiteKing      |= bit;
-                    board->white_material += KING_MATERIAL;
-                    board->white_pos      += white_king_square_values[sq];
-                    board->hash             ^= HASH_WHITE_KING[sq];
-                    board->squares[sq] = WHITE_KING;
-                    break;
-                case QUEEN: 
-                    board->WhiteQueens    |= bit;
-                    board->white_material += QUEEN_MATERIAL;
-                    board->white_pos      += white_queen_square_values[sq];
-                    board->hash             ^= HASH_WHITE_QUEEN[sq];
-                    board->squares[sq] = WHITE_QUEEN;
-                    break;
-            }
-        }
-    }
 }
 
-
-void initializeBoard(ChessBoard *board, Pieces *p) {
-
+void initializeBoard(ChessBoard *board) {
     board_clear(board);
-    //
+
     init_table();
-    
-    // PAWNS
-    for (int file = 0; file < 8 ; file++) {
-        board->WhitePawns |= BIT(RF(1, file));
-        board->squares[RF(1, file)] = WHITE_PAWN;
-        board->BlackPawns |= BIT(RF(6, file));
-        board->squares[RF(6, file)] = BLACK_PAWN;
+
+    init_zobrist();
+
+    for (int file = 0; file < 8; file++) {
+        board_update(board, RF(1, file), WHITE_PAWN);
+        board_update(board, RF(6, file), BLACK_PAWN);
     }
     
-    // ROOKS
-    board->BlackRooks   = BIT(RF(7, 0)) | BIT(RF(7, 7));
-    board->squares[RF(7, 0)] = BLACK_ROOK;
-    board->squares[RF(7, 7)] = BLACK_ROOK;
-    board->WhiteRooks   = BIT(RF(0, 0)) | BIT(RF(0, 7));
-    board->squares[RF(0, 7)] = WHITE_ROOK;
-    board->squares[RF(0, 0)] = WHITE_ROOK;
+    board_update(board, RF(0, 0), WHITE_ROOK);
+    board_update(board, RF(0, 1), WHITE_KNIGHT);
+    board_update(board, RF(0, 2), WHITE_BISHOP);
+    board_update(board, RF(0, 3), WHITE_QUEEN);
+    board_update(board, RF(0, 4), WHITE_KING);
+    board_update(board, RF(0, 5), WHITE_BISHOP);
+    board_update(board, RF(0, 6), WHITE_KNIGHT);
+    board_update(board, RF(0, 7), WHITE_ROOK);
+    board_update(board, RF(7, 0), BLACK_ROOK);
+    board_update(board, RF(7, 1), BLACK_KNIGHT);
+    board_update(board, RF(7, 2), BLACK_BISHOP);
+    board_update(board, RF(7, 3), BLACK_QUEEN);
+    board_update(board, RF(7, 4), BLACK_KING);
+    board_update(board, RF(7, 5), BLACK_BISHOP);
+    board_update(board, RF(7, 6), BLACK_KNIGHT);
+    board_update(board, RF(7, 7), BLACK_ROOK);
 
-    // BISHOPS
-    board->WhiteBishops = BIT(RF(0, 5)) | BIT(RF(0, 2));
-    board->squares[RF(0, 2)] = WHITE_BISHOP;
-    board->squares[RF(0, 5)] = WHITE_BISHOP;
-    board->BlackBishops = BIT(RF(7, 5)) | BIT(RF(7, 2));
-    board->squares[RF(7, 2)] = BLACK_BISHOP;
-    board->squares[RF(7, 5)] = BLACK_BISHOP;
-    
-    //KNIGHTS
-    board->WhiteKnights = BIT(RF(0, 1)) | BIT(RF(0, 6));
-    board->squares[RF(0, 6)] = WHITE_KNIGHT;
-    board->squares[RF(0, 1)] = WHITE_KNIGHT;
-    board->BlackKnights = BIT(RF(7, 1)) | BIT(RF(7, 6));
-    board->squares[RF(7, 6)] = BLACK_KNIGHT;
-    board->squares[RF(7, 1)] = BLACK_KNIGHT;
-    
-    //KINGS
-    board->WhiteKing    = BIT(RF(0, 4));
-    board->squares[RF(0, 4)] = WHITE_KING;
-    board->BlackKing    = BIT(RF(7, 4));
-    board->squares[RF(7, 4)] = BLACK_KING;
-    
-    //QUEENS
-    board->WhiteQueens  = BIT(RF(0, 3));
-    board->squares[RF(0, 3)] = WHITE_QUEEN;
-    board->BlackQueens  = BIT(RF(7, 3));
-    board->squares[RF(7, 3)] = BLACK_QUEEN;
-
-    initializeAllWhitePieces(board);
-    initializeAllBlackPieces(board);
-    initializeAllBoard(board);
-    // 
-    p->BlackPawns   = "♙ "; 
-    p->BlackRooks   = "♖ ";
-    p->BlackBishops = "♗ ";
-    p->BlackKnights = "♘ ";
-    p->BlackQueens  = "♕ ";
-    p->BlackKing    = "♔ ";
-
-    //
-    p->WhitePawns   = "♟ ";
-    p->WhiteRooks   = "♜ ";
-    p->WhiteBishops = "♝ ";
-    p->WhiteKnights = "♞ ";
-    p->WhiteQueens  = "♛ ";
-    p->WhiteKing    = "♚ ";
-
-    //
-    p->Empty        = ". ";
+    board->hash         = gen_curr_state_zobrist(board);
+    board->pawn_hash    = gen_pawn_zobrist(board);
 }
 
-void printBoard(ChessBoard *b, const Pieces *p) {
-    
 
-    char **grid = (char **) malloc(sizeof(char *) * GRID_SIZE);
-    for (int i = 0; i < GRID_SIZE; i++) {
-        grid[i] = (char *) malloc(sizeof(char) * (strlen(p->Empty) + 1));
-        strcpy(grid[i], p->Empty);
-    }
-    // Pawns 
-    build_board(grid, b->WhitePawns, p->WhitePawns);
-    build_board(grid, b->BlackPawns, p->BlackPawns);
-    // Rooks
-    build_board(grid, b->WhiteRooks, p->WhiteRooks);
-    build_board(grid, b->BlackRooks, p->BlackRooks);
-    // Bishops
-    build_board(grid, b->WhiteBishops, p->WhiteBishops);
-    build_board(grid, b->BlackBishops, p->BlackBishops);
-    // Knights
-    build_board(grid, b->WhiteKnights, p->WhiteKnights);
-    build_board(grid, b->BlackKnights, p->BlackKnights);
-    // Queen
-    build_board(grid, b->WhiteQueens, p->WhiteQueens);
-    build_board(grid, b->BlackQueens, p->WhiteQueens);
-    // king
-    build_board(grid, b->WhiteKing, p->WhiteKing);
-    build_board(grid, b->BlackKing, p->BlackKing);
+void printBoard(ChessBoard *board) {
 
-    for (int i = GRID_SIZE - 1; i >= 0; i--) {
-        printf("%s", grid[i]);
-        if (i % 8 == 0) {
+    for (int i = 63; i >= 0; i--) {
+        printf("%s", PIECE_SYMBOLS[board->squares[i]]);
+        if (!(i % 8)) {
             printf(" %c", '1' + (i / 8));
             printf("\n");
         }
@@ -335,15 +180,10 @@ void printBoard(ChessBoard *b, const Pieces *p) {
     for (int i = 7; i >= 0; i--) {
         printf("%c ", 'a' + i);
     }
-
     printf("\n");
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        free(grid[i]);
-    }
-    free(grid);
 }
 
+//TODO: refactore this code
 void board_load_fen(ChessBoard *board, char *fen) {
     board_clear(board);
     int i = 0;
@@ -353,23 +193,19 @@ void board_load_fen(ChessBoard *board, char *fen) {
         bool done = false;
         switch(fen[i]) {
 
-            // White
-            case 'P': board->WhitePawns   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_PAWN;   break;
-            case 'N': board->WhiteKnights |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_KNIGHT; break;
-            case 'B': board->WhiteBishops |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_BISHOP; break;
-            case 'Q': board->WhiteQueens  |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_QUEEN;  break;
-            case 'K': board->WhiteKing    |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_KING;   break;
-            case 'R': board->WhiteRooks   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = WHITE_ROOK;   break;
-
-            // Black
-            case 'p': board->BlackPawns   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_PAWN;   break;
-            case 'n': board->BlackKnights |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_KNIGHT; break;
-            case 'b': board->BlackBishops |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_BISHOP; break;
-            case 'q': board->BlackQueens  |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_QUEEN;  break;
-            case 'k': board->BlackKing    |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_KING;   break;
-            case 'r': board->BlackRooks   |= BIT(RF(rank, file++)); board->squares[RF(rank, file)] = BLACK_ROOK;   break;
-
-            //
+            case 'P': board_update(board, RF(rank, file++), WHITE_PAWN); break;
+            case 'N': board_update(board, RF(rank, file++), WHITE_KNIGHT); break;
+            case 'B': board_update(board, RF(rank, file++), WHITE_BISHOP); break;
+            case 'R': board_update(board, RF(rank, file++), WHITE_ROOK); break;
+            case 'Q': board_update(board, RF(rank, file++), WHITE_QUEEN); break;
+            case 'K': board_update(board, RF(rank, file++), WHITE_KING); break;
+            case 'p': board_update(board, RF(rank, file++), BLACK_PAWN); break;
+            case 'n': board_update(board, RF(rank, file++), BLACK_KNIGHT); break;
+            case 'b': board_update(board, RF(rank, file++), BLACK_BISHOP); break;
+            case 'r': board_update(board, RF(rank, file++), BLACK_ROOK); break;
+            case 'q': board_update(board, RF(rank, file++), BLACK_QUEEN); break;
+            case 'k': board_update(board, RF(rank, file++), BLACK_KING); break;
+            case '/': file = 0; rank--; break;
             case '1': file += 1; break;
             case '2': file += 2; break;
             case '3': file += 3; break;
@@ -378,14 +214,8 @@ void board_load_fen(ChessBoard *board, char *fen) {
             case '6': file += 6; break;
             case '7': file += 7; break;
             case '8': file += 8; break;
-
-            //
-            case '/': file = 0; rank--; break;
-
-            //
-            case ' ': done = true;
-
-            default: break;
+            case ' ': done = 1; break;
+            default: return;
         }
 
         if (done) {
@@ -401,11 +231,9 @@ void board_load_fen(ChessBoard *board, char *fen) {
     switch(fen[i++]) {
         case 'w':
             board->color = WHITE;
-            board->hash ^= HASH_COLOR;
             break;
         case 'b':
             board->color = BLACK;
-            board->hash  ^= HASH_COLOR;
             break;
         default: return;
     }
@@ -440,8 +268,6 @@ void board_load_fen(ChessBoard *board, char *fen) {
         }
     }
 
-    board->hash ^= HASH_CASTLE[CASTLE_ALL];
-    board->hash ^= HASH_CASTLE[board->castle];
 
     i++;
     if (fen[i] == '-') i++;
@@ -452,136 +278,13 @@ void board_load_fen(ChessBoard *board, char *fen) {
         if (fen[i] >= '1' && fen[i] <= '8') {
             int ep_rank = fen[i] - '1';
             board->ep |= BIT(RF(ep_rank, ep_file));
-            board->hash ^= HASH_EP[LSB(board->ep) % 8];
             i++;
         }
     }
     i++;
 
-    initializeAllBlackPieces(board);
-    initializeAllWhitePieces(board);
-    initializeAllBoard(board);
-
-    return ; 
-}
-
-int trans_to_fen(ChessBoard *board, char *result) {
-    char *ptr = result;
-    int file = 0, i = 63;
-
-    for (; i >= 0; i--) {
-        if (board->WhitePawns & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'P';
-        }
-        else if (board->WhiteKnights & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'N';
-        }
-        else if (board->WhiteBishops & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'B';
-        }
-        else if (board->WhiteRooks & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'R';
-        }
-        else if (board->WhiteQueens & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'Q';
-        }
-        else if (board->WhiteKing & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'K';
-        }
-        else if (board->BlackPawns & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'p';
-        } 
-        else if (board->BlackKnights & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'n';
-        }
-        else if (board->BlackBishops & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'b';
-        }
-        else if (board->BlackRooks & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'r';
-        }
-        else if (board->BlackQueens & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'q';
-        }
-        else if (board->BlackKing & BIT(i)) {
-                if (file) {
-                    *result++ = '0' + file;
-                    file = 0;
-                }
-                *result++ = 'k';
-        } 
-        else file ++;
-
-        if (i && i % 8 == 0) {
-            if (file) {
-                *result++ = '0' + file;
-            }
-            *result++ = '/';
-            file = 0;
-        }
-    }
-
-    if (file) {
-        *result++ = '0' + file;
-    }
-
-    *result++ = ' ';
-    switch(board->color) {
-        case WHITE:
-            *result++ = 'w';
-            break;
-        case BLACK:
-            *result++ = 'b';
-            break;
-    }
-
-    *result = 0;
-    
-    return result - ptr;
+    board->hash         = gen_curr_state_zobrist(board);
+    board->pawn_hash    = gen_pawn_zobrist(board);
 }
 
 const int   white_pawn_square_values[64] = {
@@ -833,26 +536,53 @@ int eg_queen_table[64] = {
 };
 
 int mg_king_table[64] = {
-    -65,  23,  16, -15, -56, -34,   2,  13,
-     29,  -1, -20,  -7,  -8,  -4, -38, -29,
-     -9,  24,   2, -16, -20,   6,  22, -22,
-    -17, -20, -12, -27, -30, -25, -14, -36,
-    -49,  -1, -27, -39, -46, -44, -33, -51,
-    -14, -14, -22, -46, -44, -30, -15, -27,
-      1,   7,  -8, -64, -43, -16,   9,   8,
-    -15,  36,  12, -54,   8, -28,  24,  14,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+    20, 20,  0,  0,  0,  0, 20, 20,
+    20, 30, 10,  0,  0, 10, 30, 20
 };
 
 int eg_king_table[64] = {
-    -74, -35, -18, -18, -11,  15,   4, -17,
-    -12,  17,  14,  17,  17,  38,  23,  11,
-     10,  17,  23,  15,  20,  45,  44,  13,
-     -8,  22,  24,  27,  26,  33,  26,   3,
-    -18,  -4,  21,  24,  27,  23,   9, -11,
-    -19,  -3,  11,  21,  23,  16,   7,  -9,
-    -27, -11,   4,  13,  14,   4,  -5, -17,
-    -53, -34, -21, -11, -28, -14, -24, -43
+    -50,-40,-30,-20,-20,-30,-40,-50,
+    -30,-20,-10,  0,  0,-10,-20,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-30,  0,  0,  0,  0,-30,-30,
+    -50,-30,-30,-30,-30,-30,-30,-50
 };
+
+int piece_material[13] = {
+    [WHITE_PAWN ... BLACK_PAWN]     = PAWN_MATERIAL,
+    [WHITE_KNIGHT ... BLACK_KNIGHT] = KNIGHT_MATERIAL,
+    [WHITE_BISHOP ... BLACK_BISHOP] = BISHOP_MATERIAL,
+    [WHITE_ROOK ... BLACK_ROOK]     = ROOK_MATERIAL,
+    [WHITE_QUEEN ... BLACK_QUEEN]   = QUEEN_MATERIAL,
+    [WHITE_KING ... BLACK_KING]     = KING_MATERIAL
+};
+
+const int *square_values[13] = {
+    
+    [   WHITE_PAWN      ]     = white_pawn_square_values,
+    [   BLACK_PAWN      ]     = black_pawn_square_values,
+    [   WHITE_KNIGHT    ]     = white_knight_square_values,
+    [   BLACK_KNIGHT    ]     = black_knight_square_values,
+    [   WHITE_BISHOP    ]     = white_bishop_square_values,
+    [   BLACK_BISHOP    ]     = black_bishop_square_values,
+    [   WHITE_ROOK      ]     = white_rook_square_values,
+    [   BLACK_ROOK      ]     = black_rook_square_values,
+    [   WHITE_QUEEN     ]     = white_queen_square_values,
+    [   BLACK_QUEEN     ]     = black_queen_square_values,
+    [   WHITE_KING      ]     = white_king_square_values,
+    [   BLACK_KING      ]     = black_king_square_values 
+};
+
+int castling_rights[64] = {0};
 
 int* mg_pesto_table[6] =
 {

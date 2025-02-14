@@ -1,34 +1,15 @@
 #include "search.h"
 
-#define  XOR_SWAP(a, b) a = a ^ b; b = a ^ b; a = a ^ b;
-#define MAX_R 4
-#define MIN_R 3
-#define DR    4 
-
-typedef struct {
-	int score;
-	int index;
-} Score;
-
-inline int ok_to_reduce(ChessBoard *board, Move *move) {
-	int result = 0;
-
-	result |= move->promotion;
-	result |= (board->squares[move->dst] != NONE) ? 1 : 0;
-	
-	return result;
-} 
-
-void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
+void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
 	Move temp[MAX_MOVES];
 	int scores[MAX_MOVES];
 	int indexes[MAX_MOVES];
 
-	Move *best = table_get_move(&search->table, board->hash);
+	Move best = table_get_move(&search->table, board->hash);
 	for (int i = 0; i < count; i++) {
-		Move *move = moves + i;
-		scores[i]  = score_move(board, move);
-		if (best && best->src == move->src && best->dst == move->dst) {
+		Move move = *(moves + i);
+		scores[i]  = (capture) ? score_capture(board, move) : score_move(board, move);
+		if (best && (best == move)) {
 			scores[i] += INF;
 		}
 		indexes[i] = i; 
@@ -37,58 +18,32 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count) {
 		int j = i;
 		while (j > 0 && scores[j - 1] < scores[j])
 		{
-			XOR_SWAP(scores[j - 1], scores[j]);
-			XOR_SWAP(indexes[j - 1], indexes[j]);
+			SWAP_VALUES(scores[j - 1], scores[j]);
+			SWAP_VALUES(indexes[j - 1], indexes[j]);
 			j--;			
 		}
-		
 	}
-	memcpy(temp, moves, sizeof(Move) * count);
-	for (int i = 0; i < count; i++) {
-		memcpy(moves + i, temp + indexes[i], sizeof(Move));
-	}
-
-}
-
-int _cmp_int_(const void *p, const void *q) {
-	int x = ( (const Score *) p)->score;
-	int y = ( (const Score *) q)->score;
 	
-	return (x >= y) ? -1 : 1;
-}
-
-void sort_captures(Search *search, ChessBoard *board, Move *moves, int count) {
-	Move temp[count];
-	Score scores[count];
-
-	Move *best = table_get_move(&search->table, board->hash);
-
-	for (int i = 0; i < count; i++) {
-		Move *move = moves + i;
-		scores[i]  = (Score) {
-			.score=  mvv_lva(board, move), 
-		 	.index = i
-		};
-
-		if (best && best->src == move->src && best->dst == move->dst) {
-			scores[i].score += INF;
-		}
-	}
-
-	qsort(scores, count, sizeof(Score), _cmp_int_);
-
 	memcpy(temp, moves, sizeof(Move) * count);
+	
 	for (int i = 0; i < count; i++) {
-		memcpy(moves + i, temp + scores[i].index, sizeof(Move));
+		moves[i] = temp[indexes[i]];
 	}
 }
+
+int ok_to_reduce(Search *search, ChessBoard *board, Move move) {
+	int flag = 1;
+	if (table_get_move(&search->table, board->hash) == move) flag = 0;
+	if (is_check(board)) flag = 0;
+	return flag;
+} 
 
 int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	if (illegal_to_move(board)) {
 		return INF;
 	}
 
-	int score = eval(board);
+	int score = pesto_eval(board) + evaluate_pawns(board);
 
 	if (score >= beta) {
 		return beta;
@@ -96,46 +51,50 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	if (score > alpha) {
 		alpha = score;
 	}
+	
 	Undo undo;
 	Move moves[MAX_MOVES];
 	int count = gen_attacks(board, moves);
-	sort_captures(search, board, moves, count);
-	
+	sort_moves(search, board, moves, count, true);
+
 	for (int i = 0; i < count; i++) {
-		Move *move = &moves[i];
+		Move move = moves[i];
+
+		if (!staticExchangeEvaluation(board, move, 0)) continue;
+
+		search->nodes++;
 		do_move(board, move, &undo);
-		int score = -quiescence_search(search, board, -beta, -alpha);
+		int value = -quiescence_search(search, board, -beta, -alpha);
 		undo_move(board, move, &undo);
 		
 		if (search->stop) {
 			break;
 		}
 
-		if (score >= beta) {
+		if (value >= beta) {
 			return beta;
 		}
-		if (score > alpha) {
-			alpha = score;
+		if (value > alpha) {
+			alpha = value;
 		}
 	}
 
 	return alpha;
 }
 
-int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
+int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, int beta) {
 	int flag = ALPHA;
 	int value = 0;
 
 	if (illegal_to_move(state)) {
 		return INF;
 	}
-
 	if ((table_get(&search->table, state->hash, depth, alpha, beta, &value))) {
 		return value;
 	}
 
 	if (depth <= 0) {
-		int value = quiescence_search(
+		value = quiescence_search(
 			search,
 			state,
 			alpha,
@@ -145,11 +104,12 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 		return value;
 	}
 
+	search->nodes++;
 	Undo undo;
-	if (is_check(state) == 0 && depth >= 3) {
+	if (!is_check(state) && depth >= 3) { // Extended Null-Move Reductions
 		do_null_move_pruning(state, &undo);
 		int R = depth > 6 ? MAX_R : MIN_R;
-		int score = -negamax(search, state, depth - 1 - R, -beta, -beta + 1);
+		int score = -negamax(search, state, depth - R - 1, ply + 1, -beta, -beta + 1);
 		undo_null_move_pruning(state, &undo);
 		if (score >= beta) {
 			depth -= DR;
@@ -161,23 +121,27 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 					beta
 				);
 			}
-
 			table_set(&search->table, state->hash, depth, beta, BETA);
 			return beta;
 		}
 	}
 	Move moves[MAX_MOVES];
 	int count = gen_legal_moves(state, moves);
-	sort_moves(search, state, moves, count);
+	sort_moves(search, state, moves, count, false);
+	int can_move = 0;
 	for (int i = 0; i < count; i++) {
-		Move *move = &moves[i];
+		Move move = moves[i];
+
+		search->nodes++;
 		do_move(state, move, &undo);
-		value = -negamax(search, state, depth - 1, -beta, -alpha);
+		value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
 		undo_move(state, move, &undo);
 
 		if (search->stop) {
 			break;
 		}
+
+		if (value > -INF) can_move = 1;
 
 		if (value >= beta) {
 			table_set(
@@ -207,25 +171,97 @@ int negamax(Search *search, ChessBoard *state, int depth, int alpha, int beta) {
 			);
 		}
 	}
+	if (!can_move) {
+		if (is_check(state)) 
+			return -MATE + ply;
+		else 
+			return 0;
+	}
 	table_set(&search->table, state->hash, depth, alpha, flag);
 	return alpha;
 }
 
-#define MAX_DEPTH 5
+int staticExchangeEvaluation(ChessBoard *board, Move move, int threshold) {
+	int src   = EXTRACT_FROM(move);
+	int dst   = EXTRACT_TO(move);
+	int flag  = EXTRACT_FLAGS(move);
+	int piece = EXTRACT_PIECE(move);
 
-int root_search(Search *search, ChessBoard *board, int depth, Move *result) {
-	int best_score = -INF;
+ 	if (IS_CAS(flag) || IS_ENP(flag) || IS_PROMO(flag)) return 1;
+
+	int value = move_estimated_value(board, move) - threshold;
+	if (value < 0) return 0;
+
+	value = SEEPieceValues[piece] - value;
+	if (value <= 0) return 1;
+
+	int color 	 = board->color;
+	bb occ    	 = board->occ[BOTH] ^ BIT(src) ^ BIT(dst);
+	bb attackers = attacks_to_square(board, dst, occ);
+	bb mine, leastattacker;
+
+	const bb diag     = board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP] | board->bb_squares[WHITE_QUEEN] | board->bb_squares[BLACK_QUEEN];
+	const bb straight =	board->bb_squares[WHITE_ROOK  ] | board->bb_squares[BLACK_ROOK  ] | board->bb_squares[WHITE_QUEEN] | board->bb_squares[BLACK_QUEEN];
+	
+	int result = 1;
+
+	while (1) {
+		color ^= BLACK;
+		attackers &= occ;
+
+		if (!(mine = (attackers & board->occ[color])))
+			break;
+		
+		result &= BLACK;
+		
+		if ((leastattacker = mine & board->bb_squares[CALC_PIECE(PAWN, color)])) {
+			if ((value = SEEPieceValues[PAWN] - value) < result)
+				break;
+			occ ^= (leastattacker & -leastattacker);
+			attackers |= get_bishop_attacks(dst, occ);
+		} 
+		else if ((leastattacker = mine & board->bb_squares[CALC_PIECE(KNIGHT, color)])) {
+			if ((value = SEEPieceValues[KNIGHT] - value) < result)
+				break;
+		    occ ^= (leastattacker & -leastattacker);
+		} else if ((leastattacker = mine & CALC_PIECE(BISHOP, color))) {
+		if ((value = SEEPieceValues[BISHOP] - value) < result)
+			break;
+
+		occ ^= (leastattacker & -leastattacker);
+		attackers |= get_bishop_attacks(dst, occ) & diag;
+		} else if ((leastattacker = mine & CALC_PIECE(ROOK, color))) {
+		if ((value = SEEPieceValues[ROOK] - value) < result)
+			break;
+
+		occ ^= (leastattacker & -leastattacker);
+		attackers |= get_rook_attacks(dst, occ) & straight;
+		} else if ((leastattacker = mine & CALC_PIECE(QUEEN, color))) {
+		if ((value = SEEPieceValues[QUEEN] - value) < result)
+			break;
+
+		occ ^= (leastattacker & -leastattacker);
+		attackers |= (get_bishop_attacks(dst, occ) & diag) | (get_rook_attacks(dst, occ) & straight);
+		} else
+		return (attackers & ~board->occ[color]) ? result ^ BLACK : result;
+	}
+	return result;
+}
+
+int root_search(Search *search, ChessBoard *board, int depth, int alpha, int beta,  Move *result) {
+	int  best_score 	= 	   -INF;
+	Move best_move  	= 		NULL_MOVE;
 	
 	Move moves[MAX_MOVES];
 	Undo undo;
 	int count = gen_legal_moves(board, moves);
-	sort_moves(search, board, moves, count);
+	sort_moves(search, board, moves, count, false);
 
 	for (int i = 0; i < count; i++) {
-		Move *move = &moves[i];
-		
+		Move move = moves[i];
+		search->nodes++;
 		do_move(board, move, &undo);
-		int score = -negamax(search , board, depth, -INF, INF);
+		int score = -negamax(search , board, depth, 1, alpha, beta);
 		undo_move(board, move, &undo);
 
 		if (search->stop) {
@@ -233,63 +269,70 @@ int root_search(Search *search, ChessBoard *board, int depth, Move *result) {
 		}
 
 		if (score > best_score) {
-			best_score = score;
-			memcpy(result, move, sizeof(Move));
+			best_score 	= score;
+			best_move 	= move;
 		}
+	}
+
+	if (best_score > -INF) {
+		*(result) = best_move;
+		table_set_move(&search->table, board->hash, depth, best_move);
 	}
 
 	return best_score;
 } 
 
-void *thread_start(void *arg) {
-	Thread_d *thread_d = (Thread_d *) arg;
+void print_pv(Search *search, ChessBoard *board, int depth) {
+	if (depth <= 0) return;
 
-	thread_d->score = best_move(thread_d->search, thread_d->board, thread_d->move);
+	Entry *entry = table_entry(&search->table, board->hash);
 
-	return NULL;
-}
+	if (entry->key != board->hash) return;
 
-void thread_stop(Search *search) {
-	search->stop = true;
-}
+	Move move = entry->move;
+	Undo undo;
 
-#define DURATION 2
+	printf(" %s", move_to_str(move));
+	do_move(board, move, &undo);
+	print_pv(search, board, depth - 1);
+	undo_move(board, move, &undo);
 
-int thread_init(Search *search, ChessBoard *board, Move *result) {
-	Thread_d *thread_d = (Thread_d *) malloc(sizeof(Thread_d));
-	if (thread_d == NULL) {
-		fprintf(stderr, "thread_init(): Could not allocate memory for thread_d .\n");
-		return 0;
-	}
-	thread_d->board  =  board;
-	thread_d->search = search;
-	thread_d->move   = result;
-	thread_d->score = 	 -INF;
-
-	threadpool thpool_p = thpool_init(1);
-
-	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
-	thpool_wait(thpool_p);
-	
-	thpool_destroy(thpool_p);
-
-	int score = thread_d->score;
-
-	free(thread_d);
-
-	return score;
+	return ;
 }
 
 int best_move(Search *search, ChessBoard *board, Move *result) {
+	int best_score = 	 -INF;
+	int alpha = -INF, beta = INF; 
+	search->stop   = 	false;
 
-	table_alloc(&search->table, 20);
-	search->stop = false;
-	int best_score = -INF;
-
-	for (int depth = 1; depth <= MAX_DEPTH; depth++) {
-			best_score = root_search(search, board, depth, result);
+	if (!table_alloc(&search->table, 20)) {
+		return -best_score;
 	}
 
+	for (int depth = 1; depth <= MAX_DEPTH; depth++) {
+			best_score = root_search(search, board, depth, alpha, beta, result);
+
+			if (search->stop) {
+				break;
+			}
+
+			printf("info score=%d, depth=%d, pv ", best_score, depth);
+			print_pv(search, board, depth);
+			printf("\n");
+
+			if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
+
+			if ((best_score <= alpha) || (best_score >= beta)) {
+				alpha = -INF;
+				beta  =  INF;
+				continue;  
+			}
+
+			alpha = best_score - VALID_WINDOW;
+			beta  = best_score + VALID_WINDOW;
+	}
+
+	printf("nodes=%d \n", search->nodes);
 	table_free(&search->table);
 	return best_score;
 }

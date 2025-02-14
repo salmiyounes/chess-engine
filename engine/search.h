@@ -6,34 +6,36 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <pthread.h>
-#include "thpool.h"
 #include "bb.h"
-#include "board.h"
 #include "gen.h"
 #include "move.h"
 #include "table.h"
 #include "eval.h"
+#include "attacks.h"
 
-#define INF 1000000
+#define  INF 1000000
+#define  MATE 100000
 
-typedef struct {
-	int   nodes;
+#define MAX_DEPTH    	 100
+#define VALID_WINDOW     100
 
-	bool   stop;
-	
-	Move   move;
-	
-	Table  table;
-} Search;
+#define MAX_R 		 	   4
+#define MIN_R 		       3 
+#define DR    		       4 
 
-typedef struct {
-	int 		score;
-	Search 	  *search;
-	ChessBoard *board;
-	Move 		*move;
-} Thread_d;
+#define SWAP_VALUES(a, b) 			\
+	do {							\
+		__typeof__(a) c = b;		\
+		b = a;						\
+		a = c;						\
+	} while (0)						\
 
-int best_move(Search *search, ChessBoard *board, Move *result);
+int best_move(Search *search, 
+              ChessBoard *board, 
+              Move *result);
+
+int staticExchangeEvaluation(ChessBoard *board, 
+                            Move move, 
+                            int threshold);
 
 #endif

@@ -1,33 +1,42 @@
 #include "perft.h"
 
-Entry TABLE[SIZE];
+#define SIZE (1 << 20)
+#define MASK ((SIZE) - 1)
+
+typedef struct {
+    bb 		key;
+    bb 	  value;
+    int   depth;
+} Entry_t;
+
+Entry_t TABLE[SIZE] = {0};
 
 bb perft_test(ChessBoard *board, int depth) {
-	if (illegal_to_move(board)) {
-		return 0L;
-	}
-	if (depth == 0) {
-		return 1L;
-	}
+	Undo undo;
+	Move moves[MAX_MOVES];
+	bb nodes  = 0ULL;
+	int count = 0;
+	depth = MAX(depth, 0);
+	
+	if (!depth) 
+		return 1ULL; 
 
-	Entry *entry = &TABLE[(board->hash & MASK)];
+	Entry_t *entry = &TABLE[(board->hash & MASK)];
+
 	if (entry->key == board->hash && entry->depth == depth) {
 		return entry->value;
 	}
-
-	Move moves[MAX_MOVES];
-	Undo undo;
-	bb nodes    = 0;
-
-	int count = gen_moves(board, moves);
-	for (int i = 0; i < count; i++) {
-		do_move(board, &moves[i], &undo);
-		nodes += perft_test(board, depth - 1);
-		undo_move(board, &moves[i], &undo);
+	count += gen_moves(board, moves);
+	for (count -= 1; count >= 0; count--) {
+		Move move = moves[count];
+		do_move(board, move, &undo);
+		if (!illegal_to_move(board)) nodes += perft_test(board, depth - 1);
+		undo_move(board, move, &undo);
 	}
 
 	entry->depth = depth;
 	entry->key   = board->hash;
 	entry->value = nodes;
+
 	return nodes;
 }

@@ -19,7 +19,3 @@ void seed_random(uint64_t seed) {
         radnom_64_int();
     }
 }
-
-uint64_t random_magic() {
-    return radnom_64_int() & radnom_64_int() & radnom_64_int();
-}

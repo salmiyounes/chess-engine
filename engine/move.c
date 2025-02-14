@@ -1,58 +1,61 @@
 #include "move.h"
-#include "gen.h"
 
-#define TOGGLE_HASH(board) \
-    board->hash ^= HASH_CASTLE[board->castle]; \
-    if (board->ep) { \
-        board->hash ^= HASH_EP[LSB(board->ep) % 8]; \
-    }
+const char* PROMOTION_TO_CHAR = "-nbrq-";
 
-const int MVV_LVA[7][7] = {
-    {0, 0, 0, 0, 0, 0, 0},
-	{10, 11, 12, 13, 14, 15, 0}, 
-    {20, 21, 22, 23, 24, 25, 0}, 
-	{30, 31, 32, 33, 34, 35, 0}, 
-	{40, 41, 42, 43, 44, 45, 0}, 
-    {50, 51, 52, 53, 54, 55, 0}, 
-    {0, 0, 0, 0, 0, 0, 0},       
+// from https://rustic-chess.org/search/ordering/mvv_lva.html
+const int MVV_LVA[6][6] = {
+	[KING]   = { 0,  0,  0,  0,  0,  0}, 
+    [QUEEN]  = {55, 54, 53, 52, 51, 50}, 
+    [ROOK]   = {45, 44, 43, 42, 41, 40}, 
+    [BISHOP] = {35, 34, 33, 32, 31, 30}, 
+    [KNIGHT] = {25, 24, 23, 22, 21, 20}, 
+    [PAWN]   = {15, 14, 13, 12, 11, 10}, 
 };
 
+const char* SQ_TO_COORD[64] = {
+  "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", //
+  "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", //
+  "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", //
+  "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", //
+  "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", //
+  "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", //
+  "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", //
+  "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", //
+};
 
-void make_move(ChessBoard *board, Move *move) {
+void make_move(ChessBoard *board, Move move) {
 	Undo undo;
 	do_move(board, move, &undo);
 }
 
-void notate_move(ChessBoard *board, Move* move, char *result) {
-	int piece   = move->piece;
-	int color   = move->color;
-	int ep      = move->ep;
-	bb capture;
-	
-	CAPTURE(capture, board, color, move);
+void notate_move(ChessBoard *board, Move move, char *result) {
+	int piece   = EXTRACT_PIECE(move);
+	int flag	= EXTRACT_FLAGS(move);
+	int src = EXTRACT_FROM(move), dst = EXTRACT_TO(move);
+	int capture = board->squares[dst];
 
-	char rank1 = '1' + move->src / 8;
-	char file1 = 'a' + move->src % 8;
+	char rank1 = '1' + src / 8;
+	char file1 = 'a' + src % 8;
 
-	char ramk2 = '1' + move->dst / 8;
-	char file2 = 'a' + move->dst % 8;
+	char ramk2 = '1' + dst / 8;
+	char file2 = 'a' + dst % 8;
 
 	bool castle = false;
-	if (piece == KING) {
+	if (PIECE(piece) == KING) {
 		castle = true;
-		if (move->src == 4 && move->dst == 6) {
+		if (src == 4 && dst == 6) {
 			strcpy(result, "O-O");
 			result += 3;
 		}
-		else if (move->src == 4 && move->dst == 2) {
+		else if (src == 4 && dst == 2) {
 			strcpy(result, "O-O-O");
 			result += 5;
 		}
-		else if (move->src == 60 && move->dst == 62)  {
+		else if (src == 60 && dst == 62)  {
 			strcpy(result, "O-O");
 			result += 3;
 		}
-		else if (move->src == 60 && move->dst == 58) {
+		else if (src == 60 && dst == 58) {
 			strcpy(result, "O-O-O");
 			result += 5;
 		}
@@ -73,14 +76,14 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 		*result++ = file1;
 		*result++ = rank1;
 
-		if (capture || ep) *result++ = 'x';
+		if (capture != NONE || IS_ENP(flag)) *result++ = 'x';
 
 		*result++ = file2;
 		*result++ = ramk2;
 
-		if (move->promotion) {
+		if (IS_PROMO(flag)) {
 			*result++ = '=';
-			switch (move->promotion) {
+			switch (PROMO_PT(flag)) {
 	            case KNIGHT: *result++ = 'N'; break;
 	            case BISHOP: *result++ = 'B'; break;
 	            case ROOK:   *result++ = 'R'; break;
@@ -91,365 +94,199 @@ void notate_move(ChessBoard *board, Move* move, char *result) {
 	*result++ = 0;
 }
 
-int get_piece_type(ChessBoard *board, int sq, int color) {
-	bb bit = BIT(sq);
-	switch (color) {
-		case BLACK: 
-			if (bit & board->BlackPawns) {
-				return PAWN;
-			} else if (bit & board->BlackKnights) {
-				return KNIGHT;
-			} else if (bit & board->BlackBishops) {
-				return BISHOP;
-			} else if (bit & board->BlackQueens) {
-				return QUEEN;
-			} else if (bit & board->BlackKing) {
-				return KING;
-			} else if (bit & board->BlackRooks) {
-				return ROOK;
-			}
-			break;
-		case WHITE:
-			if (bit & board->WhitePawns) {
-				return PAWN;
-			} else if (bit & board->WhiteKnights) {
-				return KNIGHT;
-			} else if (bit & board->WhiteBishops) {
-				return BISHOP;
-			} else if (bit & board->WhiteQueens) {
-				return QUEEN;
-			} else if (bit & board->WhiteKing) {
-				return KING;
-			} else if (bit & board->WhiteRooks) {
-				return ROOK;
-			}
-			break;
-
-	}
-	return EMPTY;
-}
-
-void do_move(ChessBoard *board, Move *move, Undo *undo) {
-	TOGGLE_HASH(board); 
-	int piece     = move->piece;
-	int color     = move->color;
-	int promotion = undo->promotion = move->promotion;
+void do_move(ChessBoard *board, Move move, Undo *undo) {
+	TOGGLE_HASH(board);
+	
+	int src  	= EXTRACT_FROM(move); 
+	int dst 	= EXTRACT_TO(move);
+	int piece 	= EXTRACT_PIECE(move);
+	int color   = COLOR(piece);
+	int flag 	= EXTRACT_FLAGS(move);
+	
+	undo->capture = board->squares[dst];
 	undo->ep      = board->ep;
 	undo->castle  = board->castle;
-	bb capture;
 
-	CAPTURE(capture, board, color, move);
-	board_set(board, move->src, piece, color);
+	board_update(board, src, NONE);
 
-	undo->capture = get_piece_type(board, move->dst, SWITCH(color));
-
-	board->ep = 0L;
-
-	if (promotion) {
-		if (capture) {
-			board_set(board, move->dst, undo->capture, SWITCH(color));
-		}
-		board_set(board, move->dst, move->promotion, color);
-	}
-	else {
-		if (capture) {
-			board_set(board, move->dst, undo->capture, SWITCH(color));
-		}
-		board_set(board, move->dst, piece, color);
+	if (!IS_PROMO(flag)) {
+		board_update(board, dst, piece);
 	}
 
-	if (piece == PAWN) {
-		bb src, dst;
-		switch (PIECE(board->color)) {
-			case BLACK: 
-					src  = BIT(move->src);
-					dst  = BIT(move->dst);
-					if ((src & 0x00ff000000000000L) && (dst & 0x000000ff00000000L)) {
-						board->ep = BIT(move->src - 8);
-					}
-					if (dst == undo->ep) {
-						board_set(board, move->dst + 8, PAWN, WHITE);
-					}
-					break;
-			case WHITE:
-					src    = BIT(move->src);
-					dst    = BIT(move->dst);
-					if ((src &  0x000000000000ff00L) && (dst & 0x00000000ff000000L)) {
-						board->ep = BIT(move->src + 8);
-					}	
-					if (dst == undo->ep) {
-						board_set(board, move->dst - 8, PAWN, BLACK);
-					}
-					break;
-			}
+	board->ep = 0ULL;
+
+	if (piece == WHITE_PAWN) {
+		bb bsrc = BIT(src);
+		bb bdst = BIT(dst);
+		if ((bsrc & RANK_2) && (bdst & RANK_4)) {
+			board->ep = BIT(src + 8);
+		} 
+		if (IS_ENP(flag)) {
+			board_update(board, dst - 8, NONE);
+		} 
+		HANDLE_PROMOTION(board, piece, flag, dst, color);
 	} 
-	if (piece == KING) {
-		switch(COLOR(board->color)) {
-			case WHITE:
-					board->castle &= ~CASTLE_WHITE;
-					if (move->src == 4 && move->dst == 6) {
-						board_set(board, 7, ROOK, WHITE);
-						board_set(board, 5, ROOK, WHITE);
-					} else if (move->src == 4 && move->dst == 2) {
-						board_set(board, 0, ROOK, WHITE);
-						board_set(board, 3, ROOK, WHITE);
-					}
-				break;
-			case BLACK:
-					board->castle &= ~CASTLE_BLACK;
-					if (move->src == 60 && move->dst == 62) {
-						board_set(board, 63, ROOK, BLACK);
-						board_set(board, 61, ROOK, BLACK);
-					} else if (move->src == 60 && move->dst == 58) {
-						board_set(board, 56, ROOK, BLACK);
-						board_set(board, 59, ROOK, BLACK);
-					}
-				break; 
+	else if (piece == BLACK_PAWN) {
+		bb bsrc = BIT(src);
+		bb bdst = BIT(dst);
+		if ((bsrc & RANK_7) && (bdst & RANK_5)) {
+			board->ep = BIT(src - 8);
 		}
-	}
-	if (move->src == 0 || move->dst == 0) {
-		board->castle &= ~CASTLE_WHITE_QUEEN_SIDE;
-	}
-	if (move->src == 7 || move->dst == 7) {
-		board->castle &= ~CASTLE_WHITE_KING_SIDE;
-	}
-	if (move->src == 56 || move->dst == 56) {
-		board->castle &= ~CASTLE_BLACK_QUEEN_SIDE;
-	}
-	if (move->src == 63 || move->dst == 63) {
-		board->castle &= ~CASTLE_BLACK_KING_SIDE;
-	}
-
-	board->color ^= BLACK;
-	board->hash   ^= HASH_COLOR;
-	TOGGLE_HASH(board);
-}
-
-void undo_move(ChessBoard *board, Move *move, Undo *undo) {
-	TOGGLE_HASH(board);
-	int piece     = move->piece;
-	int color     = board->color;
-	int capture   = undo->capture;
-	int promotion = undo->promotion;
+		if (IS_ENP(flag)) {
+			board_update(board, dst + 8, NONE);
+		} 
+		HANDLE_PROMOTION(board, piece, flag, dst, color);
+	} 
+	else if (piece == WHITE_KING) {
+		board->castle &= ~CASTLE_WHITE;
+		if (IS_CAS(flag)) {
+			if (src == 4 && dst == 6) {
+				board_update(board, 7, NONE);
+				board_update(board, 5, WHITE_ROOK);
+			}
+			else if (src == 4 && dst == 2) {
+				board_update(board, 0, NONE);
+				board_update(board, 3, WHITE_ROOK);
+			}
+		}
+	} else if (piece == BLACK_KING) {
+		board->castle &= ~CASTLE_BLACK;
+		if (IS_CAS(flag)) {			
+			if (src == 60 && dst == 62) {
+				board_update(board, 63, NONE);
+				board_update(board, 61, BLACK_ROOK);
+			}
+			else if (src == 60 && dst == 58) {
+				board_update(board, 56, NONE);
+				board_update(board, 59, BLACK_ROOK);
+			}
+		}
+	} 
 	
-	board_set(board, move->src, piece, SWITCH(color));
-	if (promotion) {
-		board_set(board, move->dst, promotion, SWITCH(color));
-	} else {
-		board_set(board, move->dst, piece, SWITCH(color));
-	}
-	board->ep  	  = undo->ep;
-	board->castle = undo->castle;
-
-
-	if (piece == PAWN) {
-		bb bit = BIT(move->dst);
-		switch(COLOR(move->color)) {
-			case BLACK:
-				if (bit == undo->ep) {
-					board_set(board, move->dst + 8, piece, WHITE);
-				}
-				break;
-			case WHITE:
-				if (bit == undo->ep) {
-					board_set(board, move->dst - 8, piece, BLACK);
-				}
-				break;
-			default: 
-				break;
-		}
-	} if (piece == KING) {
-		switch(COLOR(move->color)) {
-			case WHITE:
-				if (move->src == 4 && move->dst == 6) {
-					board_set(board, 7, ROOK, WHITE);
-					board_set(board, 5, ROOK, WHITE);
-				} else if (move->src == 4 && move->dst == 2) {
-					board_set(board, 0, ROOK, WHITE);
-					board_set(board, 3, ROOK, WHITE);
-				}
-				break;
-			case BLACK:
-				if (move->src == 60 && move->dst == 62) {
-					board_set(board, 63, ROOK, BLACK);
-					board_set(board, 61, ROOK,BLACK);
-				} else if (move->src == 60 && move->dst == 58) {
-					board_set(board, 56, ROOK, BLACK);
-					board_set(board, 59, ROOK, BLACK);
-				}
-				break;
-			default:
-				break;
-		}
+	if (board->castle) {
+		board->castle &= ~castling_rights[src];
+		board->castle &= ~castling_rights[dst];
 	}
 
-	if (capture) {
-		board_set(board, move->dst, capture, color);
-	}
-
-	board->color ^= BLACK;
-	board->hash  ^= HASH_COLOR;
+	SWITCH_SIDE(board);
+	board->hash ^= HASH_COLOR_SIDE;
 	TOGGLE_HASH(board);
-	return;
+
 }
 
-int score_move(ChessBoard *board, Move *move) {
-	int score            = 0;
-	int capture_material = 0;
-	int src   			 = move->src;
-	int dst   			 = move->dst;
-	int color 			 = move->color;
-	int piece 			 = move->piece;
-	bb capture;
-	CAPTURE(capture, board, color, move);
-	if (COLOR(color)) {
-		switch(PIECE(piece)) {
-			case PAWN:
-				score -= black_pawn_square_values[src];
-				score += black_pawn_square_values[dst];
-				break; 
-			case KNIGHT:
-				score -= black_knight_square_values[src];
-				score += black_knight_square_values[dst];
-				break;
-			case BISHOP:
-				score -= black_bishop_square_values[src];
-				score += black_bishop_square_values[dst];
-				break;
-			case ROOK:
-				score -= black_rook_square_values[src];
-				score += black_rook_square_values[dst];
-				break;
-			case KING:
-				score -= black_king_square_values[src];
-				score += black_king_square_values[dst];
-				break;
-			case QUEEN:
-				score -= black_queen_square_values[src];
-				score += black_queen_square_values[dst];
-				break;
-			default:
-				break;
+void undo_move(ChessBoard *board, Move move, Undo *undo) {
+	TOGGLE_HASH(board);
+
+	int piece       =   EXTRACT_PIECE(move);
+	int src  		= 	EXTRACT_FROM(move); 
+	int dst 		= 	EXTRACT_TO(move);
+	int flag 		= 	EXTRACT_FLAGS(move);
+	int capture 	= 	undo->capture;
+	
+	board->ep 		= undo->ep;
+	board->castle   = undo->castle;
+
+	board_update(board, src, piece);
+	
+	board_update(board, dst, capture);
+
+	if (piece == WHITE_PAWN) {
+		if (IS_ENP(flag)) {
+			board_update(board, dst - 8, BLACK_PAWN);
 		}
-	} else {
-		switch(PIECE(piece)) {
-			case PAWN:
-				score -= white_pawn_square_values[src];
-				score += white_pawn_square_values[dst];
-				break;
-			case KNIGHT:
-				score -= white_knight_square_values[src];
-				score += white_knight_square_values[dst];
-				break;
-			case BISHOP:
-				score -= white_bishop_square_values[src];
-				score += white_bishop_square_values[dst];
-				break;
-			case ROOK:
-				score -= white_rook_square_values[src];
-				score += white_rook_square_values[dst];
-				break;
-			case KING:
-				score -= white_king_square_values[src];
-				score += white_king_square_values[dst];
-				break;
-			case QUEEN:
-				score -= white_queen_square_values[src];
-				score += white_queen_square_values[dst];
-				break; 
-			default:
-				break;
+	} else if (piece == BLACK_PAWN) {
+		if (IS_ENP(flag)) {
+			board_update(board, dst + 8, WHITE_PAWN);
+		}
+	} 
+
+	else if (piece == WHITE_KING) {
+		if (IS_CAS(flag)) {
+			if (src == 4 && dst == 6) {
+				board_update(board, 7, WHITE_ROOK);
+				board_update(board, 5, NONE);
+			}
+			else if (src == 4 && dst == 2) {
+				board_update(board, 0, WHITE_ROOK);
+				board_update(board, 3, NONE);
+			}
+		}
+	} else if (piece == BLACK_KING) {
+		if (IS_CAS(flag)) {
+			if (src == 60 && dst == 62) {
+				board_update(board, 63, BLACK_ROOK);
+				board_update(board, 61, NONE);
+			}
+			else if (src == 60 && dst == 58) {
+				board_update(board, 56, BLACK_ROOK);
+				board_update(board, 59, NONE);
+			}
 		}
 	}
-
-	if (capture) {
-		if (COLOR(color)) {
-			switch(PIECE(piece)) {
-				case PAWN:
-					capture_material = PAWN_MATERIAL;
-					score            += black_pawn_square_values[dst];
-					break;
-				case KNIGHT:
-					capture_material = KNIGHT_MATERIAL;
-					score          	 += black_knight_square_values[dst];
-					break;
-				case BISHOP:
-					capture_material = BISHOP_MATERIAL;
-					score 			 += black_bishop_square_values[dst];
-					break;
-				case ROOK:
-					capture_material = ROOK_MATERIAL;
-					score  			 += black_rook_square_values[dst];
-					break;
-				case KING:
-					capture_material = KING_MATERIAL;
-					score 			 += black_king_square_values[dst];
-					break;
-				case QUEEN:
-					capture_material = QUEEN_MATERIAL;
-					score  			 += black_queen_square_values[dst];
-					break; 
-			}
-		} else {
-			switch(PIECE(piece)) {
-				case PAWN:
-					capture_material = PAWN_MATERIAL;
-					score 			 += white_pawn_square_values[dst];
-					break;
-				case KNIGHT:
-					capture_material = KNIGHT_MATERIAL;
-					score 			 += white_knight_square_values[dst];
-					break;
-				case BISHOP:
-					capture_material = BISHOP_MATERIAL;
-					score 			 += white_bishop_square_values[dst];
-					break;
-				case ROOK:
-					capture_material = ROOK_MATERIAL;
-					score            += white_rook_square_values[dst];
-					break;
-				case KING:
-					capture_material = KING_MATERIAL;
-					score 			 += white_king_square_values[dst];
-					break;
-				case QUEEN: 
-					capture_material = QUEEN_MATERIAL;
-					score 			 += white_queen_square_values[dst];
-					break; 
-			}
-
-		}
-		score += capture_material;
-	}
-
-	return score;
+	SWITCH_SIDE(board);
+	board->hash ^= HASH_COLOR_SIDE;
+	TOGGLE_HASH(board);
 }
+
 
 void do_null_move_pruning(ChessBoard *board, Undo *undo) {
 	TOGGLE_HASH(board);
-	undo->ep  		= board->ep;
-	board->ep  		= 0L;
-	board->color 	^= BLACK;
-	board->hash 	^= HASH_COLOR;
+	undo->ep = board->ep;
+	board->ep = 0ULL;
+	SWITCH_SIDE(board);
+	board->hash ^= HASH_COLOR_SIDE; 
 	TOGGLE_HASH(board);
 }
 
 void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
 	TOGGLE_HASH(board);
-	board->ep 		= undo->ep;
-	board->color 	^= BLACK;
-	board->hash 	^= HASH_COLOR;
-	TOGGLE_HASH(board); 
+	board->ep = undo->ep;
+	SWITCH_SIDE(board);
+	board->hash ^= HASH_COLOR_SIDE; 
+	TOGGLE_HASH(board);
 }
 
-int mvv_lva(ChessBoard *state,  Move *move) {
-	int score = 0;
-	int piece = state->squares[move->dst];
-	if (piece != NONE) {
-		int attacker   = move->piece;
-		int victim     = get_piece_type(state, move->dst, OTHER(move->color));
-		score = MVV_LVA[attacker][victim];
-	}
+INLINE int score_move(ChessBoard *board, Move move) {
+	int src 	= EXTRACT_FROM(move), dst = EXTRACT_TO(move);
+	int piece 	= EXTRACT_PIECE(move);
+	int capture = board->squares[dst];
+
+	int score 	= square_values[piece][dst] - square_values[piece][src];
+	score 		+= (capture != NONE) ? square_values[capture][dst] + piece_material[capture] : 0; 
 
 	return score;
 }
+
+INLINE int score_capture(ChessBoard *board, Move move) {
+	int dst 		= EXTRACT_TO(move);
+	int attacker 	= PIECE(EXTRACT_PIECE(move)), victim = PIECE(board->squares[dst]);
+	return MVV_LVA[victim][attacker];
+}
+
+INLINE int move_estimated_value(ChessBoard *board, Move move) {
+	int flag  = EXTRACT_FLAGS(move);
+	int value = SEEPieceValues[PIECE(board->squares[EXTRACT_TO(move)])]; 
+
+	if (IS_PROMO(flag))
+		value += SEEPieceValues[PROMO_PT(flag)] - SEEPieceValues[PAWN];
+	
+	else if (IS_ENP(flag))
+		value = SEEPieceValues[PAWN];
+
+	else if (IS_CAS(flag))
+		value = 0;
+	
+	return value;
+}
+
+char *move_to_str(Move move) {
+	static char buffer[6];
+	int src = EXTRACT_FROM(move), dst = EXTRACT_TO(move);
+	int flag = EXTRACT_FLAGS(move);
+	if (IS_PROMO(flag)) {
+		sprintf(buffer, "%s%s%c", SQ_TO_COORD[src], SQ_TO_COORD[dst], PROMOTION_TO_CHAR[PROMO_PT(flag)]);
+	} else {
+		sprintf(buffer, "%s%s", SQ_TO_COORD[src], SQ_TO_COORD[dst]);
+	}
+	return buffer;
+} 

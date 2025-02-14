@@ -1,9 +1,9 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -fPIC -O3 
+CC = clang
+CFLAGS = -Wall -Wextra -Wshadow -std=c11 -fPIC -O3
 LINK_FLAGS = -pthread
 
-SRCS = random.c bb.c board.c gen.c move.c perft.c search.c table.c eval.c C-Thread-Pool/thpool.c
-HEADERS = random.h bb.h board.h gen.h move.h perft.h search.h table.h eval.h C-Thread-Pool/thpool.h
+SRCS = zobrist.c  bb.c attacks.c search.c board.c gen.c move.c perft.c  table.c eval.c C-Thread-Pool/thpool.c
+HEADERS = types.h zobrist.h  bb.h attacks.h search.h board.h gen.h move.h perft.h  table.h eval.h C-Thread-Pool/thpool.h
 INCLUDES = -I. -I C-Thread-Pool
 
 OBJS = $(SRCS:.c=.o)

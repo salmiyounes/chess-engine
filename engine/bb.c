@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "bb.h"
-#include "random.h"
 
+bb BB_PAWNS[2][64];
 bb BB_KNIGHT[64];
 bb BB_BISHOP[64];
 bb BB_ROOK[64];
@@ -86,21 +84,6 @@ int OFFSET_ROOK[64];
 bb ATTACK_BISHOP[5248];
 bb ATTACK_ROOK[102400];
 
-bb HASH_WHITE_PAWN[64];
-bb HASH_BLACK_PAWN[64];
-bb HASH_WHITE_KNIGHT[64];
-bb HASH_BLACK_KNIGHT[64];
-bb HASH_WHITE_BISHOP[64];
-bb HASH_BLACK_BISHOP[64];
-bb HASH_WHITE_ROOK[64];
-bb HASH_BLACK_ROOK[64];
-bb HASH_WHITE_QUEEN[64];
-bb HASH_BLACK_QUEEN[64];
-bb HASH_WHITE_KING[64];
-bb HASH_BLACK_KING[64];
-bb HASH_CASTLE[16];
-bb HASH_EP[8];
-bb HASH_COLOR;
 
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
@@ -111,6 +94,15 @@ int bb_squares(bb value, int squares[64]) {
 	}
 	return i;
 }
+
+bb bb_pawns_attacks(int sq, int color) {
+    assert(sq >= 0 && sq < SQUARE_NB);
+
+    const bb board = BIT(sq);
+    return color ? 
+            ((board & ~FILE_H) >> 7) | ((board & ~FILE_A) >> 9) :
+            ((board & ~FILE_A) << 7) | ((board & ~FILE_H) << 9) ;
+} 
 
 bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
 	bb value = 0;
@@ -144,7 +136,7 @@ bb bb_slide_bishop(int sq, int truncate, bb obs) {
 	return bb_slide(sq, truncate, obs, directions);
 }
 
-bb bb_slide_rook(int sq, int truncate, bb obs) {
+ bb bb_slide_rook(int sq, int truncate, bb obs) {
 	int directions[4][2] = {
 		{-1, 0}, {1, 0}, {0, -1}, {0, 1}
 	};
@@ -152,11 +144,13 @@ bb bb_slide_rook(int sq, int truncate, bb obs) {
 }
 
 void bb_init() {
-
-    seed_random(0);
+    // bb_pawns
+    for (int sq = 0; sq < 64; sq++) {
+        BB_PAWNS[WHITE][sq] = bb_pawns_attacks(sq, WHITE);
+        BB_PAWNS[BLACK][sq] = bb_pawns_attacks(sq, BLACK);
+    }
 
 	// bb_knight
-
 	const int knight_offsets[8][2] = {
 		{-2, -1}, {-2,  1}, { 2, -1}, { 2,  1},
         {-1, -2}, {-1,  2}, { 1, -2}, { 1,  2},
@@ -199,7 +193,7 @@ void bb_init() {
 			int index = (obs * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
 			bb prev   = ATTACK_BISHOP[offset + index];
 			if (prev & (prev != value)) {
-				fprintf(stdout, "ERROR: invalid ATTACK_BISHOP table\n");
+				    err("ERROR: invalid ATTACK_BISHOP table\n");
 				} 
 			
 			ATTACK_BISHOP[offset + index] = value;
@@ -225,7 +219,7 @@ void bb_init() {
             int index = (obstacles * MAGIC_ROOK[sq]) >> SHIFT_ROOK[sq];
             bb previous = ATTACK_ROOK[offset + index];
             if (previous && previous != value) {
-                fprintf(stdout ,"ERROR: invalid ATTACK_ROOK table\n");
+                err("ERROR: invalid ATTACK_ROOK table\n");
             }
             ATTACK_ROOK[offset + index] = value;
         }
@@ -252,33 +246,6 @@ void bb_init() {
             BB_KING[RF(rank, file)] = value;
         }
     }
-
-    HASH_COLOR = bb_random();
-
-    for (int i = 0; i < 8; i++) {
-    	HASH_EP[i] = bb_random();
-    }
-
-    for (int i = 0 ; i < 16; i++) {
-    	HASH_CASTLE[i] = bb_random(); 
-    }
-
-    for (int i = 0 ; i < 64; i++) {
-        
-        HASH_WHITE_PAWN[i] 	= bb_random();
-        HASH_BLACK_PAWN[i] 	= bb_random();
-        HASH_WHITE_KNIGHT[i] 	= bb_random();
-        HASH_BLACK_KNIGHT[i] 	= bb_random();
-        HASH_WHITE_BISHOP[i] 	= bb_random();
-        HASH_BLACK_BISHOP[i] 	= bb_random();
-        HASH_WHITE_ROOK[i] 	= bb_random();
-        HASH_BLACK_ROOK[i] 	= bb_random();
-        HASH_WHITE_QUEEN[i] 	= bb_random();
-        HASH_BLACK_QUEEN[i] 	= bb_random();
-        HASH_WHITE_KING[i] 	= bb_random();
-        HASH_BLACK_KING[i] 	= bb_random();
-    }
-
 }
 
 bb bb_bishop(int sq, bb obs) {
@@ -297,11 +264,9 @@ bb bb_queen(int sq, bb obs) {
 	return bb_bishop(sq, obs) | bb_rook(sq, obs);
 }
 
-bb bb_random() {
-	bb a = (bb)(random_magic() % 0x10000);
-	bb b = (bb)(random_magic() % 0x10000);
-	bb c = (bb)(random_magic() % 0x10000);
-	bb d = (bb)(random_magic() % 0x10000);
-
-	return (bb)( a << 48 | b << 32 | c << 16 | d) ;
+void bb_print(bb bbit) {
+    for (int sq = SQUARE_NB - 1; sq >= 0; sq--) {
+        printf(" %c", (BIT(sq) & bbit) ? '1' : '0');
+        if (!(sq % 8)) printf("\n");
+    }
 }
