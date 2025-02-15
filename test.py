@@ -5,9 +5,11 @@ from time import monotonic
 
 def test_move_gen(data: Dict[bytes, Tuple[int, int]]) -> None:
     for fen, test_cases in data.items():
+
         print(f"\n{Fore.CYAN}Testing FEN: {fen}{Style.RESET_ALL}")
         print(f"{'-'*40}")
         c.load_fen(fen)
+        c.print_board()
 
         for i, (depth, expected_result) in enumerate(test_cases, start=1):
             start: float = monotonic()
@@ -15,13 +17,13 @@ def test_move_gen(data: Dict[bytes, Tuple[int, int]]) -> None:
             end: float = monotonic() - start
 
             if result == expected_result:
-                print(f"{Fore.GREEN}[✓] Test {i}: Depth {depth} passed in {end:.3f} {Style.RESET_ALL}")
-                print(f"    {Fore.YELLOW}Expected: {expected_result}, Got: {result}{Style.RESET_ALL}")
+                print(f"\n\t\t{Fore.GREEN}[✓] Test {i}: Depth : {depth}, Time : {end:.3f} {Style.RESET_ALL}")
+                print(f"\t\t    {Fore.YELLOW}Expected: {expected_result}, Got: {result}{Style.RESET_ALL}")
 
         
             else:
-                print(f"{Fore.RED}[✗] Test {i}: Depth {depth} failed")
-                print(f"    {Fore.YELLOW}Expected: {expected_result}, Got: {result}{Style.RESET_ALL}")
+                print(f"\n\t\t{Fore.RED}[✗] Test {i}: Depth {depth} failed")
+                print(f"\t\t    {Fore.YELLOW}Expected: {expected_result}, Got: {result}{Style.RESET_ALL}")
         
         print(f"{'-'*40}\n")
     
