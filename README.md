@@ -88,7 +88,7 @@ move = c.computer_move()
 
 c.do_move(move) # Make the move
 
-c.undo_move(move) # Unmake the last move
+c.undo_move()   # Unmake the last move
 ```
 
 * Move Generator 
