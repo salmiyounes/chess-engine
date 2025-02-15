@@ -66,9 +66,6 @@ class Chess(object):
         self.moves     = []
         self.__call__()
         self.player    = Color.WHITE.value
-    
-    #def __repr__(self):
-    #    return f'{self.__class__.__name__} State({self.board_to_fen(self.player)})'
 
     def __call__(self):
         self.board_init()
@@ -144,7 +141,6 @@ class Chess(object):
 
     def do_move(self, move: ctypes.c_uint32) -> None:
         self.chess_lib.make_move.argtypes = [ctypes.POINTER(ChessBoard), ctypes.c_uint32, ctypes.POINTER(Undo)]
-        #self.player = Color.BLACK.value if move.color == Color.WHITE.value else Color.WHITE.value
         self.chess_lib.do_move(ctypes.byref(self.board), move, ctypes.byref(self.undo))
         self.moves.append(move)
         return None
@@ -203,7 +199,7 @@ class LegalMoveGenerater(object):
         raise KeyError
 
     def __iter__(self) :
-        return 
+        return iter(self.legal_moves.values())
 
     def __next__(self) :
         return 
