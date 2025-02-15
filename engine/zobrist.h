@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "bb.h"
 #include "types.h"
-#include "random.h"
 
 extern bb HASH_PIECES[12][64];
 extern bb HAHS_EP[8];
