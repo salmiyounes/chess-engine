@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #define INLINE  inline __attribute__((always_inline))
-#define err(str) fprintf(stderr, str)
+#define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
 
 typedef unsigned long long  bb;
 
@@ -117,6 +117,24 @@ typedef struct {
 #define WHITE_KING      CALC_PIECE(KING, WHITE)
 #define BLACK_KING      CALC_PIECE(KING, BLACK)
 #define NONE 					  (BLACK_KING+1)
+
+#define RANK_1 0x00000000000000ffULL
+#define RANK_2 0x000000000000ff00ULL
+#define RANK_3 0x0000000000ff0000ULL
+#define RANK_4 0x00000000ff000000ULL
+#define RANK_5 0x000000ff00000000ULL
+#define RANK_6 0x0000ff0000000000ULL
+#define RANK_7 0x00ff000000000000ULL
+#define RANK_8 0xff00000000000000ULL
+
+#define FILE_A 0x0101010101010101ULL
+#define FILE_B 0x0202020202020202ULL
+#define FILE_C 0x0404040404040404ULL
+#define FILE_D 0x0808080808080808ULL
+#define FILE_E 0x1010101010101010ULL
+#define FILE_F 0x2020202020202020ULL
+#define FILE_G 0x4040404040404040ULL
+#define FILE_H 0x8080808080808080ULL
 
 #endif
 

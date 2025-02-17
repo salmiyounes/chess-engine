@@ -1,6 +1,6 @@
 #include "board.h"
 
-#define DURATION 2.0
+#define DURATION 1
 
 static const char *PIECE_SYMBOLS[13] = {
     [WHITE_PAWN]    = "♟ ",
@@ -36,7 +36,7 @@ void thread_stop(Search *search) {
 int thread_init(Search *search, ChessBoard *board, Move *result) {
 	Thread_d *thread_d = (Thread_d *) malloc(sizeof(Thread_d));
 	if (thread_d == NULL) {
-		fprintf(stderr, "thread_init(): Could not allocate memory for thread_d .\n");
+		err("thread_init(): Could not allocate memory for thread_d");
 		return 0;
 	}
     
@@ -49,15 +49,7 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
 	thpool_p = thpool_init(1);
 
 	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
-    time_t start, end;
-	double diff = 0.0;
-	time(&start);
-
-	while (diff < DURATION) {
-		time(&end);
-		diff = difftime(end, start);
-	}
-
+    sleep(DURATION);
     thread_stop(search);
     thpool_destroy(thpool_p);
 

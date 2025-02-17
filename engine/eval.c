@@ -43,5 +43,6 @@ int evaluate_pawns(ChessBoard *board) {
     int score = 0;
     score += evaluate_white_pawns(board);
     score -= evaluate_black_pawns(board);
-    return board->color ? -score : score;
+    
+    return (board->color == WHITE) ? score : -score; 
 }

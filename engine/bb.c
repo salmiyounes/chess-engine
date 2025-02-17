@@ -193,7 +193,7 @@ void bb_init() {
 			int index = (obs * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
 			bb prev   = ATTACK_BISHOP[offset + index];
 			if (prev & (prev != value)) {
-				    err("ERROR: invalid ATTACK_BISHOP table\n");
+				    err("ERROR: invalid ATTACK_BISHOP table");
 				} 
 			
 			ATTACK_BISHOP[offset + index] = value;
@@ -219,7 +219,7 @@ void bb_init() {
             int index = (obstacles * MAGIC_ROOK[sq]) >> SHIFT_ROOK[sq];
             bb previous = ATTACK_ROOK[offset + index];
             if (previous && previous != value) {
-                err("ERROR: invalid ATTACK_ROOK table\n");
+                err("ERROR: invalid ATTACK_ROOK table");
             }
             ATTACK_ROOK[offset + index] = value;
         }

@@ -131,7 +131,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 	int can_move = 0;
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
-
+	
 		search->nodes++;
 		do_move(state, move, &undo);
 		value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
@@ -259,6 +259,7 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
+
 		search->nodes++;
 		do_move(board, move, &undo);
 		int score = -negamax(search , board, depth, 1, alpha, beta);
