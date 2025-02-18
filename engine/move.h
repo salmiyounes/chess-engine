@@ -84,11 +84,13 @@ void undo_move(ChessBoard *board,
                Move move, 
                Undo *undo);
 
-int score_move(ChessBoard *board, 
-               Move move);
+void score_move(ChessBoard *board, 
+               Move move,
+               int *score);
 
-int score_capture(ChessBoard *board, 
-                  Move move);
+void score_capture(ChessBoard *board, 
+                  Move move,
+                  int *score);
 
 int move_estimated_value(ChessBoard *board, 
                          Move move);

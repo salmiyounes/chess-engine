@@ -1,14 +1,21 @@
 #include "search.h"
 
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
+	assert(capture == 0 || capture == 1);
+	
 	Move temp[MAX_MOVES];
 	int scores[MAX_MOVES];
 	int indexes[MAX_MOVES];
 
 	Move best = table_get_move(&search->table, board->hash);
+	
+	static void (*table[2])(ChessBoard *, Move, int *) = {
+		score_move, score_capture
+	};
+	
 	for (int i = 0; i < count; i++) {
-		Move move = *(moves + i);
-		scores[i]  = (capture) ? score_capture(board, move) : score_move(board, move);
+		Move move = moves[i];
+		table[capture](board, move, scores + i);
 		if (best && (best == move)) {
 			scores[i] += INF;
 		}
@@ -23,7 +30,7 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
 			j--;			
 		}
 	}
-	
+
 	memcpy(temp, moves, sizeof(Move) * count);
 	
 	for (int i = 0; i < count; i++) {
@@ -249,9 +256,7 @@ int staticExchangeEvaluation(ChessBoard *board, Move move, int threshold) {
 }
 
 int root_search(Search *search, ChessBoard *board, int depth, int alpha, int beta,  Move *result) {
-	int  best_score 	= 	   -INF;
 	Move best_move  	= 		NULL_MOVE;
-	
 	Move moves[MAX_MOVES];
 	Undo undo;
 	int count = gen_legal_moves(board, moves);
@@ -262,25 +267,25 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 
 		search->nodes++;
 		do_move(board, move, &undo);
-		int score = -negamax(search , board, depth, 1, alpha, beta);
+		int score = -negamax(search , board, depth, 1, -beta, -alpha);
 		undo_move(board, move, &undo);
 
 		if (search->stop) {
 			break;
 		}
 
-		if (score > best_score) {
-			best_score 	= score;
+		if (score > alpha) {
+			alpha 	    = score;
 			best_move 	= move;
 		}
 	}
 
-	if (best_score > -INF) {
-		*(result) = best_move;
+	if (best_move != NULL_MOVE) {
+		*result = best_move;
 		table_set_move(&search->table, board->hash, depth, best_move);
 	}
 
-	return best_score;
+	return alpha;
 } 
 
 void print_pv(Search *search, ChessBoard *board, int depth) {

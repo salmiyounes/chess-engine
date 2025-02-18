@@ -95,14 +95,19 @@ void notate_move(ChessBoard *board, Move move, char *result) {
 }
 
 void do_move(ChessBoard *board, Move move, Undo *undo) {
-	TOGGLE_HASH(board);
-	
 	int src  	= EXTRACT_FROM(move); 
 	int dst 	= EXTRACT_TO(move);
 	int piece 	= EXTRACT_PIECE(move);
 	int color   = COLOR(piece);
 	int flag 	= EXTRACT_FLAGS(move);
-	
+
+	assert((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
+	assert(piece >= WHITE_PAWN && piece <= NONE);
+	assert(color == WHITE || color == BLACK);
+	assert(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
+
+	TOGGLE_HASH(board);
+
 	undo->capture = board->squares[dst];
 	undo->ep      = board->ep;
 	undo->castle  = board->castle;
@@ -175,12 +180,17 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
 }
 
 void undo_move(ChessBoard *board, Move move, Undo *undo) {
-	TOGGLE_HASH(board);
-
 	int piece       =   EXTRACT_PIECE(move);
 	int src  		= 	EXTRACT_FROM(move); 
 	int dst 		= 	EXTRACT_TO(move);
 	int flag 		= 	EXTRACT_FLAGS(move);
+
+	assert((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
+	assert(piece >= WHITE_PAWN && piece <= NONE);
+	assert(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
+
+	TOGGLE_HASH(board);
+
 	int capture 	= 	undo->capture;
 	
 	board->ep 		= undo->ep;
@@ -246,21 +256,20 @@ void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
 	TOGGLE_HASH(board);
 }
 
-INLINE int score_move(ChessBoard *board, Move move) {
+void score_move(ChessBoard *board, Move move, int *score) {
 	int src 	= EXTRACT_FROM(move), dst = EXTRACT_TO(move);
 	int piece 	= EXTRACT_PIECE(move);
 	int capture = board->squares[dst];
 
-	int score 	= square_values[piece][dst] - square_values[piece][src];
-	score 		+= (capture != NONE) ? square_values[capture][dst] + piece_material[capture] : 0; 
-
-	return score;
+	int result 	= square_values[piece][dst] - square_values[piece][src];
+	result 		+= (capture != NONE) ? square_values[capture][dst] + piece_material[capture] : 0; 
+	*score      = result;
 }
 
-INLINE int score_capture(ChessBoard *board, Move move) {
+void score_capture(ChessBoard *board, Move move, int *score) {
 	int dst 		= EXTRACT_TO(move);
 	int attacker 	= PIECE(EXTRACT_PIECE(move)), victim = PIECE(board->squares[dst]);
-	return MVV_LVA[victim][attacker];
+	*score 			= MVV_LVA[victim][attacker];
 }
 
 INLINE int move_estimated_value(ChessBoard *board, Move move) {
