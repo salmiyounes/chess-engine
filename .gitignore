@@ -3,4 +3,5 @@ __pycache__
 *.o
 *.out
 *.so
+*.so.1
 venv/

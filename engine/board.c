@@ -1,4 +1,7 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include "board.h"
+#include "time.h"
 
 #define DURATION 1
 
@@ -30,7 +33,6 @@ void *thread_start(void *arg) {
 
 void thread_stop(Search *search) {
 	search->stop = true;
-    //sleep(1);
 }
 
 int thread_init(Search *search, ChessBoard *board, Move *result) {
@@ -49,8 +51,18 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
 	thpool_p = thpool_init(1);
 
 	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
-    sleep(DURATION);
+
+    struct timespec ts;
+    ts.tv_sec  = DURATION;
+    ts.tv_nsec =        0;
+    nanosleep(&ts, NULL);
+    
     thread_stop(search);
+    
+    ts.tv_sec = 0;
+    ts.tv_nsec = 100000000;  
+    nanosleep(&ts, NULL);
+    
     thpool_destroy(thpool_p);
 
 	int score = thread_d->score;
@@ -64,10 +76,10 @@ void init_table() {
     int pc, p, sq;
     for (p = PAWN, pc = WHITE_PAWN; p <= KING; pc += 2, p++) {
         for (sq = 0; sq < 64; sq++) {
-            mg_table[pc]  [sq] = mg_value[p] + mg_pesto_table[p][(FLIP(sq))];
+            mg_table[pc]  [sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
             eg_table[pc]  [sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
-            mg_table[pc+1][sq] = mg_value[p] + mg_pesto_table[p][(sq)];
-            eg_table[pc+1][sq] = eg_value[p] + eg_pesto_table[p][(sq)];
+            mg_table[pc+1][sq] = mg_value[p] + mg_pesto_table[p][sq];
+            eg_table[pc+1][sq] = eg_value[p] + eg_pesto_table[p][sq];
         }
     }
 }
@@ -528,25 +540,25 @@ int eg_queen_table[64] = {
 };
 
 int mg_king_table[64] = {
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -20,-30,-30,-40,-40,-30,-30,-20,
-    -10,-20,-20,-20,-20,-20,-20,-10,
-    20, 20,  0,  0,  0,  0, 20, 20,
-    20, 30, 10,  0,  0, 10, 30, 20
+    -65,  23,  16, -15, -56, -34,   2,  13,
+     29,  -1, -20,  -7,  -8,  -4, -38, -29,
+     -9,  24,   2, -16, -20,   6,  22, -22,
+    -17, -20, -12, -27, -30, -25, -14, -36,
+    -49,  -1, -27, -39, -46, -44, -33, -51,
+    -14, -14, -22, -46, -44, -30, -15, -27,
+      1,   7,  -8, -64, -43, -16,   9,   8,
+    -15,  36,  12, -54,   8, -28,  24,  14,
 };
 
 int eg_king_table[64] = {
-    -50,-40,-30,-20,-20,-30,-40,-50,
-    -30,-20,-10,  0,  0,-10,-20,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 30, 40, 40, 30,-10,-30,
-    -30,-10, 20, 30, 30, 20,-10,-30,
-    -30,-30,  0,  0,  0,  0,-30,-30,
-    -50,-30,-30,-30,-30,-30,-30,-50
+    -74, -35, -18, -18, -11,  15,   4, -17,
+    -12,  17,  14,  17,  17,  38,  23,  11,
+     10,  17,  23,  15,  20,  45,  44,  13,
+     -8,  22,  24,  27,  26,  33,  26,   3,
+    -18,  -4,  21,  24,  27,  23,   9, -11,
+    -19,  -3,  11,  21,  23,  16,   7,  -9,
+    -27, -11,   4,  13,  14,   4,  -5, -17,
+    -53, -34, -21, -11, -28, -14, -24, -43
 };
 
 int piece_material[13] = {

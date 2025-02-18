@@ -9,7 +9,6 @@
 #include "bb.h"
 #include "zobrist.h"
 #include "thpool.h"
-#include "time.h"
 
 extern const int   white_pawn_square_values[64];
 extern const int white_knight_square_values[64];
