@@ -1,5 +1,8 @@
 #include "search.h"
 
+#define FullDepthMoves 4
+#define ReductionLimit 3
+
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
 	assert(capture == 0 || capture == 1);
 	
@@ -136,12 +139,29 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 	int count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count, false);
 	int can_move = 0;
+	int moves_searched = 0;
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
 	
 		search->nodes++;
 		do_move(state, move, &undo);
-		value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
+		if (moves_searched == 0) {
+			value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
+		} else {
+			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(search, state, move) == 0) {
+				value = -negamax(search, state, depth - 2, ply + 1, -alpha - 1, -alpha);
+			} else {
+				value = alpha + 1;
+			} 
+
+			if (value > alpha) {
+				value = -negamax(search, state, depth - 1, ply + 1, -alpha - 1, -alpha);
+				if (value > alpha && value < beta) {
+					value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
+				}
+			}
+
+		}
 		undo_move(state, move, &undo);
 
 		if (search->stop) {
@@ -328,12 +348,12 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 
 			if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
 
-			if ((best_score <= alpha) || (best_score >= beta)) {
+			// Aspiration window https://www.frayn.net/beowulf/theory.html#aspiration
+			if ((best_score <= alpha) || (best_score >= beta)) {  
 				alpha = -INF;
 				beta  =  INF;
 				continue;  
 			}
-
 			alpha = best_score - VALID_WINDOW;
 			beta  = best_score + VALID_WINDOW;
 	}
