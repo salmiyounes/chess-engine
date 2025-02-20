@@ -1,7 +1,6 @@
 #ifndef BB_H
 #define BB_H
 #include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include "types.h"
 
@@ -35,6 +34,8 @@ bb bb_rook(int sq,
 
 bb bb_queen(int sq, 
             bb obs);
+
+void bb_print(bb bbit);
 
 #endif
 

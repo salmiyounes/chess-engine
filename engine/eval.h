@@ -1,6 +1,6 @@
 #ifndef EVAL_H
 #define EVAL_H
-#include <stdlib.h>
+
 #include "bb.h"
 #include "types.h"
 

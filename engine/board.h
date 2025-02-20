@@ -1,7 +1,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "types.h"
@@ -59,7 +58,7 @@ void  initializeBoard(ChessBoard *b);
 void  printBoard(ChessBoard *b);
 
 void  board_load_fen(ChessBoard *board, 
-                     char *fen);
+                     const char *fen);
 
 void  board_update(ChessBoard *board, 
                    int sq, 

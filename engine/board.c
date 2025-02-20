@@ -173,7 +173,7 @@ void initializeBoard(ChessBoard *board) {
 
 void printBoard(ChessBoard *board) {
 
-    for (int i = 63; i >= 0; i--) {
+    for (int i = SQUARE_NB - 1; i >= 0; i--) {
         printf("%s", PIECE_SYMBOLS[board->squares[i]]);
         if (!(i % 8)) {
             printf(" %c", '1' + (i / 8));
@@ -188,7 +188,7 @@ void printBoard(ChessBoard *board) {
 }
 
 //TODO: refactore this code
-void board_load_fen(ChessBoard *board, char *fen) {
+void board_load_fen(ChessBoard *board, const char *fen) {
     board_clear(board);
     int i = 0;
     int n = strlen(fen);

@@ -26,7 +26,7 @@ bb perft_test(ChessBoard *board, int depth) {
 	if (entry->key == board->hash && entry->depth == depth) {
 		return entry->value;
 	}
-	count += gen_moves(board, moves);
+	count = gen_moves(board, moves);
 	for (count -= 1; count >= 0; count--) {
 		Move move = moves[count];
 		do_move(board, move, &undo);
