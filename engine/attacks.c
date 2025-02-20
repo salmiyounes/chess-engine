@@ -37,7 +37,15 @@ INLINE bb get_king_attacks(int sq) {
     return BB_KING[sq];
 }
 
-INLINE bb attacks_to_square(ChessBoard *board, int sq, bb occ) {
+int attacks_to_king_square(ChessBoard *board, const bb b_king) {
+    assert(b_king);
+
+    return (attacks_to_square(board, 
+                              LSB(b_king), 
+                              board->occ[BOTH]) & board->occ[board->color]) ? 1 : 0;
+}
+
+bb attacks_to_square(ChessBoard *board, int sq, bb occ) {
     return ((get_pawns_attacks(sq, WHITE) & (board->bb_squares[BLACK_PAWN])) |
             (get_pawns_attacks(sq, BLACK) & (board->bb_squares[WHITE_PAWN])) |
             (get_knight_attacks(sq) & (board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT])) |

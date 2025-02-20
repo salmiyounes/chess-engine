@@ -451,9 +451,8 @@ INLINE int gen_legal_moves(ChessBoard *board, Move *moves) {
 }
 
 INLINE int illegal_to_move(ChessBoard *board) {
-    Move moves[MAX_MOVES];
-    return board->color ? gen_black_checks(board, moves)
-                        : gen_white_checks(board, moves);
+    return board->color ? attacks_to_king_square(board, board->bb_squares[WHITE_KING])
+                        : attacks_to_king_square(board, board->bb_squares[BLACK_KING]);
 }
 
 INLINE int is_check(ChessBoard *board) {

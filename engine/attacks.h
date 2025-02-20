@@ -9,6 +9,9 @@ bb get_bishop_attacks(int sq,
 
 bb get_rook_attacks(int sq, 
                     bb obs);
+                    
+int attacks_to_king_square(ChessBoard *board, 
+                          bb b_king);
 
 bb attacks_to_square(ChessBoard *board, 
                      int sq, 

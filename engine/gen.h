@@ -1,10 +1,8 @@
 #ifndef GEN_H
 #define GEN_H
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 #include "bb.h"
+#include "attacks.h"
 #include "board.h"
 #include "move.h"
 
