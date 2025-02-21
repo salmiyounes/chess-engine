@@ -198,13 +198,11 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 			);
 		}
 	}
-	if (!can_move) {
-		if (is_check(state)) 
-			return -MATE + ply;
-		else 
-			return 0;
-	}
+	
+	if (!can_move) return is_check(state) ? -MATE + ply : 0;
+	
 	table_set(&search->table, state->hash, depth, alpha, flag);
+	
 	return alpha;
 }
 
@@ -341,11 +339,11 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 			if (search->stop) {
 				break;
 			}
-
+#if defined(DEBUG)
 			printf("info score=%d, depth=%d, pv ", best_score, depth);
 			print_pv(search, board, depth);
 			printf("\n");
-
+#endif
 			if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
 
 			// Aspiration window https://www.frayn.net/beowulf/theory.html#aspiration
@@ -358,7 +356,6 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 			beta  = best_score + VALID_WINDOW;
 	}
 
-	printf("nodes=%d \n", search->nodes);
 	table_free(&search->table);
 	return best_score;
 }

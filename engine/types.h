@@ -5,7 +5,12 @@
 #include <stdbool.h>
 
 #define INLINE  inline __attribute__((always_inline))
-#define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
+
+#if !defined(DEBUG_DESIBLE_PRINT) || defined(DEBUG)
+	#define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
+#else 
+	#define err(str)
+#endif
 
 typedef unsigned long long  bb;
 
