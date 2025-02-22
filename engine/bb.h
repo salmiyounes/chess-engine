@@ -10,7 +10,6 @@
 
 #define LSB(x) ( __builtin_ctzll(x))
 #define MSB(x) ( __builtin_clzll(x))
-#define BITS(x) (__builtin_popcountll(x))
 
 #define POP_LSB(b, x) b = LSB(x); x &= ~BIT(b);
 #define POP_MSB(b, x) b = MSB(x); x &= ~BIT(b);
@@ -25,6 +24,10 @@ extern bb BB_ROOK[64];
 extern bb BB_KING[64];
 
 void bb_init();
+
+int popcount(bb bbit);
+
+int several(bb bbit);
 
 bb bb_bishop(int sq, 
              bb obs);

@@ -104,6 +104,14 @@ bb bb_pawns_attacks(int sq, int color) {
             ((board & ~FILE_A) << 7) | ((board & ~FILE_H) << 9) ;
 } 
 
+int popcount(bb bbit) {
+    return __builtin_popcountll(bbit);
+} 
+
+int several(bb bbit) {
+    return bbit & (bbit - 1);
+}
+
 bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
 	bb value = 0;
 	int rank = sq / 8;

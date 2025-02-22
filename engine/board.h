@@ -64,5 +64,6 @@ void  board_update(ChessBoard *board,
                    int sq, 
                    int piece);
 
+int is_draw(ChessBoard *board);
 
 #endif

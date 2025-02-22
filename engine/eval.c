@@ -12,14 +12,14 @@ int pesto_eval(ChessBoard *board) {
 
 int count_stacked_pawns(bb pawns, int count) {
     int result = 0;
-    result += BITS(pawns & FILE_A) == count;
-    result += BITS(pawns & FILE_B) == count;
-    result += BITS(pawns & FILE_C) == count;
-    result += BITS(pawns & FILE_D) == count;
-    result += BITS(pawns & FILE_E) == count;
-    result += BITS(pawns & FILE_F) == count;
-    result += BITS(pawns & FILE_G) == count;
-    result += BITS(pawns & FILE_H) == count;
+    result += popcount(pawns & FILE_A) == count;
+    result += popcount(pawns & FILE_B) == count;
+    result += popcount(pawns & FILE_C) == count;
+    result += popcount(pawns & FILE_D) == count;
+    result += popcount(pawns & FILE_E) == count;
+    result += popcount(pawns & FILE_F) == count;
+    result += popcount(pawns & FILE_G) == count;
+    result += popcount(pawns & FILE_H) == count;
     return result;
 }
 

@@ -187,6 +187,21 @@ void printBoard(ChessBoard *board) {
     printf("\n");
 }
 
+int board_drawn_by_insufficient_material(ChessBoard *board) {
+    return !(board->bb_squares[WHITE_PAWN] | board->bb_squares[BLACK_PAWN] | 
+            board->bb_squares[WHITE_ROOK] | board->bb_squares[BLACK_ROOK]  | 
+            board->bb_squares[WHITE_QUEEN] |  board->bb_squares[BLACK_QUEEN])
+    && (!several(board->occ[WHITE]) || !several(board->occ[BLACK]))
+    && (    !several(board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT] | 
+            board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP])
+        || (! (board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP]) && popcount(board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT]) <= 2));
+
+}
+
+int is_draw(ChessBoard *board) {
+    return board_drawn_by_insufficient_material(board);
+}
+
 //TODO: refactore this code
 void board_load_fen(ChessBoard *board, const char *fen) {
     board_clear(board);
