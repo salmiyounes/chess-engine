@@ -84,6 +84,27 @@ int OFFSET_ROOK[64];
 bb ATTACK_BISHOP[5248];
 bb ATTACK_ROOK[102400];
 
+int get_lsb(bb bbit) {
+    // https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fclz
+    // If bbit is 0, the result is undefined
+    ASSERT(bbit);
+
+    return __builtin_ctzll(bbit);
+}
+
+int get_msb(bb bbit) {
+    ASSERT(bbit);
+    
+    return __builtin_ctzll(bbit) ^ 63;
+}
+
+int popcount(bb bbit) {
+    return __builtin_popcountll(bbit);
+} 
+
+int several(bb bbit) {
+    return bbit & (bbit - 1);
+}
 
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
@@ -96,21 +117,13 @@ int bb_squares(bb value, int squares[64]) {
 }
 
 bb bb_pawns_attacks(int sq, int color) {
-    assert(sq >= 0 && sq < SQUARE_NB);
+    ASSERT(sq >= 0 && sq < SQUARE_NB);
 
     const bb board = BIT(sq);
     return color ? 
             ((board & ~FILE_H) >> 7) | ((board & ~FILE_A) >> 9) :
             ((board & ~FILE_A) << 7) | ((board & ~FILE_H) << 9) ;
 } 
-
-int popcount(bb bbit) {
-    return __builtin_popcountll(bbit);
-} 
-
-int several(bb bbit) {
-    return bbit & (bbit - 1);
-}
 
 bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
 	bb value = 0;

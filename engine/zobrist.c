@@ -61,7 +61,7 @@ bb gen_curr_state_zobrist(ChessBoard *board) {
     hash ^= HASH_CASTLE[board->castle];
 
     if (board->ep) {
-        hash ^= HAHS_EP[LSB(board->ep) % 8];
+        hash ^= HAHS_EP[get_lsb(board->ep) % 8];
     }
 
     return hash;
@@ -80,7 +80,7 @@ bb gen_pawn_zobrist(ChessBoard *board) {
     }
 
     if (board->ep) {
-        hash ^= HAHS_EP[LSB(board->ep) % 8];
+        hash ^= HAHS_EP[get_lsb(board->ep) % 8];
     }
 
     if (board->color) {

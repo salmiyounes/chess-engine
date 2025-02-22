@@ -6,10 +6,16 @@
 
 #define INLINE  inline __attribute__((always_inline))
 
-#if !defined(DEBUG_DESIBLE_PRINT) || defined(DEBUG)
+#if !defined(DEBUG_DISABLE_PRINT) || defined(DEBUG)
 	#define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
 #else 
 	#define err(str)
+#endif
+
+#if !defined(DISABLE_ASSERT)
+	#define ASSERT(expr) assert(expr)
+#else 
+	#define ASSERT(expr)
 #endif
 
 typedef unsigned long long  bb;
@@ -107,7 +113,7 @@ typedef struct {
 #define QUEEN  4
 #define KING   5
 
-#define CALC_PIECE(p, c) ((p << 1) + c)
+#define CALC_PIECE(p, c) (((p) << 1) + (c))
 
 #define WHITE_PAWN      CALC_PIECE(PAWN, WHITE)
 #define BLACK_PAWN      CALC_PIECE(PAWN, BLACK)

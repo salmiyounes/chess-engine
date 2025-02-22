@@ -8,11 +8,8 @@
 #define BIT(sq) (1ULL << (sq))
 #define RF(rank, file) (((rank) * 8) + (file))
 
-#define LSB(x) ( __builtin_ctzll(x))
-#define MSB(x) ( __builtin_clzll(x))
-
-#define POP_LSB(b, x) b = LSB(x); x &= ~BIT(b);
-#define POP_MSB(b, x) b = MSB(x); x &= ~BIT(b);
+#define POP_LSB(b, x) b = get_lsb(x); x &= ~BIT(b);
+#define POP_MSB(b, x) b = get_msb(x); x &= ~BIT(b);
 
 #define SET_BIT(bbit, sq)   ((bbit) |=  BIT(sq))
 #define CLEAR_BIT(bbit, sq) ((bbit) &= ~BIT(sq))
@@ -24,6 +21,10 @@ extern bb BB_ROOK[64];
 extern bb BB_KING[64];
 
 void bb_init();
+
+int get_lsb(bb bbit);
+
+int get_msb(bb bbit);
 
 int popcount(bb bbit);
 

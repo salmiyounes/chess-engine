@@ -4,7 +4,7 @@
 #define ReductionLimit 3
 
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
-	assert(capture == 0 || capture == 1);
+	ASSERT(capture == 0 || capture == 1);
 	
 	Move temp[MAX_MOVES];
 	int scores[MAX_MOVES];

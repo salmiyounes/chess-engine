@@ -33,11 +33,11 @@
 		    board_update(board, dst, CALC_PIECE(PROMO_PT(flag), color)); 		\
     } 	          																                      \
 
-#define TOGGLE_HASH(board)						            									\
-	if (board->castle)															                	\
-		    board->hash ^= HASH_CASTLE[board->castle];									\
-    if (board->ep)  																                \
-        board->hash ^= HAHS_EP[LSB(board->ep) % 8]; 								\
+#define TOGGLE_HASH(board)						                									\
+	if (board->castle)											    				                	\
+		    board->hash ^= HASH_CASTLE[board->castle];    									\
+    if (board->ep)  																                    \
+        board->hash ^= HAHS_EP[get_lsb(board->ep) % 8]; 								\
 
 /*
   Move encoding:

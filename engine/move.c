@@ -101,10 +101,10 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
 	int color   = COLOR(piece);
 	int flag 	= EXTRACT_FLAGS(move);
 
-	assert((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
-	assert(piece >= WHITE_PAWN && piece <= NONE);
-	assert(color == WHITE || color == BLACK);
-	assert(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
+	ASSERT((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
+	ASSERT(piece >= WHITE_PAWN && piece <= NONE);
+	ASSERT(color == WHITE || color == BLACK);
+	ASSERT(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
 
 	TOGGLE_HASH(board);
 
@@ -185,9 +185,9 @@ void undo_move(ChessBoard *board, Move move, Undo *undo) {
 	int dst 		= 	EXTRACT_TO(move);
 	int flag 		= 	EXTRACT_FLAGS(move);
 
-	assert((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
-	assert(piece >= WHITE_PAWN && piece <= NONE);
-	assert(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
+	ASSERT((src >= 0 && src < SQUARE_NB) && (dst >= 0 && dst < SQUARE_NB));
+	ASSERT(piece >= WHITE_PAWN && piece <= NONE);
+	ASSERT(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
 
 	TOGGLE_HASH(board);
 
