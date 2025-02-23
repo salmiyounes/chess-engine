@@ -124,7 +124,21 @@ class Chess(object):
         self.chess_lib.notate_move.restype  = None
         self.chess_lib.notate_move(ctypes.byref(self.board), move, res)
         return res.value.decode('utf-8')
+   
+    def move_str(self, move: ctypes.c_uint32) -> str:
+        self.chess_lib.move_to_str.argtypes = [ctypes.c_uint32]
+        self.chess_lib.move_to_str.restype = ctypes.c_char_p
+        
+        try:
+            result = self.chess_lib.move_to_str(move)
+            if not result:
+                return ""
 
+            return result.decode('utf-8')
+        except Exception as e:
+            print(f"Error converting move to string: {e}")
+            return ""
+    
     def load_fen(self, fen: bytes) -> None:
         if not isinstance(fen, bytes):
             raise TypeError(f"Expected bytes-like object, got '{type(fen).__name__}'")
@@ -174,7 +188,6 @@ class Chess(object):
         self.chess_lib.thread_init.restype  = ctypes.c_int
         start: float = time.monotonic() 
         score: ctypes.c_int = self.chess_lib.thread_init(ctypes.byref(search), ctypes.byref(self.board), ctypes.byref(move))
-        print (f"move= {move}, in {time.monotonic() - start:.3f}")
         return move
 
 class LegalMoveGenerater(object):
