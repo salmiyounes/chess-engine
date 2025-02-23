@@ -48,7 +48,8 @@ extern int castling_rights[64];
 
 #define MAX(x, y) (x ^ ((x ^ y) & -(x < y)))
 #define MIN(x, y) (y ^ ((x ^ y) & -(x < y)))
-#define FLIP(sq) ( (sq ^ 56))
+#define FLIP(sq)    ((sq ^ 56))
+#define FLIP_63(sq) ((sq ^ 63))
 #define PIECE(x) (((x) & ~1) >> 1)
 #define COLOR(x) ((x) & 1)
 #define SWITCH_SIDE(x) (x->color ^= BLACK) 
