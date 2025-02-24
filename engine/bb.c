@@ -213,7 +213,7 @@ void bb_init() {
 			bb value  = bb_slide_bishop(sq, 0, obs);
 			int index = (obs * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
 			bb prev   = ATTACK_BISHOP[offset + index];
-			if (prev & (prev != value)) {
+			if (prev && (prev != value)) {
 				    err("ERROR: invalid ATTACK_BISHOP table");
 				} 
 			
@@ -224,7 +224,7 @@ void bb_init() {
 		offset += 1 << (64 - SHIFT_BISHOP[sq]);
 	}
 
-	// atack rook
+	// attack_rook
 	offset = 0;
     for (int sq = 0; sq < 64; sq++) {
         int count = bb_squares(BB_ROOK[sq], squares);

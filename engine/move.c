@@ -289,8 +289,6 @@ INLINE int move_estimated_value(ChessBoard *board, Move move) {
 }
 
 char *move_to_str(Move move) {
-	ASSERT(move != NULL_MOVE);
-	
 	static char buffer[6];
 	int src = EXTRACT_FROM(move), dst = EXTRACT_TO(move);
 	int flag = EXTRACT_FLAGS(move);

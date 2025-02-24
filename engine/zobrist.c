@@ -10,7 +10,7 @@
 */
 
 bb HASH_PIECES[12][64];
-bb HAHS_EP[8];
+bb HASH_EP[8];
 bb HASH_CASTLE[16];
 bb HASH_COLOR_SIDE;
 
@@ -32,7 +32,7 @@ void init_zobrist() {
     }
 
     for (int i = 0; i < 8; i++) {
-        HAHS_EP[i] = xorshift64();
+        HASH_EP[i] = xorshift64();
     }
 
     for (int i = 0; i < 16; i++) {
@@ -61,7 +61,7 @@ bb gen_curr_state_zobrist(ChessBoard *board) {
     hash ^= HASH_CASTLE[board->castle];
 
     if (board->ep) {
-        hash ^= HAHS_EP[get_lsb(board->ep) % 8];
+        hash ^= HASH_EP[get_lsb(board->ep) % 8];
     }
 
     return hash;
@@ -80,7 +80,7 @@ bb gen_pawn_zobrist(ChessBoard *board) {
     }
 
     if (board->ep) {
-        hash ^= HAHS_EP[get_lsb(board->ep) % 8];
+        hash ^= HASH_EP[get_lsb(board->ep) % 8];
     }
 
     if (board->color) {

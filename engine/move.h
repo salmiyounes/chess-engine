@@ -37,7 +37,7 @@
 	if (board->castle)											    				                	\
 		    board->hash ^= HASH_CASTLE[board->castle];    									\
     if (board->ep)  																                    \
-        board->hash ^= HAHS_EP[get_lsb(board->ep) % 8]; 								\
+        board->hash ^= HASH_EP[get_lsb(board->ep) % 8]; 								\
 
 /*
   Move encoding:
