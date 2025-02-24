@@ -173,18 +173,15 @@ void initializeBoard(ChessBoard *board) {
 
 void printBoard(ChessBoard *board) {
 
-    for (int i = SQUARE_NB - 1; i >= 0; i--) {
-        printf("%s", PIECE_SYMBOLS[board->squares[i]]);
-        if (!(i % 8)) {
-            printf(" %c", '1' + (i / 8));
-            printf("\n");
+    for (int i = 7; i >= 0; i--) {
+        printf("%c ", '1' + i);
+        for (int j = 7; j >= 0; j--) {
+            printf("%s", PIECE_SYMBOLS[board->squares[RF(i, j)]]);
         }
+        printf("\n");
     }
 
-    for (int i = 7; i >= 0; i--) {
-        printf("%c ", 'a' + i);
-    }
-    printf("\n");
+    printf("  h g f e d c b a\n\n");
 }
 
 int board_drawn_by_insufficient_material(ChessBoard *board) {
