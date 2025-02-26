@@ -320,8 +320,6 @@ void print_pv(Search *search, ChessBoard *board, int depth) {
 	do_move(board, move, &undo);
 	print_pv(search, board, depth - 1);
 	undo_move(board, move, &undo);
-
-	return ;
 }
 
 int best_move(Search *search, ChessBoard *board, Move *result) {

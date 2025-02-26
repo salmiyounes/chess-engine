@@ -84,7 +84,7 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (p1) {
         POP_LSB(sq, p1);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq - 8, sq, WHITE_PAWN);
         } else {
             EMIT_MOVE(moves, sq - 8, sq, WHITE_PAWN, EMPTY_FLAG);
@@ -98,11 +98,11 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (a1) {
         POP_LSB(sq, a1);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq - 7, sq, WHITE_PAWN);
         }
          else {
-            if (BIT(sq) & board->ep) {
+            if (test_bit(board->ep, sq)) {
                 EMIT_EN_PASSANT(moves, sq - 7, sq, WHITE_PAWN);
             } else {
                 EMIT_MOVE(moves, sq - 7, sq, WHITE_PAWN, EMPTY_FLAG);
@@ -112,11 +112,11 @@ int gen_white_pawn_moves(ChessBoard *board, Move *moves) {
 
     while (a2) {
         POP_LSB(sq, a2);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq - 9, sq, WHITE_PAWN);
         }
         else {
-            if (BIT(sq) & board->ep) {
+            if (test_bit(board->ep, sq)) {
                 EMIT_EN_PASSANT(moves, sq - 9, sq, WHITE_PAWN);
             } else {
                 EMIT_MOVE(moves, sq - 9, sq, WHITE_PAWN, EMPTY_FLAG);
@@ -262,7 +262,7 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     int sq;
     while (p1) {
         POP_LSB(sq, p1);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq + 8, sq, BLACK_PAWN);
         }
         else {
@@ -275,11 +275,11 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (a1) {
         POP_LSB(sq, a1);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq + 7, sq, BLACK_PAWN);
         }
         else {
-            if (BIT(sq) & board->ep) {
+            if (test_bit(board->ep, sq)) {
                 EMIT_EN_PASSANT(moves, sq + 7, sq, BLACK_PAWN);
             } else {
                EMIT_MOVE(moves, sq + 7, sq, BLACK_PAWN, EMPTY_FLAG);
@@ -288,11 +288,11 @@ int gen_black_pawn_moves(ChessBoard *board, Move *moves) {
     }
     while (a2) {
         POP_LSB(sq, a2);
-        if (BIT(sq) & promo) {
+        if (test_bit(promo, sq)) {
             EMIT_PROMOTIONS(moves, sq + 9, sq, BLACK_PAWN);
         }
         else {
-            if (BIT(sq) & board->ep) {
+            if (test_bit(board->ep, sq)) {
                 EMIT_EN_PASSANT(moves, sq + 9, sq, BLACK_PAWN);
             } else {
                 EMIT_MOVE(moves, sq + 9, sq, BLACK_PAWN, EMPTY_FLAG);

@@ -106,6 +106,12 @@ int several(bb bbit) {
     return bbit & (bbit - 1);
 }
 
+bool test_bit(bb bbit, const int sq) {
+    ASSERT(sq >= 0 && sq < SQUARE_NB);
+
+    return (bool) (bbit & BIT(sq));
+} 
+
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
 	int sq;

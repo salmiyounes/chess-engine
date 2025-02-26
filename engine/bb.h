@@ -30,6 +30,9 @@ int popcount(bb bbit);
 
 int several(bb bbit);
 
+bool test_bit(bb bbit, 
+              const int sq);
+
 bb bb_bishop(int sq, 
              bb obs);
 
