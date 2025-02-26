@@ -41,51 +41,44 @@ void init_zobrist() {
     HASH_COLOR_SIDE = xorshift64();
 }
 
-bb gen_curr_state_zobrist(ChessBoard *board) {
-    bb hash = 0ULL;
-
+void gen_curr_state_zobrist(ChessBoard *board) {
     for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++) {
         bb bbit = board->bb_squares[pc];
         int sq;
 
         while (bbit) {
             POP_LSB(sq, bbit);
-            hash ^= HASH_PIECES[pc][sq];
+            board->hash ^= HASH_PIECES[pc][sq];
         }
     }
 
     if (board->color) {
-        hash ^= HASH_COLOR_SIDE;
+        board->hash ^= HASH_COLOR_SIDE;
     }
 
-    hash ^= HASH_CASTLE[board->castle];
+    board->hash ^= HASH_CASTLE[board->castle];
 
     if (board->ep) {
-        hash ^= HASH_EP[get_lsb(board->ep) % 8];
+        board->hash ^= HASH_EP[get_lsb(board->ep) % 8];
     }
-
-    return hash;
 }
 
-bb gen_pawn_zobrist(ChessBoard *board) {
-    bb hash = 0ULL;
+void gen_pawn_zobrist(ChessBoard *board) {
 
     for (int pc = WHITE_PAWN; pc <= BLACK_PAWN; pc++) {
         bb bbit = board->bb_squares[pc];
         int sq;
         while (bbit) {
             POP_LSB(sq, bbit);
-            hash ^= HASH_PIECES[pc][sq];
+            board->hash ^= HASH_PIECES[pc][sq];
         }
     }
 
     if (board->ep) {
-        hash ^= HASH_EP[get_lsb(board->ep) % 8];
+        board->hash ^= HASH_EP[get_lsb(board->ep) % 8];
     }
 
     if (board->color) {
-        hash ^= HASH_COLOR_SIDE;
+        board->hash ^= HASH_COLOR_SIDE;
     }
-
-    return hash; 
 }

@@ -12,8 +12,8 @@ extern bb HASH_COLOR_SIDE;
 
 void init_zobrist();
 
-bb gen_curr_state_zobrist(ChessBoard *board);
+void gen_curr_state_zobrist(ChessBoard *board);
 
-bb gen_pawn_zobrist(ChessBoard *board);
+void gen_pawn_zobrist(ChessBoard *board);
 
 #endif 
