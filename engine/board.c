@@ -1,5 +1,7 @@
 #define _POSIX_C_SOURCE 199309L
 
+#include <ctype.h>
+#include <string.h>
 #include "board.h"
 #include "time.h"
 
@@ -58,11 +60,11 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
     nanosleep(&ts, NULL);
     
     thread_stop(search);
-    
+
     ts.tv_sec = 0;
     ts.tv_nsec = 100000000;  
     nanosleep(&ts, NULL);
-    
+
     thpool_destroy(thpool_p);
 
 	int score = thread_d->score;
@@ -166,8 +168,8 @@ void initializeBoard(ChessBoard *board) {
     board_update(board, RF(7, 6), BLACK_KNIGHT);
     board_update(board, RF(7, 7), BLACK_ROOK);
 
-    board->hash         = gen_curr_state_zobrist(board);
-    board->pawn_hash    = gen_pawn_zobrist(board);
+    gen_curr_state_zobrist(board);
+    gen_pawn_zobrist(board);
 }
 
 
@@ -199,108 +201,80 @@ int is_draw(ChessBoard *board) {
     return board_drawn_by_insufficient_material(board);
 }
 
-//TODO: refactore this code
+int string_to_sq(const char * str) {
+    return str[0] == '-' ? -1 : RF(str[1] - '1', str[0] - 'a');
+}
+
+char *strdup(const char *src) {
+    char *dst = malloc(strlen (src) + 1);  
+    if (dst == NULL) return NULL;          
+    strcpy(dst, src);                      
+    return dst;                            
+}
+
 void board_load_fen(ChessBoard *board, const char *fen) {
     board_clear(board);
-    int i = 0;
-    int n = strlen(fen);
+
     int rank = 7, file = 0;
-    for (; i < n; i++) {
-        bool done = false;
-        switch(fen[i]) {
+    char ch;
+    char *str = strdup(fen) ,*save_p = NULL;
+    if (str == NULL) return;
+    char *token = strtok_r(str, " ", &save_p);
 
-            case 'P': board_update(board, RF(rank, file++), WHITE_PAWN); break;
-            case 'N': board_update(board, RF(rank, file++), WHITE_KNIGHT); break;
-            case 'B': board_update(board, RF(rank, file++), WHITE_BISHOP); break;
-            case 'R': board_update(board, RF(rank, file++), WHITE_ROOK); break;
-            case 'Q': board_update(board, RF(rank, file++), WHITE_QUEEN); break;
-            case 'K': board_update(board, RF(rank, file++), WHITE_KING); break;
-            case 'p': board_update(board, RF(rank, file++), BLACK_PAWN); break;
-            case 'n': board_update(board, RF(rank, file++), BLACK_KNIGHT); break;
-            case 'b': board_update(board, RF(rank, file++), BLACK_BISHOP); break;
-            case 'r': board_update(board, RF(rank, file++), BLACK_ROOK); break;
-            case 'q': board_update(board, RF(rank, file++), BLACK_QUEEN); break;
-            case 'k': board_update(board, RF(rank, file++), BLACK_KING); break;
-            case '/': file = 0; rank--; break;
-            case '1': file += 1; break;
-            case '2': file += 2; break;
-            case '3': file += 3; break;
-            case '4': file += 4; break;
-            case '5': file += 5; break;
-            case '6': file += 6; break;
-            case '7': file += 7; break;
-            case '8': file += 8; break;
-            case ' ': done = 1; break;
-            default: return;
-        }
-
-        if (done) {
-            if (rank != 0 || file != 8) {
-                break;
+    while ((ch = *token++)) {
+        if (isdigit(ch))    
+            file += ch - '0';
+        else if (ch == '/') {     
+            file = 0;
+            rank--;
+        } else {
+            int piece = NONE;
+            switch(ch) {
+                case 'P': piece = WHITE_PAWN;   break;
+                case 'N': piece = WHITE_KNIGHT; break;
+                case 'B': piece = WHITE_BISHOP; break;
+                case 'R': piece = WHITE_ROOK;   break;
+                case 'Q': piece = WHITE_QUEEN;  break;
+                case 'K': piece = WHITE_KING;   break;
+                case 'p': piece = BLACK_PAWN;   break;
+                case 'n': piece = BLACK_KNIGHT; break;
+                case 'b': piece = BLACK_BISHOP; break;
+                case 'r': piece = BLACK_ROOK;   break;
+                case 'q': piece = BLACK_QUEEN;  break;
+                case 'k': piece = BLACK_KING;   break;
             }
-            break;
-        }
+            if (piece != NONE)
+                board_update(board, RF(rank, file++), piece);
+        } 
     }
 
-    i++;
+    token = strtok_r(NULL, " ", &save_p);
+    board->color = token[0] == 'w' ? WHITE : BLACK;
 
-    switch(fen[i++]) {
-        case 'w':
-            board->color = WHITE;
-            break;
-        case 'b':
-            board->color = BLACK;
-            break;
-        default: return;
-    }
-    i++;
-    board->castle = 0;
-    for (; i < n; i++) {
-        bool done = false;
-        switch(fen[i]) {
-            case 'K':
-                board->castle |= CASTLE_WHITE_KING_SIDE;
-                break; 
-            case 'Q':
-                board->castle |= CASTLE_WHITE_QUEEN_SIDE;
-                break;
-            case 'k':
-                board->castle |= CASTLE_BLACK_KING_SIDE;
-                break;
-            case 'q':
-                board->castle |= CASTLE_BLACK_QUEEN_SIDE;
-                break;
-            case '-':
-                done = true;
-                break;
-            case ' ':
-                done = true;
-                break;
-            default:
-                return;
-        }
-        if (done) {
-            break;
+    board->castle = 0ULL;
+    token = strtok_r(NULL, " ", &save_p);
+    bool done = false;
+    while((!done) && (ch = *token++)) {
+        switch(ch) {
+            case 'K': board->castle |= CASTLE_WHITE_KING_SIDE; break; 
+            case 'Q': board->castle |= CASTLE_WHITE_QUEEN_SIDE; break;
+            case 'k': board->castle |= CASTLE_BLACK_KING_SIDE; break;
+            case 'q': board->castle |= CASTLE_BLACK_QUEEN_SIDE; break;
+            case '-': done = true; break;
+            case ' ': done = true; break;
         }
     }
-
-
-    i++;
-    if (fen[i] == '-') i++;
-
-    else if (fen[i] >= 'a' && fen[i] <= 'h') {
-        int ep_file = fen[i] - 'a';
-        i++;
-        if (fen[i] >= '1' && fen[i] <= '8') {
-            int ep_rank = fen[i] - '1';
-            board->ep |= BIT(RF(ep_rank, ep_file));
-            i++;
-        }
+    
+    token = strtok_r(NULL, " ", &save_p);
+    if (token != NULL) {
+        int sq = string_to_sq(token);  
+        if (sq != -1) SET_BIT(board->ep, sq);
     }
-    i++;
 
-    board->hash         = gen_curr_state_zobrist(board);
-    board->pawn_hash    = gen_pawn_zobrist(board);
+    gen_curr_state_zobrist(board);
+    gen_pawn_zobrist(board);
+
+    free(str);
 }
 
 const int   white_pawn_square_values[64] = {
