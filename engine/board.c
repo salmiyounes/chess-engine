@@ -125,14 +125,14 @@ void  board_update(ChessBoard *board, int sq, int piece) {
         }                                                                   
 
         if (piece != NONE) {                                                 
-            SET_BIT(board->occ[BOTH], (sq));                                      
-            SET_BIT(board->bb_squares[(piece)], (sq));                           
+            SET_BIT(board->occ[BOTH], sq);                                      
+            SET_BIT(board->bb_squares[piece], sq);                           
             if (COLOR(piece)) {                                                
-                SET_BIT(board->occ[BLACK], (sq));                         
+                SET_BIT(board->occ[BLACK], sq);                         
             } else {                                                        
-                SET_BIT(board->occ[WHITE], (sq));                         
+                SET_BIT(board->occ[WHITE], sq);                         
             }                                                               
-            board->hash ^= HASH_PIECES[(piece)][(sq)];                           
+            board->hash ^= HASH_PIECES[piece][sq];                           
             board->mg[COLOR(piece)] +=    mg_table[piece][sq];  
             board->eg[COLOR(piece)] +=    eg_table[piece][sq];
             board->gamePhase        +=    gamephaseInc[piece];               
@@ -206,10 +206,14 @@ int string_to_sq(const char * str) {
 }
 
 char *strdup(const char *src) {
-    char *dst = malloc(strlen (src) + 1);  
-    if (dst == NULL) return NULL;          
-    strcpy(dst, src);                      
-    return dst;                            
+    if (src == NULL) return NULL;
+    
+    size_t len = strlen(src) + 1;
+    void *new  = malloc(len);
+
+    if (new == NULL) return NULL;
+
+    return (char *) memcpy(new, src, len);
 }
 
 void board_load_fen(ChessBoard *board, const char *fen) {
@@ -251,7 +255,7 @@ void board_load_fen(ChessBoard *board, const char *fen) {
     token = strtok_r(NULL, " ", &save_p);
     board->color = token[0] == 'w' ? WHITE : BLACK;
 
-    board->castle = 0ULL;
+    board->castle = 0;
     token = strtok_r(NULL, " ", &save_p);
     bool done = false;
     while((!done) && (ch = *token++)) {

@@ -293,7 +293,7 @@ bb bb_queen(int sq, bb obs) {
 
 void bb_print(bb bbit) {
     for (int sq = SQUARE_NB - 1; sq >= 0; sq--) {
-        printf(" %c", (BIT(sq) & bbit) ? '1' : '0');
+        printf(" %c", (test_bit(bbit, sq)) ? '1' : '0');
         
         if (!(sq % 8)) 
             printf("\n");
