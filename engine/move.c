@@ -28,6 +28,10 @@ void make_move(ChessBoard *board, Move move) {
 	do_move(board, move, &undo);
 }
 
+bool is_capture(ChessBoard *board, const Move move) {
+	return (bool) (attacks_to_square(board, EXTRACT_TO(move), board->bb_squares[BOTH]));	
+}
+
 void notate_move(ChessBoard *board, Move move, char *result) {
 	int piece   = EXTRACT_PIECE(move);
 	int flag	= EXTRACT_FLAGS(move);

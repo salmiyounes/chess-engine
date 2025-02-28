@@ -460,3 +460,13 @@ INLINE int is_check(ChessBoard *board) {
     return board->color ? gen_white_checks(board, moves)
                         : gen_black_checks(board, moves);
 }
+
+int move_gives_check(ChessBoard *board, const Move move) {
+    Undo undo;
+    
+    do_move(board, move, &undo);
+    int flag = is_check(board);
+    undo_move(board, move, &undo);
+
+    return flag;
+}

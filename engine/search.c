@@ -41,11 +41,11 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
 	}
 }
 
-int ok_to_reduce(Search *search, ChessBoard *board, Move move) {
-	int flag = 1;
-	if (table_get_move(&search->table, board->hash) == move) flag = 0;
-	if (is_check(board)) flag = 0;
-	return flag;
+int ok_to_reduce(ChessBoard *board, Move move) {
+	// https://www.chessprogramming.org/Late_Move_Reductions#Uncommon_Conditions
+	return ((!is_check(board)) && (!is_capture(board, move)) && 
+			(IS_PROMO(EXTRACT_FLAGS(move)) == EMPTY_FLAG)    &&
+			(!move_gives_check(board, move)));
 } 
 
 int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
@@ -148,7 +148,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 		if (moves_searched == 0) {
 			value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
 		} else {
-			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(search, state, move) == 0) {
+			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(state, move)) {
 				value = -negamax(search, state, depth - 2, ply + 1, -alpha - 1, -alpha);
 			} else {
 				value = alpha + 1;
