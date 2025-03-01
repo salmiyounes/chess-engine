@@ -25,6 +25,8 @@ static const char *PIECE_SYMBOLS[13] = {
     [NONE]          = ". "
 };
 
+const char *PIECE_LABEL[COLOR_NB] = {"PNBRQK", "pnbrqk"};
+
 void *thread_start(void *arg) {
 	Thread_d *thread_d = (Thread_d *) arg;
 
@@ -52,7 +54,7 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
     threadpool thpool_p;
 	thpool_p = thpool_init(1);
 
-	thpool_add_work(thpool_p, (void *)thread_start, (void *) thread_d);
+	thpool_add_work(thpool_p, (void *)thread_start, (void *)thread_d);
 
     struct timespec ts;
     ts.tv_sec  = DURATION;
@@ -106,6 +108,9 @@ void board_clear(ChessBoard *board) {
 }
 
 void  board_update(ChessBoard *board, int sq, int piece) {
+        ASSERT(piece >= WHITE_PAWN && piece <= NONE);
+        ASSERT(sq >= 0 && sq < SQUARE_NB);
+
         int prev = board->squares[sq];
         board->squares[sq] = piece;   
 
@@ -174,6 +179,7 @@ void initializeBoard(ChessBoard *board) {
 
 
 void printBoard(ChessBoard *board) {
+    char fen[256];
 
     for (int i = 7; i >= 0; i--) {
         printf("%c ", '1' + i);
@@ -184,6 +190,9 @@ void printBoard(ChessBoard *board) {
     }
 
     printf("  h g f e d c b a\n\n");
+
+    board_to_fen(board, fen);
+    printf("\n%s\n\n", fen);
 }
 
 int board_drawn_by_insufficient_material(ChessBoard *board) {
@@ -203,6 +212,19 @@ int is_draw(ChessBoard *board) {
 
 int string_to_sq(const char * str) {
     return str[0] == '-' ? -1 : RF(str[1] - '1', str[0] - 'a');
+}
+
+void sq_to_string(int sq, char *str) {
+    assert(-1 <= sq && sq < SQUARE_NB);
+
+    if (sq == -1)
+        *str++ = '-';
+    else {
+        *str++ = file_of(sq) + 'a';
+        *str++ = rank_of(sq) + '1';
+    }
+
+    *str++ = '\0';
 }
 
 char *strdup(const char *src) {
@@ -279,6 +301,43 @@ void board_load_fen(ChessBoard *board, const char *fen) {
     gen_pawn_zobrist(board);
 
     free(str);
+}
+
+void board_to_fen(ChessBoard *board, char *fen) {
+    char str[3];
+    int sq;
+
+    for (int r = RANK_NB - 1; r >= 0; r--) {
+        int cnt = 0;
+        for (int f = 0; f < FILE_NB; f++) {
+            const int p = board->squares[RF(r, f)];
+
+            if (p != NONE) {
+                if (cnt) *fen++ = cnt + '0';
+                *fen++ = PIECE_LABEL[COLOR(p)][PIECE(p)];
+                cnt = 0;
+            } else cnt++;
+        }
+        if (cnt) *fen++ = cnt + '0';
+
+        *fen++ = r == 0 ? ' ' : '/';
+    }
+
+    *fen++ = board->color == WHITE ? 'w' : 'b';
+    *fen++ = ' ';
+
+    if (board->castle) {
+        if (board->castle & CASTLE_WHITE_KING_SIDE)  *fen++ = 'K';
+        if (board->castle & CASTLE_WHITE_QUEEN_SIDE) *fen++ = 'Q';
+        if (board->castle & CASTLE_BLACK_KING_SIDE)  *fen++ = 'k';
+        if (board->castle & CASTLE_BLACK_QUEEN_SIDE) *fen++ = 'q';
+
+    } else *fen++ = '-';
+   
+    sq = board->ep ? get_lsb(board->ep) : -1;
+    sq_to_string(sq, str);
+   
+    sprintf(fen, " %s", str);
 }
 
 const int   white_pawn_square_values[64] = {

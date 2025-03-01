@@ -112,6 +112,16 @@ bool test_bit(bb bbit, const int sq) {
     return (bool) (bbit & BIT(sq));
 } 
 
+int file_of(int sq) {
+    assert(0 <= sq && sq < SQUARE_NB);
+    return sq % FILE_NB;
+}
+
+int rank_of(int sq) {
+    assert(0 <= sq && sq < SQUARE_NB);
+    return sq / RANK_NB;
+}
+
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
 	int sq;

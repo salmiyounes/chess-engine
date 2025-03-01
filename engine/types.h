@@ -86,6 +86,9 @@ typedef struct {
 } Thread_d;
 
 #define SQUARE_NB 64
+#define COLOR_NB   2
+#define FILE_NB    8
+#define RANK_NB    8
 
 #define PAWN_MATERIAL   100
 #define KNIGHT_MATERIAL 320

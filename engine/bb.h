@@ -33,6 +33,10 @@ int several(bb bbit);
 bool test_bit(bb bbit, 
               const int sq);
 
+int file_of(int sq);
+
+int rank_of(int sq);
+
 bb bb_bishop(int sq, 
              bb obs);
 

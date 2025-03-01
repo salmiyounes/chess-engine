@@ -61,6 +61,9 @@ void  printBoard(ChessBoard *b);
 void  board_load_fen(ChessBoard *board, 
                      const char *fen);
 
+void board_to_fen(ChessBoard *board, 
+                  char *fen);
+
 void  board_update(ChessBoard *board, 
                    int sq, 
                    int piece);
