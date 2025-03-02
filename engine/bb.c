@@ -112,6 +112,12 @@ bool test_bit(bb bbit, const int sq) {
     return (bool) (bbit & BIT(sq));
 } 
 
+int square(int rank, int file) {
+    assert(0 <= rank && rank < RANK_NB);
+    assert(0 <= file && file < FILE_NB);
+    return rank * FILE_NB + file;
+}
+
 int file_of(int sq) {
     assert(0 <= sq && sq < SQUARE_NB);
     return sq % FILE_NB;
@@ -155,7 +161,7 @@ bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
 				if (truncate) value &= ~prev;
 				break;
 			}
-			bb bit = BIT(RF(r, f));
+			bb bit = BIT(square(r, f));
 			value |= bit;
 			if (bit & obs) break;
 			prev = bit;
@@ -200,10 +206,10 @@ void bb_init() {
 				int r = rank + knight_offsets[i][0];
 				int f = file + knight_offsets[i][1];
 				if (r >= 0 && f >= 0 && r < 8 && f < 8) {
-					value |= BIT(RF(r, f)); 
+					value |= BIT(square(r, f)); 
 				}
 			}
-			BB_KNIGHT[RF(rank, file)] = value; 
+			BB_KNIGHT[square(rank, file)] = value; 
 		}
 	}
 
@@ -277,10 +283,10 @@ void bb_init() {
                 int r = rank + king_offsets[i][0];
                 int f = file + king_offsets[i][1];
                 if (r >= 0 && f >= 0 && r < 8 && f < 8) {
-                    value |= BIT(RF(r, f));
+                    value |= BIT(square(r, f));
                 }
             }
-            BB_KING[RF(rank, file)] = value;
+            BB_KING[square(rank, file)] = value;
         }
     }
 }

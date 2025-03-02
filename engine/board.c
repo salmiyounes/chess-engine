@@ -145,33 +145,26 @@ void  board_update(ChessBoard *board, int sq, int piece) {
 }
 
 void initializeBoard(ChessBoard *board) {
+    if (board == NULL) return;
+
     board_clear(board);
-
     init_table();
-
     init_zobrist();
 
+    static const int INITIAL_PIECES[COLOR_NB][FILE_NB] = {
+        {WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, 
+         WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK},
+        {BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, 
+         BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK}
+    };
+
     for (int file = 0; file < 8; file++) {
-        board_update(board, RF(1, file), WHITE_PAWN);
-        board_update(board, RF(6, file), BLACK_PAWN);
+        board_update(board, square(1, file), WHITE_PAWN);
+        board_update(board, square(6, file), BLACK_PAWN);
+        
+        board_update(board, square(0, file), INITIAL_PIECES[WHITE][file]);
+        board_update(board, square(7, file), INITIAL_PIECES[BLACK][file]);
     }
-    
-    board_update(board, RF(0, 0), WHITE_ROOK);
-    board_update(board, RF(0, 1), WHITE_KNIGHT);
-    board_update(board, RF(0, 2), WHITE_BISHOP);
-    board_update(board, RF(0, 3), WHITE_QUEEN);
-    board_update(board, RF(0, 4), WHITE_KING);
-    board_update(board, RF(0, 5), WHITE_BISHOP);
-    board_update(board, RF(0, 6), WHITE_KNIGHT);
-    board_update(board, RF(0, 7), WHITE_ROOK);
-    board_update(board, RF(7, 0), BLACK_ROOK);
-    board_update(board, RF(7, 1), BLACK_KNIGHT);
-    board_update(board, RF(7, 2), BLACK_BISHOP);
-    board_update(board, RF(7, 3), BLACK_QUEEN);
-    board_update(board, RF(7, 4), BLACK_KING);
-    board_update(board, RF(7, 5), BLACK_BISHOP);
-    board_update(board, RF(7, 6), BLACK_KNIGHT);
-    board_update(board, RF(7, 7), BLACK_ROOK);
 
     gen_curr_state_zobrist(board);
     gen_pawn_zobrist(board);
@@ -184,7 +177,7 @@ void printBoard(ChessBoard *board) {
     for (int i = 7; i >= 0; i--) {
         printf("%c ", '1' + i);
         for (int j = 7; j >= 0; j--) {
-            printf("%s", PIECE_SYMBOLS[board->squares[RF(i, j)]]);
+            printf("%s", PIECE_SYMBOLS[board->squares[square(i, j)]]);
         }
         printf("\n");
     }
@@ -211,7 +204,7 @@ int is_draw(ChessBoard *board) {
 }
 
 int string_to_sq(const char * str) {
-    return str[0] == '-' ? -1 : RF(str[1] - '1', str[0] - 'a');
+    return str[0] == '-' ? -1 : square(str[1] - '1', str[0] - 'a');
 }
 
 void sq_to_string(int sq, char *str) {
@@ -270,7 +263,7 @@ void board_load_fen(ChessBoard *board, const char *fen) {
                 case 'k': piece = BLACK_KING;   break;
             }
             if (piece != NONE)
-                board_update(board, RF(rank, file++), piece);
+                board_update(board, square(rank, file++), piece);
         } 
     }
 
@@ -310,7 +303,7 @@ void board_to_fen(ChessBoard *board, char *fen) {
     for (int r = RANK_NB - 1; r >= 0; r--) {
         int cnt = 0;
         for (int f = 0; f < FILE_NB; f++) {
-            const int p = board->squares[RF(r, f)];
+            const int p = board->squares[square(r, f)];
 
             if (p != NONE) {
                 if (cnt) *fen++ = cnt + '0';

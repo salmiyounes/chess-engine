@@ -6,7 +6,6 @@
 
 
 #define BIT(sq) (1ULL << (sq))
-#define RF(rank, file) (((rank) * 8) + (file))
 
 #define POP_LSB(b, x) b = get_lsb(x); x &= ~BIT(b);
 #define POP_MSB(b, x) b = get_msb(x); x &= ~BIT(b);
@@ -36,6 +35,9 @@ bool test_bit(bb bbit,
 int file_of(int sq);
 
 int rank_of(int sq);
+
+int square(int rank, 
+           int file);
 
 bb bb_bishop(int sq, 
              bb obs);
