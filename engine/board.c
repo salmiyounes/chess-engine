@@ -166,6 +166,8 @@ void initializeBoard(ChessBoard *board) {
         board_update(board, square(7, file), INITIAL_PIECES[BLACK][file]);
     }
 
+    board->hash = 0ULL;
+    board->pawn_hash = 0ULL;
     gen_curr_state_zobrist(board);
     gen_pawn_zobrist(board);
 }
@@ -290,6 +292,8 @@ void board_load_fen(ChessBoard *board, const char *fen) {
         if (sq != -1) SET_BIT(board->ep, sq);
     }
 
+    board->hash = 0ULL;
+    board->pawn_hash = 0ULL;
     gen_curr_state_zobrist(board);
     gen_pawn_zobrist(board);
 

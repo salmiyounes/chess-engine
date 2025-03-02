@@ -70,15 +70,15 @@ void gen_pawn_zobrist(ChessBoard *board) {
         int sq;
         while (bbit) {
             POP_LSB(sq, bbit);
-            board->hash ^= HASH_PIECES[pc][sq];
+            board->pawn_hash ^= HASH_PIECES[pc][sq];
         }
     }
 
     if (board->ep) {
-        board->hash ^= HASH_EP[get_lsb(board->ep) % 8];
+        board->pawn_hash ^= HASH_EP[get_lsb(board->ep) % 8];
     }
 
     if (board->color) {
-        board->hash ^= HASH_COLOR_SIDE;
+        board->pawn_hash ^= HASH_COLOR_SIDE;
     }
 }
