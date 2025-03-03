@@ -176,15 +176,15 @@ void initializeBoard(ChessBoard *board) {
 void printBoard(ChessBoard *board) {
     char fen[256];
 
-    for (int i = 7; i >= 0; i--) {
-        printf("%c ", '1' + i);
-        for (int j = 7; j >= 0; j--) {
-            printf("%s", PIECE_SYMBOLS[board->squares[square(i, j)]]);
+    for (int r = RANK_NB - 1; r >= 0; r--) {
+        printf("%c ", '1' + r);
+        for (int f = 0; f < FILE_NB; f++) {
+            printf("%s", PIECE_SYMBOLS[board->squares[square(r, f)]]);
         }
         printf("\n");
     }
 
-    printf("  h g f e d c b a\n\n");
+    printf("  a b c d e f g h\n\n");
 
     board_to_fen(board, fen);
     printf("\n%s\n\n", fen);
