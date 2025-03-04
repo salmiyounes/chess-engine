@@ -122,7 +122,7 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
 		board_update(board, dst, piece);
 	}
 
-	board->ep = 0ULL;
+	board->ep = U64(0);
 
 	if (piece == WHITE_PAWN) {
 		bb bsrc = BIT(src);
@@ -246,7 +246,7 @@ void undo_move(ChessBoard *board, Move move, Undo *undo) {
 void do_null_move_pruning(ChessBoard *board, Undo *undo) {
 	TOGGLE_HASH(board);
 	undo->ep = board->ep;
-	board->ep = 0ULL;
+	board->ep = U64(0);
 	SWITCH_SIDE(board);
 	board->hash ^= HASH_COLOR_SIDE; 
 	TOGGLE_HASH(board);

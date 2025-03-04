@@ -52,19 +52,22 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	if (illegal_to_move(board)) {
 		return INF;
 	}
+	
+	int score, count;
+	Undo undo;
+	Move moves[MAX_MOVES];
 
-	int score = pesto_eval(board) + evaluate_pawns(board);
+	score = pesto_eval(board) + evaluate_pawns(board);
 
 	if (score >= beta) {
 		return beta;
 	}
+	
 	if (score > alpha) {
 		alpha = score;
 	}
-	
-	Undo undo;
-	Move moves[MAX_MOVES];
-	int count = gen_attacks(board, moves);
+
+	count = gen_attacks(board, moves);
 	sort_moves(search, board, moves, count, true);
 
 	for (int i = 0; i < count; i++) {
@@ -93,12 +96,14 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 }
 
 int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, int beta) {
-	int flag = ALPHA;
-	int value = 0;
-
 	if (illegal_to_move(state)) {
 		return INF;
 	}
+
+	int flag = ALPHA, value = 0, count, can_move = 0, moves_searched = 0;
+	Undo undo;
+	Move moves[MAX_MOVES];
+
 	if ((table_get(&search->table, state->hash, depth, alpha, beta, &value))) {
 		return value;
 	}
@@ -115,7 +120,7 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 	}
 
 	search->nodes++;
-	Undo undo;
+
 	if (!is_check(state) && depth >= 3) { // Extended Null-Move Reductions
 		do_null_move_pruning(state, &undo);
 		int R = depth > 6 ? MAX_R : MIN_R;
@@ -135,11 +140,10 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 			return beta;
 		}
 	}
-	Move moves[MAX_MOVES];
-	int count = gen_legal_moves(state, moves);
+
+	count = gen_legal_moves(state, moves);
 	sort_moves(search, state, moves, count, false);
-	int can_move = 0;
-	int moves_searched = 0;
+
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
 	

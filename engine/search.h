@@ -21,7 +21,7 @@
 
 #define MAX_R 		 	   4
 #define MIN_R 		       3 
-#define DR    		       4 
+#define DR                 4 
 
 #define SWAP_VALUES(a, b)  do { __typeof__(a) c = b; b = a; a = c;} while(0)
 
