@@ -5,7 +5,7 @@
 #include "types.h"
 
 
-#define BIT(sq) (1ULL << (sq))
+#define BIT(sq) (U64(1) << (sq))
 
 #define POP_LSB(b, x) b = get_lsb(x); x &= ~BIT(b);
 #define POP_MSB(b, x) b = get_msb(x); x &= ~BIT(b);

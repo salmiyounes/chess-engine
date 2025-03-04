@@ -20,6 +20,8 @@
 
 typedef unsigned long long  bb;
 
+#define U64(u) u##ULL 
+
 typedef struct { 
 	int    squares[64];
 	int 	     color;

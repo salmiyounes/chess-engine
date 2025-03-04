@@ -3,6 +3,7 @@
 
 #include "bb.h"
 #include "types.h"
+#include "board.h"
 
 int pesto_eval(ChessBoard *board);
 

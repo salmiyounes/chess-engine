@@ -17,11 +17,11 @@ bb HASH_COLOR_SIDE;
 bb xorshift64() {
     // https://en.wikipedia.org/wiki/Xorshift
     // https://vigna.di.unimi.it/ftp/papers/xorshift.pdf
-    static bb x = 1ULL;
+    static bb x = U64(1);
     x ^= x >> 12;
     x ^= x << 25;
     x ^= x >> 27;
-    return x * 0x2545F4914F6CDD1DULL;
+    return x * U64(0x2545F4914F6CDD1D);
 }
 
 void init_zobrist() {

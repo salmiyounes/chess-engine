@@ -40,10 +40,11 @@ void thread_stop(Search *search) {
 }
 
 int thread_init(Search *search, ChessBoard *board, Move *result) {
-	Thread_d *thread_d = (Thread_d *) malloc(sizeof(Thread_d));
-	if (thread_d == NULL) {
+	Thread_d *thread_d = (Thread_d *) calloc(1, sizeof(Thread_d));
+	
+    if (thread_d == NULL) {
 		err("thread_init(): Could not allocate memory for thread_d");
-		return 0;
+		return -1;
 	}
     
 	thread_d->board  =  board;
@@ -53,8 +54,17 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
 
     threadpool thpool_p;
 	thpool_p = thpool_init(1);
+    
+    if (thpool_p == NULL) { 
+        free(thread_d);
+        return -1;
+    }
 
-	thpool_add_work(thpool_p, (void *)thread_start, (void *)thread_d);
+	if (thpool_add_work(thpool_p, (void *)thread_start, (void *)thread_d) == -1) {
+        free(thread_d);
+        thpool_destroy(thpool_p);
+        return -1;
+    }
 
     struct timespec ts;
     ts.tv_sec  = DURATION;
@@ -67,10 +77,9 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
     ts.tv_nsec = 100000000;  
     nanosleep(&ts, NULL);
 
+    int score = thread_d->score;
+
     thpool_destroy(thpool_p);
-
-	int score = thread_d->score;
-
 	free(thread_d);
 
 	return score;
@@ -101,8 +110,8 @@ void board_clear(ChessBoard *board) {
     castling_rights[56] = CASTLE_BLACK_QUEEN_SIDE;
     castling_rights[63] = CASTLE_BLACK_KING_SIDE;
 
-    board->hash         =                    0ULL;
-    board->pawn_hash    =                    0ULL;
+    board->hash         =                    U64(0);
+    board->pawn_hash    =                    U64(0);
     board->mg[WHITE] = board->mg[BLACK] = 0;
     board->eg[WHITE] = board->eg[BLACK] = 0;
 }
@@ -166,8 +175,8 @@ void initializeBoard(ChessBoard *board) {
         board_update(board, square(7, file), INITIAL_PIECES[BLACK][file]);
     }
 
-    board->hash = 0ULL;
-    board->pawn_hash = 0ULL;
+    board->hash      = U64(0);
+    board->pawn_hash = U64(0);
     gen_curr_state_zobrist(board);
     gen_pawn_zobrist(board);
 }
@@ -292,8 +301,8 @@ void board_load_fen(ChessBoard *board, const char *fen) {
         if (sq != -1) SET_BIT(board->ep, sq);
     }
 
-    board->hash = 0ULL;
-    board->pawn_hash = 0ULL;
+    board->hash      = U64(0);
+    board->pawn_hash = U64(0);
     gen_curr_state_zobrist(board);
     gen_pawn_zobrist(board);
 
