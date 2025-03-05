@@ -49,9 +49,7 @@ int ok_to_reduce(ChessBoard *board, Move move) {
 } 
 
 int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
-	if (illegal_to_move(board)) {
-		return INF;
-	}
+	if (illegal_to_move(board)) return INF;
 	
 	int score, count;
 	Undo undo;
@@ -95,78 +93,80 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	return alpha;
 }
 
-int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, int beta) {
-	if (illegal_to_move(state)) {
-		return INF;
-	}
+int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, int beta) {
+	if (illegal_to_move(board)) return INF;
 
 	int flag = ALPHA, value = 0, count, can_move = 0, moves_searched = 0;
 	Undo undo;
 	Move moves[MAX_MOVES];
 
-	if ((table_get(&search->table, state->hash, depth, alpha, beta, &value))) {
+	if ((table_get(&search->table, board->hash, depth, alpha, beta, &value))) {
 		return value;
 	}
+	
+	depth = MAX(depth, 0); // Make sure depth >= 0
 
-	if (depth <= 0) {
+	if (depth == 0) {
 		value = quiescence_search(
 			search,
-			state,
+			board,
 			alpha,
 			beta
 		);
-		table_set(&search->table, state->hash, depth, value, EXACT);
+		table_set(&search->table, board->hash, depth, value, EXACT);
 		return value;
 	}
 
 	search->nodes++;
 
-	if (!is_check(state) && depth >= 3) { // Extended Null-Move Reductions
-		do_null_move_pruning(state, &undo);
+	if (!is_check(board) && depth >= 3) { // Extended Null-Move Reductions
+		do_null_move_pruning(board, &undo);
 		int R = depth > 6 ? MAX_R : MIN_R;
-		int score = -negamax(search, state, depth - R - 1, ply + 1, -beta, -beta + 1);
-		undo_null_move_pruning(state, &undo);
+		int score = -negamax(search, board, depth - R - 1, ply + 1, -beta, -beta + 1);
+		undo_null_move_pruning(board, &undo);
 		if (score >= beta) {
 			depth -= DR;
 			if (depth <= 0) {
 				return quiescence_search(
 					search,
-					state,
+					board,
 					alpha,
 					beta
 				);
 			}
-			table_set(&search->table, state->hash, depth, beta, BETA);
+			table_set(&search->table, board->hash, depth, beta, BETA);
 			return beta;
 		}
 	}
 
-	count = gen_legal_moves(state, moves);
-	sort_moves(search, state, moves, count, false);
+	count = gen_legal_moves(board, moves);
+	sort_moves(search, board, moves, count, false);
 
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
 	
 		search->nodes++;
-		do_move(state, move, &undo);
+		do_move(board, move, &undo);
+
 		if (moves_searched == 0) {
-			value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
+			value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
 		} else {
-			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(state, move)) {
-				value = -negamax(search, state, depth - 2, ply + 1, -alpha - 1, -alpha);
+			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(board, move)) {
+				value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha);
 			} else {
 				value = alpha + 1;
 			} 
 
 			if (value > alpha) {
-				value = -negamax(search, state, depth - 1, ply + 1, -alpha - 1, -alpha);
+				value = -negamax(search, board, depth - 1, ply + 1, -alpha - 1, -alpha);
 				if (value > alpha && value < beta) {
-					value = -negamax(search, state, depth - 1, ply + 1, -beta, -alpha);
+					value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
 				}
 			}
 
 		}
-		undo_move(state, move, &undo);
+
+		undo_move(board, move, &undo);
 
 		if (search->stop) {
 			break;
@@ -177,14 +177,14 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 		if (value >= beta) {
 			table_set(
 				&search->table,
-				state->hash,
+				board->hash,
 				depth,
 				beta,
 				BETA
 			);
 			table_set_move(
 				&search->table,
-				state->hash,
+				board->hash,
 				depth,
 				move
 			);
@@ -196,16 +196,16 @@ int negamax(Search *search, ChessBoard *state, int depth, int ply, int alpha, in
 			alpha = value;
 			table_set_move(
 				&search->table,
-				state->hash,
+				board->hash,
 				depth,
 				move
 			);
 		}
 	}
 	
-	if (!can_move) return is_check(state) ? -MATE + ply : 0;
+	if (!can_move) return is_check(board) ? -MATE + ply : 0;
 	
-	table_set(&search->table, state->hash, depth, alpha, flag);
+	table_set(&search->table, board->hash, depth, alpha, flag);
 	
 	return alpha;
 }
@@ -243,29 +243,29 @@ int staticExchangeEvaluation(ChessBoard *board, Move move, int threshold) {
 		
 		result &= BLACK;
 		
-		if ((leastattacker = mine & board->bb_squares[CALC_PIECE(PAWN, color)])) {
+		if ((leastattacker = mine & board->bb_squares[make_piece_type(PAWN, color)])) {
 			if ((value = SEEPieceValues[PAWN] - value) < result)
 				break;
 			occ ^= (leastattacker & -leastattacker);
 			attackers |= get_bishop_attacks(dst, occ);
 		} 
-		else if ((leastattacker = mine & board->bb_squares[CALC_PIECE(KNIGHT, color)])) {
+		else if ((leastattacker = mine & board->bb_squares[make_piece_type(KNIGHT, color)])) {
 			if ((value = SEEPieceValues[KNIGHT] - value) < result)
 				break;
 		    occ ^= (leastattacker & -leastattacker);
-		} else if ((leastattacker = mine & CALC_PIECE(BISHOP, color))) {
+		} else if ((leastattacker = mine & make_piece_type(BISHOP, color))) {
 		if ((value = SEEPieceValues[BISHOP] - value) < result)
 			break;
 
 		occ ^= (leastattacker & -leastattacker);
 		attackers |= get_bishop_attacks(dst, occ) & diag;
-		} else if ((leastattacker = mine & CALC_PIECE(ROOK, color))) {
+		} else if ((leastattacker = mine & make_piece_type(ROOK, color))) {
 		if ((value = SEEPieceValues[ROOK] - value) < result)
 			break;
 
 		occ ^= (leastattacker & -leastattacker);
 		attackers |= get_rook_attacks(dst, occ) & straight;
-		} else if ((leastattacker = mine & CALC_PIECE(QUEEN, color))) {
+		} else if ((leastattacker = mine & make_piece_type(QUEEN, color))) {
 		if ((value = SEEPieceValues[QUEEN] - value) < result)
 			break;
 
@@ -281,7 +281,7 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 	Move best_move  	= 		NULL_MOVE;
 	Move moves[MAX_MOVES];
 	Undo undo;
-	int count = gen_legal_moves(board, moves);
+	int count = gen_legal_moves(board, moves), can_move = 0;
 	sort_moves(search, board, moves, count, false);
 
 	for (int i = 0; i < count; i++) {
@@ -289,7 +289,7 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 
 		search->nodes++;
 		do_move(board, move, &undo);
-		int score = -negamax(search , board, depth, 1, -beta, -alpha);
+		int score = -negamax(search , board, depth - 1, 1, -beta, -alpha);
 		undo_move(board, move, &undo);
 
 		if (search->stop) {
@@ -299,10 +299,11 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 		if (score > alpha) {
 			alpha 	    = score;
 			best_move 	= move;
+			can_move 	= 1;
 		}
 	}
 
-	if (best_move != NULL_MOVE) {
+	if (can_move) {
 		*result = best_move;
 		table_set_move(&search->table, board->hash, depth, best_move);
 	}
@@ -320,10 +321,12 @@ void print_pv(Search *search, ChessBoard *board, int depth) {
 	Move move = entry->move;
 	Undo undo;
 
-	printf(" %s", move_to_str(move));
-	do_move(board, move, &undo);
-	print_pv(search, board, depth - 1);
-	undo_move(board, move, &undo);
+	if (move != NULL_MOVE) {
+		printf(" %s", move_to_str(move));
+		do_move(board, move, &undo);
+		print_pv(search, board, depth - 1);
+		undo_move(board, move, &undo);
+	}
 }
 
 int best_move(Search *search, ChessBoard *board, Move *result) {
@@ -338,14 +341,15 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
 	for (int depth = 1; depth <= MAX_DEPTH; depth++) {
 			best_score = root_search(search, board, depth, alpha, beta, result);
 
-			if (search->stop) {
-				break;
-			}
-#if defined(DEBUG)
+#if !defined(DEBUG)
 			printf("info score=%d, depth=%d, pv ", best_score, depth);
 			print_pv(search, board, depth);
 			printf("\n");
 #endif
+			if (search->stop) {
+				break;
+			}
+
 			if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
 
 			// Aspiration window https://www.frayn.net/beowulf/theory.html#aspiration
