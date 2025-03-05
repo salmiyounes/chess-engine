@@ -39,6 +39,9 @@ int rank_of(int sq);
 int square(int rank, 
            int file);
 
+int make_piece_type(int pc, 
+               int color);
+
 bb bb_bishop(int sq, 
              bb obs);
 

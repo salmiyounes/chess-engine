@@ -21,17 +21,17 @@
 #define BISHOP_PROMO_FLAG 10
 #define QUEEN_PROMO_FLAG  11
 
-#define NULL_MOVE 0
+#define NULL_MOVE U32(0)
 #define  IS_PROMO(flag) ( (bool)((flag) & PROMO_FLAG)) 
 #define  PROMO_PT(flag) ((flag & 0x3) + KNIGHT)
 #define  IS_ENP(flag) ((flag) == ENP_FLAG)  
 #define  IS_CAS(flag) ((flag) == CATLE_FLAG)
 
 
-#define HANDLE_PROMOTION(board, piece, flag, dst, color)							  \
-  	if (IS_PROMO(flag)) {															                  \
-		    board_update(board, dst, CALC_PIECE(PROMO_PT(flag), color)); 		\
-    } 	          																                      \
+#define HANDLE_PROMOTION(board, piece, flag, dst, color)							        \
+  	if (IS_PROMO(flag)) {															                        \
+		    board_update(board, dst, make_piece_type(PROMO_PT(flag), color)); 		\
+    } 	          																                            \
 
 #define TOGGLE_HASH(board)						                									\
 	if (board->castle)											    				                	\

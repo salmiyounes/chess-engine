@@ -128,6 +128,13 @@ int rank_of(int sq) {
     return sq / RANK_NB;
 }
 
+int make_piece_type(int pc, int color) {
+    ASSERT(color == WHITE || color == BLACK);
+    ASSERT(pc >= PAWN && pc <= KING);
+   
+    return  (pc << 1) + color;
+}
+
 int bb_squares(bb value, int squares[64]) {
 	int i = 0;
 	int sq;

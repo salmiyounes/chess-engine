@@ -21,6 +21,7 @@
 typedef unsigned long long  bb;
 
 #define U64(u) u##ULL 
+#define U32(u) u##U
 
 typedef struct { 
 	int    squares[64];
@@ -118,21 +119,19 @@ typedef struct {
 #define QUEEN  4
 #define KING   5
 
-#define CALC_PIECE(p, c) (((p) << 1) + (c))
-
-#define WHITE_PAWN      CALC_PIECE(PAWN, WHITE)
-#define BLACK_PAWN      CALC_PIECE(PAWN, BLACK)
-#define WHITE_KNIGHT	CALC_PIECE(KNIGHT, WHITE)
-#define BLACK_KNIGHT    CALC_PIECE(KNIGHT, BLACK)
-#define WHITE_BISHOP    CALC_PIECE(BISHOP, WHITE)
-#define BLACK_BISHOP    CALC_PIECE(BISHOP, BLACK)
-#define WHITE_ROOK      CALC_PIECE(ROOK, WHITE)
-#define BLACK_ROOK      CALC_PIECE(ROOK, BLACK)
-#define WHITE_QUEEN     CALC_PIECE(QUEEN, WHITE)
-#define BLACK_QUEEN     CALC_PIECE(QUEEN, BLACK)
-#define WHITE_KING      CALC_PIECE(KING, WHITE)
-#define BLACK_KING      CALC_PIECE(KING, BLACK)
-#define NONE 					  (BLACK_KING+1)
+#define WHITE_PAWN      0
+#define BLACK_PAWN      1
+#define WHITE_KNIGHT	2
+#define BLACK_KNIGHT    3
+#define WHITE_BISHOP    4
+#define BLACK_BISHOP    5
+#define WHITE_ROOK      6
+#define BLACK_ROOK      7
+#define WHITE_QUEEN     8
+#define BLACK_QUEEN     9
+#define WHITE_KING     10
+#define BLACK_KING     11 
+#define NONE		   12	
 
 #define RANK_1 0x00000000000000ffULL
 #define RANK_2 0x000000000000ff00ULL

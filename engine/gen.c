@@ -8,7 +8,7 @@ int gen_knight_moves(Move *moves, bb srcs, bb mask, int color) {
         bb dsts = BB_KNIGHT[src] & mask;
         while (dsts) {
             POP_LSB(dst, dsts);
-            EMIT_MOVE(moves, src, dst, CALC_PIECE(KNIGHT, color), EMPTY_FLAG);
+            EMIT_MOVE(moves, src, dst, make_piece_type(KNIGHT, color), EMPTY_FLAG);
         }
     }
 
@@ -23,7 +23,7 @@ int gen_bishop_moves(Move *moves, bb srcs, bb mask, bb all, int color) {
         bb dsts = bb_bishop(src, all) & mask;
         while (dsts) {
             POP_LSB(dst, dsts);
-            EMIT_MOVE(moves, src, dst, CALC_PIECE(BISHOP, color), EMPTY_FLAG);
+            EMIT_MOVE(moves, src, dst, make_piece_type(BISHOP, color), EMPTY_FLAG);
         }
     }
     return moves - ptr;
@@ -37,7 +37,7 @@ int gen_rook_moves(Move *moves, bb srcs, bb mask, bb all, int color) {
         bb dsts = bb_rook(src, all) & mask;
         while (dsts) {
             POP_LSB(dst, dsts);
-            EMIT_MOVE(moves, src, dst, CALC_PIECE(ROOK, color), EMPTY_FLAG);
+            EMIT_MOVE(moves, src, dst, make_piece_type(ROOK, color), EMPTY_FLAG);
         }
     }
     return moves - ptr;
@@ -51,7 +51,7 @@ int gen_queen_moves(Move *moves, bb srcs, bb mask, bb all, int color) {
         bb dsts = bb_queen(src, all) & mask;
         while (dsts) {
             POP_LSB(dst, dsts);
-            EMIT_MOVE(moves, src, dst, CALC_PIECE(QUEEN, color), EMPTY_FLAG);
+            EMIT_MOVE(moves, src, dst, make_piece_type(QUEEN, color), EMPTY_FLAG);
         }
     }
     return moves - ptr;
@@ -65,7 +65,7 @@ int gen_king_moves(Move *moves, bb srcs, bb mask, int color) {
         bb dsts = BB_KING[src] & mask;
         while (dsts) {
             POP_LSB(dst, dsts);
-            EMIT_MOVE(moves, src, dst, CALC_PIECE(KING, color), EMPTY_FLAG);
+            EMIT_MOVE(moves, src, dst, make_piece_type(KING, color), EMPTY_FLAG);
         }
     }
     return moves - ptr;

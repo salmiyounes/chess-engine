@@ -206,7 +206,8 @@ int board_drawn_by_insufficient_material(ChessBoard *board) {
     && (!several(board->occ[WHITE]) || !several(board->occ[BLACK]))
     && (    !several(board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT] | 
             board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP])
-        || (! (board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP]) && popcount(board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT]) <= 2));
+        || (! (board->bb_squares[WHITE_BISHOP] | board->bb_squares[BLACK_BISHOP]) && 
+        popcount(board->bb_squares[WHITE_KNIGHT] | board->bb_squares[BLACK_KNIGHT]) <= 2));
 
 }
 
