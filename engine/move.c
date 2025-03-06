@@ -261,12 +261,23 @@ void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
 }
 
 void score_move(ChessBoard *board, Move move, int *score) {
-	int src 	= EXTRACT_FROM(move), dst = EXTRACT_TO(move);
 	int piece 	= EXTRACT_PIECE(move);
+	int src 	= EXTRACT_FROM(move), dst = EXTRACT_TO(move), flag = EXTRACT_FLAGS(move); 
+	int color = COLOR(piece), result = 0;
 	int capture = board->squares[dst];
 
-	int result 	= square_values[piece][dst] - square_values[piece][src];
-	result 		+= (capture != NONE) ? square_values[capture][dst] + piece_material[capture] : 0; 
+	result 	= (color == WHITE) ? square_values[piece][(dst)] - square_values[piece][(src)] :  
+									 square_values[piece][FLIP(dst)] - square_values[piece][FLIP(src)];
+	
+	result 		+= (capture != NONE) ? (COLOR(capture) == WHITE) ? square_values[capture][dst] + piece_material[capture] : 
+																   square_values[capture][FLIP(dst)] + piece_material[capture]: 0; 
+
+	if (IS_PROMO(flag))
+		result 	+= (color == WHITE) ? square_values[PROMO_PT(flag)][dst] - square_values[WHITE_PAWN][dst] :  
+									  square_values[PROMO_PT(flag)][FLIP(dst)] - square_values[BLACK_PAWN][FLIP(dst)];
+	else if (IS_ENP(flag))
+		result += piece_material[WHITE_PAWN];
+
 	*score      = result;
 }
 
