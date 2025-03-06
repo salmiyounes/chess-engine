@@ -9,22 +9,16 @@
 #include "zobrist.h"
 #include "thpool.h"
 
-extern const int   white_pawn_square_values[64];
-extern const int white_knight_square_values[64];
-extern const int white_bishop_square_values[64];
-extern const int   white_rook_square_values[64];
-extern const int   white_king_square_values[64];
-extern const int  white_queen_square_values[64];
-
-extern const int   black_pawn_square_values[64];
-extern const int black_knight_square_values[64];
-extern const int black_bishop_square_values[64];
-extern const int   black_rook_square_values[64];
-extern const int   black_king_square_values[64];
-extern const int  black_queen_square_values[64];
+extern const int   pawn_square_values[64];
+extern const int   knight_square_values[64];
+extern const int   bishop_square_values[64];
+extern const int   rook_square_values[64];
+extern const int   king_square_values[64];
+extern const int   queen_square_values[64];
 
 extern int mg_value[6]; 
 extern int eg_value[6];
+
 extern int mg_pawn_table[64];
 extern int eg_pawn_table[64];
 extern int mg_knight_table[64];
@@ -37,11 +31,15 @@ extern int mg_queen_table[64];
 extern int eg_queen_table[64];
 extern int mg_king_table[64];
 extern int eg_king_table[64];
+
 extern int* mg_pesto_table[6];
 extern int* eg_pesto_table[6];
+
 extern int mg_table[12][64];
 extern int eg_table[12][64];
+
 extern int gamephaseInc[12];
+
 extern const int *square_values[13];
 extern  int piece_material[13];
 extern int castling_rights[64];

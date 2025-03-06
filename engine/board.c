@@ -347,7 +347,7 @@ void board_to_fen(ChessBoard *board, char *fen) {
     sprintf(fen, " %s", str);
 }
 
-const int   white_pawn_square_values[64] = {
+const int   pawn_square_values[64] = {
       0,  0,  0,  0,  0,  0,  0,  0,
       5, 10, 10,-20,-20, 10, 10,  5,
       5, -5,-10,  0,  0,-10, -5,  5,
@@ -358,7 +358,7 @@ const int   white_pawn_square_values[64] = {
       0,  0,  0,  0,  0,  0,  0,  0,
 };
 
-const int white_knight_square_values[64] = {
+const int knight_square_values[64] = {
     -50,-40,-30,-30,-30,-30,-40,-50,
     -40,-20,  0,  5,  5,  0,-20,-40,
     -30,  5, 10, 15, 15, 10,  5,-30,
@@ -369,7 +369,7 @@ const int white_knight_square_values[64] = {
     -50,-40,-30,-30,-30,-30,-40,-50,
 };
 
-const int white_bishop_square_values[64] = {
+const int bishop_square_values[64] = {
     -20,-10,-10,-10,-10,-10,-10,-20,
     -10,  5,  0,  0,  0,  0,  5,-10,
     -10, 10, 10, 10, 10, 10, 10,-10,
@@ -380,7 +380,7 @@ const int white_bishop_square_values[64] = {
     -20,-10,-10,-10,-10,-10,-10,-20,
 };
 
-const int   white_rook_square_values[64] = {
+const int   rook_square_values[64] = {
       0,  0,  0,  5,  5,  0,  0,  0,
      -5,  0,  0,  0,  0,  0,  0, -5,
      -5,  0,  0,  0,  0,  0,  0, -5,
@@ -391,7 +391,7 @@ const int   white_rook_square_values[64] = {
       0,  0,  0,  0,  0,  0,  0,  0,
 };
 
-const int   white_king_square_values[64] = {
+const int   king_square_values[64] = {
      20, 30, 10,  0,  0, 10, 30, 20,
      20, 20,  0,  0,  0,  0, 20, 20,
     -10,-20,-20,-20,-20,-20,-20,-10,
@@ -403,7 +403,7 @@ const int   white_king_square_values[64] = {
 };
 
 
-const int  white_queen_square_values[64] = {
+const int  queen_square_values[64] = {
     -20,-10,-10, -5, -5,-10,-10,-20,
     -10,  0,  5,  0,  0,  0,  0,-10,
     -10,  5,  5,  5,  5,  5,  0,-10,
@@ -411,74 +411,6 @@ const int  white_queen_square_values[64] = {
      -5,  0,  5,  5,  5,  5,  0, -5,
     -10,  0,  5,  5,  5,  5,  0,-10,
     -10,  0,  0,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20,
-};
-
-
-
-const int black_pawn_square_values[64] = {
-      0,  0,  0,  0,  0,  0,  0,  0,
-     50, 50, 50, 50, 50, 50, 50, 50,
-     10, 10, 20, 30, 30, 20, 10, 10,
-      5,  5, 10, 25, 25, 10,  5,  5,
-      0,  0,  0, 20, 20,  0,  0,  0,
-      5, -5,-10,  0,  0,-10, -5,  5,
-      5, 10, 10,-20,-20, 10, 10,  5,
-      0,  0,  0,  0,  0,  0,  0,  0,
-};
-
-const int black_knight_square_values[64] = {
-    -50,-40,-30,-30,-30,-30,-40,-50,
-    -40,-20,  0,  0,  0,  0,-20,-40,
-    -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  5, 15, 20, 20, 15,  5,-30,
-    -30,  0, 15, 20, 20, 15,  0,-30,
-    -30,  5, 10, 15, 15, 10,  5,-30,
-    -40,-20,  0,  5,  5,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50,
-};
-
-const int black_bishop_square_values[64] = {
-    -20,-10,-10,-10,-10,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5, 10, 10,  5,  0,-10,
-    -10,  5,  5, 10, 10,  5,  5,-10,
-    -10,  0, 10, 10, 10, 10,  0,-10,
-    -10, 10, 10, 10, 10, 10, 10,-10,
-    -10,  5,  0,  0,  0,  0,  5,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20,
-};
-
-const int   black_rook_square_values[64] = {
-      0,  0,  0,  0,  0,  0,  0,  0,
-      5, 10, 10, 10, 10, 10, 10,  5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-     -5,  0,  0,  0,  0,  0,  0, -5,
-      0,  0,  0,  5,  5,  0,  0,  0,
-};
-
-const int   black_king_square_values[64] = {
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -20,-30,-30,-40,-40,-30,-30,-20,
-    -10,-20,-20,-20,-20,-20,-20,-10,
-     20, 20,  0,  0,  0,  0, 20, 20,
-     20, 30, 10,  0,  0, 10, 30, 20,
-};
-
-const int  black_queen_square_values[64] = {
-  -20,-10,-10, -5, -5,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5,  5,  5,  5,  0,-10,
-     -5,  0,  5,  5,  5,  5,  0, -5,
-      0,  0,  5,  5,  5,  5,  0, -5,
-    -10,  5,  5,  5,  5,  5,  0,-10,
-    -10,  0,  5,  0,  0,  0,  0,-10,
     -20,-10,-10, -5, -5,-10,-10,-20,
 };
 
@@ -627,19 +559,13 @@ int piece_material[13] = {
 };
 
 const int *square_values[13] = {
-    
-    [   WHITE_PAWN      ]     = white_pawn_square_values,
-    [   BLACK_PAWN      ]     = black_pawn_square_values,
-    [   WHITE_KNIGHT    ]     = white_knight_square_values,
-    [   BLACK_KNIGHT    ]     = black_knight_square_values,
-    [   WHITE_BISHOP    ]     = white_bishop_square_values,
-    [   BLACK_BISHOP    ]     = black_bishop_square_values,
-    [   WHITE_ROOK      ]     = white_rook_square_values,
-    [   BLACK_ROOK      ]     = black_rook_square_values,
-    [   WHITE_QUEEN     ]     = white_queen_square_values,
-    [   BLACK_QUEEN     ]     = black_queen_square_values,
-    [   WHITE_KING      ]     = white_king_square_values,
-    [   BLACK_KING      ]     = black_king_square_values 
+    [WHITE_PAWN ... BLACK_PAWN]     = pawn_square_values,
+    [WHITE_KNIGHT ... BLACK_KNIGHT] = knight_square_values,
+    [WHITE_BISHOP ... BLACK_BISHOP] = bishop_square_values,
+    [WHITE_ROOK ... BLACK_ROOK]     = rook_square_values,
+    [WHITE_QUEEN ... BLACK_QUEEN]   = queen_square_values,
+    [WHITE_KING ... BLACK_KING]     = king_square_values
+
 };
 
 int castling_rights[64] = {0};
