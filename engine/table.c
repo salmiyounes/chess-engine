@@ -1,5 +1,11 @@
 #include "table.h"
 
+Entry *table_entry(Table *table, bb key) {return &table->entry[key & table->mask];};
+
+void table_free(Table *table) {free(table->entry);};
+
+void table_prefetch(Table *table, bb key) {__builtin_prefetch(table_entry(table, key));};
+
 void table_clear(Table *table) {
 	memset(table, 0, sizeof(Table));
 }
@@ -14,14 +20,6 @@ int table_alloc(Table *table, int bits) {
 		return 0;
 	}
 	return 1;
-}
-
-void table_free(Table *table) {
-	free(table->entry);
-}
-
-INLINE Entry *table_entry(Table *table, bb key) {
-	return &table->entry[key & table->mask];
 }
 
 Move table_get_move(Table *table, bb key) {

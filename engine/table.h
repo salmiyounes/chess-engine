@@ -13,6 +13,9 @@
 #define ALPHA 2
 #define BETA  3
 
+void table_prefetch(Table *table, 
+                    bb key);
+
 int table_alloc(Table *table, 
                 int bits);
 
