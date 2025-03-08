@@ -25,6 +25,7 @@ typedef unsigned long long  bb;
 
 typedef struct { 
 	int    squares[64];
+	int 	  numMoves;
 	int 	     color;
 	int 	    castle;
 
@@ -33,6 +34,7 @@ typedef struct {
 	int 	 gamePhase;
 
 	bb  bb_squares[12];
+	bb  m_history[8192];
 	bb 			occ[3];
 
 	bb 	 	  	    ep;

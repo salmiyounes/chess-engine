@@ -19,7 +19,7 @@ bb perft_test(ChessBoard *board, int depth) {
 	depth = MAX(depth, 0);
 	
 	if (!depth) 
-		return 1ULL; 
+		return U64(1); 
 
 	Entry_t *entry = &TABLE[(board->hash & MASK)];
 

@@ -1,7 +1,7 @@
 #include "eval.h"
 
 int pesto_eval(ChessBoard *board) {
-    if (is_draw(board)) return 0;
+    if (board_drawn_by_insufficient_material(board)) return 0;
     
     int side2move   =   board->color;
     int mgScore     =   board->mg[side2move] - board->mg[side2move ^ BLACK];
