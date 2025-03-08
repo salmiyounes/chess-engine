@@ -180,7 +180,7 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
 	SWITCH_SIDE(board);
 	board->hash ^= HASH_COLOR_SIDE;
 	TOGGLE_HASH(board);
-
+	board->m_history[board->numMoves++] = board->hash;
 }
 
 void undo_move(ChessBoard *board, Move move, Undo *undo) {
@@ -240,6 +240,7 @@ void undo_move(ChessBoard *board, Move move, Undo *undo) {
 	SWITCH_SIDE(board);
 	board->hash ^= HASH_COLOR_SIDE;
 	TOGGLE_HASH(board);
+	board->numMoves --;
 }
 
 
@@ -250,6 +251,7 @@ void do_null_move_pruning(ChessBoard *board, Undo *undo) {
 	SWITCH_SIDE(board);
 	board->hash ^= HASH_COLOR_SIDE; 
 	TOGGLE_HASH(board);
+	board->m_history[board->numMoves++] = board->hash;
 }
 
 void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
@@ -258,6 +260,7 @@ void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
 	SWITCH_SIDE(board);
 	board->hash ^= HASH_COLOR_SIDE; 
 	TOGGLE_HASH(board);
+	board->numMoves--;
 }
 
 void score_move(ChessBoard *board, Move move, int *score) {

@@ -99,7 +99,7 @@ void init_table() {
 
 void board_clear(ChessBoard *board) {
     memset(board, 0, sizeof(ChessBoard));
-    
+
     for (int i = 0; i < 64; i++) {
         board->squares[i] = NONE;
     }
@@ -199,6 +199,18 @@ void printBoard(ChessBoard *board) {
     printf("\n%s\n\n", fen);
 }
 
+int board_drawn_by_repetition(ChessBoard *board, int ply) {
+    int reps = 0;
+
+    for (int i = board->numMoves - 2; i >= 0; i -= 2) {
+        if (    board->m_history[i] == board->hash
+            && (i > board->numMoves - ply || ++reps == 2))
+            return 1;
+    }
+
+    return 0;
+}
+
 int board_drawn_by_insufficient_material(ChessBoard *board) {
     return !(board->bb_squares[WHITE_PAWN] | board->bb_squares[BLACK_PAWN] | 
             board->bb_squares[WHITE_ROOK] | board->bb_squares[BLACK_ROOK]  | 
@@ -211,8 +223,8 @@ int board_drawn_by_insufficient_material(ChessBoard *board) {
 
 }
 
-int is_draw(ChessBoard *board) {
-    return board_drawn_by_insufficient_material(board);
+int is_draw(ChessBoard *board, int ply) {
+    return board_drawn_by_insufficient_material(board) || board_drawn_by_repetition(board, ply);
 }
 
 int string_to_sq(const char * str) {
@@ -302,6 +314,7 @@ void board_load_fen(ChessBoard *board, const char *fen) {
         if (sq != -1) SET_BIT(board->ep, sq);
     }
 
+    board->numMoves =       0;
     board->hash      = U64(0);
     board->pawn_hash = U64(0);
     gen_curr_state_zobrist(board);

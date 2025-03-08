@@ -66,6 +66,9 @@ void  board_update(ChessBoard *board,
                    int sq, 
                    int piece);
 
-int is_draw(ChessBoard *board);
+int board_drawn_by_insufficient_material(ChessBoard* board);
+
+int is_draw(ChessBoard *board, 
+            int ply);
 
 #endif

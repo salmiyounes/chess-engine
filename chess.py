@@ -10,7 +10,10 @@ class Color(Enum) :
 
 class ChessBoard(ctypes.Structure):
     _fields_ = [
+        ('m_history',   ctypes.c_uint64 * 8192),
+
         ('squares', ctypes.c_int * 64),
+        ('numMoves',     ctypes.c_int),
         ('color',        ctypes.c_int),
         ('castle',       ctypes.c_int),
 
