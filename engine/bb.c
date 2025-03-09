@@ -68,7 +68,7 @@ const int SHIFT_BISHOP[64] = {
 };
 
 const int SHIFT_ROOK[64] = {
-	52, 53, 53, 53, 53, 53, 53, 52,
+    52, 53, 53, 53, 53, 53, 53, 52,
     53, 54, 54, 54, 54, 54, 54, 53,
     53, 54, 54, 54, 54, 54, 54, 53,
     53, 54, 54, 54, 54, 54, 54, 53,
@@ -136,13 +136,13 @@ int make_piece_type(int pc, int color) {
 }
 
 int bb_squares(bb value, int squares[64]) {
-	int i = 0;
-	int sq;
-	while (value) {
-		POP_LSB(sq, value);
-		squares[i++] = sq;
-	}
-	return i;
+    int i = 0;
+    int sq;
+    while (value) {
+        POP_LSB(sq, value);
+        squares[i++] = sq;
+    }
+    return i;
 }
 
 bb bb_pawns_attacks(int sq, int color) {
@@ -155,42 +155,42 @@ bb bb_pawns_attacks(int sq, int color) {
 } 
 
 bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
-	bb value = 0;
-	int rank = sq / 8;
-	int file = sq % 8;
-	int i, n;
-	for (i = 0; i < 4; i++) {
-		bb prev = 0;
-		for (n = 1; n < 9; n++) {
-			int r = rank + directions[i][0] * n;
-			int f = file + directions[i][1] * n;
-			if (r < 0 || f < 0 || r > 7 || f > 7) {
-				if (truncate) value &= ~prev;
-				break;
-			}
-			bb bit = BIT(square(r, f));
-			value |= bit;
-			if (bit & obs) break;
-			prev = bit;
-		}
-	}
+    bb value = 0;
+    int rank = sq / 8;
+    int file = sq % 8;
+    int i, n;
+    for (i = 0; i < 4; i++) {
+        bb prev = 0;
+        for (n = 1; n < 9; n++) {
+            int r = rank + directions[i][0] * n;
+            int f = file + directions[i][1] * n;
+            if (r < 0 || f < 0 || r > 7 || f > 7) {
+                if (truncate) value &= ~prev;
+                break;
+            }
+            bb bit = BIT(square(r, f));
+            value |= bit;
+            if (bit & obs) break;
+            prev = bit;
+        }
+    }
 
-	return value;
+    return value;
 }
 
 bb bb_slide_bishop(int sq, int truncate, bb obs) {
-	int directions[4][2] = {
-		{-1, -1}, {-1, 1}, {1, -1}, {1, 1}
-	};
+    int directions[4][2] = {
+        {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
+    };
 
-	return bb_slide(sq, truncate, obs, directions);
+    return bb_slide(sq, truncate, obs, directions);
 }
 
  bb bb_slide_rook(int sq, int truncate, bb obs) {
-	int directions[4][2] = {
-		{-1, 0}, {1, 0}, {0, -1}, {0, 1}
-	};
-	return bb_slide(sq, truncate, obs, directions);
+    int directions[4][2] = {
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+    };
+    return bb_slide(sq, truncate, obs, directions);
 }
 
 void bb_init() {
@@ -200,61 +200,61 @@ void bb_init() {
         BB_PAWNS[BLACK][sq] = bb_pawns_attacks(sq, BLACK);
     }
 
-	// bb_knight
-	const int knight_offsets[8][2] = {
-		{-2, -1}, {-2,  1}, { 2, -1}, { 2,  1},
+    // bb_knight
+    const int knight_offsets[8][2] = {
+        {-2, -1}, {-2,  1}, { 2, -1}, { 2,  1},
         {-1, -2}, {-1,  2}, { 1, -2}, { 1,  2},
-	};
-	
-	for (int rank = 0; rank < 8; rank++) {
-		for (int file = 0; file < 8; file++) {
-			bb value = 0;
-			for (int i = 0; i < 8; i++) {
-				int r = rank + knight_offsets[i][0];
-				int f = file + knight_offsets[i][1];
-				if (r >= 0 && f >= 0 && r < 8 && f < 8) {
-					value |= BIT(square(r, f)); 
-				}
-			}
-			BB_KNIGHT[square(rank, file)] = value; 
-		}
-	}
+    };
+    
+    for (int rank = 0; rank < 8; rank++) {
+        for (int file = 0; file < 8; file++) {
+            bb value = 0;
+            for (int i = 0; i < 8; i++) {
+                int r = rank + knight_offsets[i][0];
+                int f = file + knight_offsets[i][1];
+                if (r >= 0 && f >= 0 && r < 8 && f < 8) {
+                    value |= BIT(square(r, f)); 
+                }
+            }
+            BB_KNIGHT[square(rank, file)] = value; 
+        }
+    }
 
-	// bb_bishop
-	for (int sq = 0; sq < 64; sq++) {
-		BB_BISHOP[sq] = bb_slide_bishop(sq, 1, 0L);
-		BB_ROOK[sq]   = bb_slide_rook(sq, 1, 0L);
-	}
+    // bb_bishop
+    for (int sq = 0; sq < 64; sq++) {
+        BB_BISHOP[sq] = bb_slide_bishop(sq, 1, 0L);
+        BB_ROOK[sq]   = bb_slide_rook(sq, 1, 0L);
+    }
 
-	// attack_bishop
-	int offset = 0;
-	int squares[64];
-	for (int sq = 0; sq < 64; sq++) {
-		int count = bb_squares(BB_BISHOP[sq], squares);
-		int n     = 1 << count;
-		for (int i = 0; i < n; i++) {
-			bb obs = 0;
-			for (int j = 0; j < count; j++) {
-				if (i & (1 << j)) {
-				obs |= BIT(squares[j]);
-				}
-			}
-			bb value  = bb_slide_bishop(sq, 0, obs);
-			int index = (obs * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
-			bb prev   = ATTACK_BISHOP[offset + index];
-			if (prev && (prev != value)) {
-				    err("ERROR: invalid ATTACK_BISHOP table");
-				} 
-			
-			ATTACK_BISHOP[offset + index] = value;
-		}
+    // attack_bishop
+    int offset = 0;
+    int squares[64];
+    for (int sq = 0; sq < 64; sq++) {
+        int count = bb_squares(BB_BISHOP[sq], squares);
+        int n     = 1 << count;
+        for (int i = 0; i < n; i++) {
+            bb obs = 0;
+            for (int j = 0; j < count; j++) {
+                if (i & (1 << j)) {
+                obs |= BIT(squares[j]);
+                }
+            }
+            bb value  = bb_slide_bishop(sq, 0, obs);
+            int index = (obs * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
+            bb prev   = ATTACK_BISHOP[offset + index];
+            if (prev && (prev != value)) {
+                    err("ERROR: invalid ATTACK_BISHOP table");
+                } 
+            
+            ATTACK_BISHOP[offset + index] = value;
+        }
 
-		OFFSET_BISHOP[sq] = offset;
-		offset += 1 << (64 - SHIFT_BISHOP[sq]);
-	}
+        OFFSET_BISHOP[sq] = offset;
+        offset += 1 << (64 - SHIFT_BISHOP[sq]);
+    }
 
-	// attack_rook
-	offset = 0;
+    // attack_rook
+    offset = 0;
     for (int sq = 0; sq < 64; sq++) {
         int count = bb_squares(BB_ROOK[sq], squares);
         int n = 1 << count;
@@ -299,19 +299,19 @@ void bb_init() {
 }
 
 bb bb_bishop(int sq, bb obs) {
-	bb value  = obs & BB_BISHOP[sq];
-	int index = (value * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
-	return  ATTACK_BISHOP[index + OFFSET_BISHOP[sq]];
+    bb value  = obs & BB_BISHOP[sq];
+    int index = (value * MAGIC_BISHOP[sq]) >> SHIFT_BISHOP[sq];
+    return  ATTACK_BISHOP[index + OFFSET_BISHOP[sq]];
 }
 
 bb bb_rook(int sq, bb obs) {
-	bb value  = obs & BB_ROOK[sq];
-	int index = (value * MAGIC_ROOK[sq]) >> SHIFT_ROOK[sq];
-	return ATTACK_ROOK[index + OFFSET_ROOK[sq]];
+    bb value  = obs & BB_ROOK[sq];
+    int index = (value * MAGIC_ROOK[sq]) >> SHIFT_ROOK[sq];
+    return ATTACK_ROOK[index + OFFSET_ROOK[sq]];
 }
 
 bb bb_queen(int sq, bb obs) {
-	return bb_bishop(sq, obs) | bb_rook(sq, obs);
+    return bb_bishop(sq, obs) | bb_rook(sq, obs);
 }
 
 void bb_print(bb bbit) {

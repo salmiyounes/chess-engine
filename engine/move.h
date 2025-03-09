@@ -29,13 +29,13 @@
 
 
 #define HANDLE_PROMOTION(board, piece, flag, dst, color)							        \
-  	if (IS_PROMO(flag)) {															                        \
-		    board_update(board, dst, make_piece_type(PROMO_PT(flag), color)); 		\
+    if (IS_PROMO(flag)) {															                        \
+        board_update(board, dst, make_piece_type(PROMO_PT(flag), color)); 		\
     } 	          																                            \
 
 #define TOGGLE_HASH(board)						                									\
-	if (board->castle)											    				                	\
-		    board->hash ^= HASH_CASTLE[board->castle];    									\
+  if (board->castle)											    				                	\
+        board->hash ^= HASH_CASTLE[board->castle];    									\
     if (board->ep)  																                    \
         board->hash ^= HASH_EP[get_lsb(board->ep) % 8]; 								\
 

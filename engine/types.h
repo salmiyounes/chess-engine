@@ -7,15 +7,15 @@
 #define INLINE  inline __attribute__((always_inline))
 
 #if !defined(DEBUG_DISABLE_PRINT) || defined(DEBUG)
-	#define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
+    #define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
 #else 
-	#define err(str)
+    #define err(str)
 #endif
 
 #if !defined(DISABLE_ASSERT)
-	#define ASSERT(expr) assert(expr)
+    #define ASSERT(expr) assert(expr)
 #else 
-	#define ASSERT(expr)
+    #define ASSERT(expr)
 #endif
 
 typedef unsigned long long  bb;
@@ -24,22 +24,22 @@ typedef unsigned long long  bb;
 #define U32(u) u##U
 
 typedef struct { 
-	int    squares[64];
-	int 	  numMoves;
-	int 	     color;
-	int 	    castle;
+    int    squares[64];
+    int 	  numMoves;
+    int 	     color;
+    int 	    castle;
 
-	int  		 mg[2];
-	int 		 eg[2];
-	int 	 gamePhase;
+    int  		 mg[2];
+    int 		 eg[2];
+    int 	 gamePhase;
 
-	bb  bb_squares[12];
-	bb  m_history[8192];
-	bb 			occ[3];
+    bb  bb_squares[12];
+    bb  m_history[8192];
+    bb 			occ[3];
 
-	bb 	 	  	    ep;
+    bb 	 	  	    ep;
     bb 			  hash;
-	bb 		 pawn_hash;
+    bb 		 pawn_hash;
 
 } ChessBoard;
 
@@ -52,42 +52,42 @@ typedef struct {
 } Undo;
 
 typedef struct {
-	bb   	key;
-	int   score;
-	int   depth;
-	int    flag;
-	Move   move;
+    bb   	key;
+    int   score;
+    int   depth;
+    int    flag;
+    Move   move;
 } Entry;
 
 typedef struct {
-	int size;
-	int mask;
-	Entry *entry;
+    int size;
+    int mask;
+    Entry *entry;
 } Table;
 
 typedef struct {
-	bb 	    key;
-	int   value;
+    bb 	    key;
+    int   value;
 } PawnEntry;
 
 typedef struct {
-	int size;
-	int mask;
-	PawnEntry *entry;
+    int size;
+    int mask;
+    PawnEntry *entry;
 } PawnTable;
 
 typedef struct {
-	int   nodes;
-	bool   stop;
-	Move   move;
-	Table  table;
+    int   nodes;
+    bool   stop;
+    Move   move;
+    Table  table;
 } Search;
 
 typedef struct {
-	int 		score;
-	Search 	  *search;
-	ChessBoard *board;
-	Move 		*move;
+    int 		score;
+    Search 	  *search;
+    ChessBoard *board;
+    Move 		*move;
 } Thread_d;
 
 #define SQUARE_NB 64

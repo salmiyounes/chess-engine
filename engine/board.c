@@ -28,39 +28,39 @@ static const char *PIECE_SYMBOLS[13] = {
 const char *PIECE_LABEL[COLOR_NB] = {"PNBRQK", "pnbrqk"};
 
 void *thread_start(void *arg) {
-	Thread_d *thread_d = (Thread_d *) arg;
+    Thread_d *thread_d = (Thread_d *) arg;
 
-	thread_d->score = best_move(thread_d->search, thread_d->board, thread_d->move);
+    thread_d->score = best_move(thread_d->search, thread_d->board, thread_d->move);
 
-	return NULL;
+    return NULL;
 }
 
 void thread_stop(Search *search) {
-	search->stop = true;
+    search->stop = true;
 }
 
 int thread_init(Search *search, ChessBoard *board, Move *result) {
-	Thread_d *thread_d = (Thread_d *) calloc(1, sizeof(Thread_d));
-	
-    if (thread_d == NULL) {
-		err("thread_init(): Could not allocate memory for thread_d");
-		return -1;
-	}
+    Thread_d *thread_d = (Thread_d *) calloc(1, sizeof(Thread_d));
     
-	thread_d->board  =  board;
-	thread_d->search = search;
-	thread_d->move   = result;
-	thread_d->score = 	 -INF;
+    if (thread_d == NULL) {
+        err("thread_init(): Could not allocate memory for thread_d");
+        return -1;
+    }
+    
+    thread_d->board  =  board;
+    thread_d->search = search;
+    thread_d->move   = result;
+    thread_d->score = 	 -INF;
 
     threadpool thpool_p;
-	thpool_p = thpool_init(1);
+    thpool_p = thpool_init(1);
     
     if (thpool_p == NULL) { 
         free(thread_d);
         return -1;
     }
 
-	if (thpool_add_work(thpool_p, (void *)thread_start, (void *)thread_d) == -1) {
+    if (thpool_add_work(thpool_p, (void *)thread_start, (void *)thread_d) == -1) {
         free(thread_d);
         thpool_destroy(thpool_p);
         return -1;
@@ -80,9 +80,9 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
     int score = thread_d->score;
 
     thpool_destroy(thpool_p);
-	free(thread_d);
+    free(thread_d);
 
-	return score;
+    return score;
 }
 
 void init_table() {
