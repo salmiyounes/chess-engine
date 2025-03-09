@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "board.h"
+#include "utils.h"
 #include "time.h"
 
 #define DURATION 1
@@ -242,17 +243,6 @@ void sq_to_string(int sq, char *str) {
     }
 
     *str++ = '\0';
-}
-
-char *strdup(const char *src) {
-    if (src == NULL) return NULL;
-    
-    size_t len = strlen(src) + 1;
-    void *new  = malloc(len);
-
-    if (new == NULL) return NULL;
-
-    return (char *) memcpy(new, src, len);
 }
 
 void board_load_fen(ChessBoard *board, const char *fen) {
