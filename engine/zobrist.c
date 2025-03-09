@@ -1,4 +1,5 @@
 #include "zobrist.h"
+#include "utils.h"
 /*
     from https://research.cs.wisc.edu/techreports/1970/TR88.pdf
     Properties :
@@ -13,16 +14,6 @@ bb HASH_PIECES[12][64];
 bb HASH_EP[8];
 bb HASH_CASTLE[16];
 bb HASH_COLOR_SIDE;
-
-bb xorshift64() {
-    // https://en.wikipedia.org/wiki/Xorshift
-    // https://vigna.di.unimi.it/ftp/papers/xorshift.pdf
-    static bb x = U64(1);
-    x ^= x >> 12;
-    x ^= x << 25;
-    x ^= x >> 27;
-    return x * U64(0x2545F4914F6CDD1D);
-}
 
 void init_zobrist() {
     for (int i = 0; i < 12; i++) {
