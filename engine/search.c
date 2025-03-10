@@ -3,42 +3,40 @@
 #define FullDepthMoves 4
 #define ReductionLimit 3
 
+int compare(const void *p, const void *q) {
+    // https://en.cppreference.com/w/c/algorithm/qsort
+	struct Score *x = (struct Score *) p;
+	struct Score *y = (struct Score *) q;
+
+    return (y->score > x->score) - (y->score < x->score);
+}
+
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
-	ASSERT(capture == 0 || capture == 1);
-	
-	Move temp[MAX_MOVES];
-	int scores[MAX_MOVES];
-	int indexes[MAX_MOVES];
+    ASSERT(capture == 0 || capture == 1);
 
-	Move best = table_get_move(&search->table, board->hash);
-	
-	static void (*table[2])(ChessBoard *, Move, int *) = {
-		score_move, score_capture
-	};
-	
-	for (int i = 0; i < count; i++) {
-		Move move = moves[i];
-		table[capture](board, move, scores + i);
-		if (best && (best == move)) {
-			scores[i] += INF;
-		}
-		indexes[i] = i; 
-	}
-	for (int i = 1; i < count; i++) {
-		int j = i;
-		while (j > 0 && scores[j - 1] < scores[j])
-		{
-			SWAP_VALUES(scores[j - 1], scores[j]);
-			SWAP_VALUES(indexes[j - 1], indexes[j]);
-			j--;			
-		}
-	}
+    Move best = table_get_move(&search->table, board->hash);
+    
+    static void (*score_functions[2])(ChessBoard *, Move, int *) = {
+        score_move, score_capture
+    };
+    
+    struct Score scores[MAX_MOVES] = {0};
+    for (int i = 0; i < count; i++) {
+        Move move = moves[i];
+        score_functions[capture](board, move, &scores[i].score);
+        if (best && (best == move)) {
+            scores[i].score += INF;
+        }
+        scores[i].index = i; 
+    }
 
-	memcpy(temp, moves, sizeof(Move) * count);
-	
-	for (int i = 0; i < count; i++) {
-		moves[i] = temp[indexes[i]];
-	}
+    qsort(scores, count, sizeof(struct Score), compare);
+
+    Move temp[MAX_MOVES];
+    memcpy(temp, moves, sizeof(Move) * count);
+    for (int i = 0; i < count; i++) {
+        moves[i] = temp[scores[i].index];
+    }
 }
 
 int ok_to_reduce(ChessBoard *board, Move move) {

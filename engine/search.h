@@ -23,8 +23,6 @@
 #define MIN_R 		       3 
 #define DR                 4 
 
-#define SWAP_VALUES(a, b)  do { __typeof__(a) c = b; b = a; a = c;} while(0)
-
 int best_move(Search *search, 
               ChessBoard *board, 
               Move *result);

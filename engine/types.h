@@ -90,6 +90,11 @@ typedef struct {
     Move 		*move;
 } Thread_d;
 
+struct Score {
+    int score;
+    int index;
+}; 
+
 #define SQUARE_NB 64
 #define COLOR_NB   2
 #define FILE_NB    8
