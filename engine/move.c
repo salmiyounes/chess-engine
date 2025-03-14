@@ -29,7 +29,7 @@ void make_move(ChessBoard *board, Move move) {
 }
 
 bool is_capture(ChessBoard *board, const Move move) {
-    return (bool) (attacks_to_square(board, EXTRACT_TO(move), board->bb_squares[BOTH]));	
+    return (bool) (board->squares[EXTRACT_TO(move)] != NONE);	
 }
 
 void notate_move(ChessBoard *board, Move move, char *result) {
@@ -274,7 +274,6 @@ void score_move(ChessBoard *board, Move move, int *score) {
     
     result 		+= (capture != NONE) ? (COLOR(capture) == WHITE) ? square_values[capture][dst] + piece_material[capture] : 
                                                                    square_values[capture][FLIP(dst)] + piece_material[capture]: 0; 
-
     if (IS_PROMO(flag))
         result 	+= (color == WHITE) ? square_values[PROMO_PT(flag)][dst] - square_values[WHITE_PAWN][dst] :  
                                       square_values[PROMO_PT(flag)][FLIP(dst)] - square_values[BLACK_PAWN][FLIP(dst)];

@@ -73,14 +73,9 @@ int thread_init(Search *search, ChessBoard *board, Move *result) {
     nanosleep(&ts, NULL);
     
     thread_stop(search);
-
-    ts.tv_sec = 0;
-    ts.tv_nsec = 100000000;  
-    nanosleep(&ts, NULL);
+    thpool_destroy(thpool_p);
 
     int score = thread_d->score;
-
-    thpool_destroy(thpool_p);
     free(thread_d);
 
     return score;

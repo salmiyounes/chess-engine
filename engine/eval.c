@@ -1,5 +1,9 @@
 #include "eval.h"
 
+int eval(ChessBoard *board) {
+    return pesto_eval(board) + evaluate_pawns(board);
+}
+
 int pesto_eval(ChessBoard *board) {
     if (board_drawn_by_insufficient_material(board)) return 0;
     
