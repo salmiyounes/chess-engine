@@ -2,6 +2,7 @@
 
 #define FullDepthMoves 4
 #define ReductionLimit 3
+#define MAX_PLY      100
 
 int compare(const void *p, const void *q) {
     // https://en.cppreference.com/w/c/algorithm/qsort
@@ -41,7 +42,7 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
 
 int ok_to_reduce(ChessBoard *board, Move move) {
 	// https://www.chessprogramming.org/Late_Move_Reductions#Uncommon_Conditions
-	return ((!is_check(board)) && (!is_capture(board, move)) && 
+	return ((!is_capture(board, move)) && 
 			(IS_PROMO(EXTRACT_FLAGS(move)) == EMPTY_FLAG)    &&
 			(!move_gives_check(board, move)));
 } 
@@ -53,7 +54,7 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 	Undo undo;
 	Move moves[MAX_MOVES];
 
-	score = pesto_eval(board) + evaluate_pawns(board);
+	score  = eval(board);
 
 	if (score >= beta) {
 		return beta;
@@ -94,9 +95,19 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, int beta) {
 	if (illegal_to_move(board)) return INF;
 
-	int flag = ALPHA, value = 0, count, can_move = 0, moves_searched = 0;
+	int flag = ALPHA, value = 0, count, can_move = 0;
+	const int isPv    = (alpha != beta - 1);
+	const int isRootN = (ply != 0);
 	Undo undo;
 	Move moves[MAX_MOVES];
+
+	if (!isRootN) {
+        if (ply >= MAX_PLY)
+            return is_check(board) ? 0 : eval(board);
+        int rAlpha = MAX(alpha, -MATE + ply);
+        int rBeta  = MIN(beta ,  MATE - ply - 1);
+        if (rAlpha >= rBeta) return rAlpha;
+    }
 
 	if ((table_get(&search->table, board->hash, depth, alpha, beta, &value))) {
 		return value;
@@ -104,7 +115,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
 	
 	depth = MAX(depth, 0); // Make sure depth >= 0
 
-	if (depth == 0) {
+	if (depth == 0 && !is_check(board)) {
 		value = quiescence_search(
 			search,
 			board,
@@ -117,7 +128,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
 
 	search->nodes++;
 
-	if (!is_check(board) && depth >= 3) { // Extended Null-Move Reductions
+	if (!is_check(board) && !isPv && depth >= 3) { // Extended Null-Move Reductions
 		do_null_move_pruning(board, &undo);
 		int R = depth > 6 ? MAX_R : MIN_R;
 		int score = -negamax(search, board, depth - R - 1, ply + 1, -beta, -beta + 1);
@@ -142,27 +153,12 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
 
 	for (int i = 0; i < count; i++) {
 		Move move = moves[i];
-	
+		if (!staticExchangeEvaluation(board, move, 0)) continue;
+
 		search->nodes++;
 		do_move(board, move, &undo);
 
-		if (moves_searched == 0) {
-			value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
-		} else {
-			if (moves_searched >= FullDepthMoves && depth >= ReductionLimit && ok_to_reduce(board, move)) {
-				value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha);
-			} else {
-				value = alpha + 1;
-			} 
-
-			if (value > alpha) {
-				value = -negamax(search, board, depth - 1, ply + 1, -alpha - 1, -alpha);
-				if (value > alpha && value < beta) {
-					value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
-				}
-			}
-
-		}
+		value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
 
 		undo_move(board, move, &undo);
 
