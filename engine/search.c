@@ -1,6 +1,6 @@
 #include "search.h"
 
-#define FullDepthMoves 4
+#define FullDepthMoves 5
 #define ReductionLimit 3
 #define MAX_PLY      100
 
@@ -42,9 +42,7 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
 
 int ok_to_reduce(ChessBoard *board, Move move) {
     // https://www.chessprogramming.org/Late_Move_Reductions#Uncommon_Conditions
-    return ((!is_capture(board, move)) && 
-            (IS_PROMO(EXTRACT_FLAGS(move)) == EMPTY_FLAG)    &&
-            (!move_gives_check(board, move)));
+    return ((!is_tactical_move(board, move)) && (!move_gives_check(board, move)));
 } 
 
 int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
@@ -95,7 +93,7 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
 int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, int beta) {
     if (illegal_to_move(board)) return INF;
 
-    int flag = ALPHA, value = -INF, count, can_move = 0;
+    int flag = ALPHA, value = -INF, count, can_move = 0, moves_searched = 0;
     const int isPv    = (alpha != beta - 1);
     const int isRootN = (ply != 0);
     Undo undo;
@@ -154,9 +152,30 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         Move move = moves[i];
         do_move(board, move, &undo);
 
-        value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
+        if (moves_searched == 0) {
+            value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
+        } else {
+            if (moves_searched >= FullDepthMoves 
+                && depth >= ReductionLimit
+                && !isPv
+                && !is_check(board) 
+                && ok_to_reduce(board, move)) {
+                value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha);
+            } else {
+                value = alpha + 1;
+            } 
+
+            if (value > alpha) {
+                value = -negamax(search, board, depth - 1, ply + 1, -alpha - 1, -alpha);
+                if (value > alpha && value < beta) {
+                    value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
+                }
+            }
+        }
 
         undo_move(board, move, &undo);
+
+        moves_searched++;
 
         if (search->stop) {
             break;
