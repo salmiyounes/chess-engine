@@ -76,9 +76,6 @@ void do_move(ChessBoard *board,
 void make_move(ChessBoard *board, 
                Move move);
 
-bool is_capture(ChessBoard *board, 
-                const Move move);
-
 void notate_move(ChessBoard *board, 
                  Move move, 
                  char *result);
@@ -106,5 +103,6 @@ void do_null_move_pruning(ChessBoard *board,
 
 char *move_to_str(Move move);
 
-
+bool is_tactical_move(ChessBoard *board, 
+                      const Move move);
 #endif

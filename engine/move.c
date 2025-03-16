@@ -32,6 +32,11 @@ bool is_capture(ChessBoard *board, const Move move) {
     return (bool) (board->squares[EXTRACT_TO(move)] != NONE);	
 }
 
+bool is_tactical_move(ChessBoard *board, const Move move) {
+    int flag = EXTRACT_FLAGS(move);
+    return is_capture(board, move) || IS_CAS(flag) || IS_ENP(flag) || IS_CAS(flag);
+}
+
 void notate_move(ChessBoard *board, Move move, char *result) {
     int piece   = EXTRACT_PIECE(move);
     int flag	= EXTRACT_FLAGS(move);
@@ -272,8 +277,8 @@ void score_move(ChessBoard *board, Move move, int *score) {
     result 	= (color == WHITE) ? square_values[piece][(dst)] - square_values[piece][(src)] :  
                                      square_values[piece][FLIP(dst)] - square_values[piece][FLIP(src)];
     
-    result 		+= (capture != NONE) ? (COLOR(capture) == WHITE) ? square_values[capture][dst] + piece_material[capture] : 
-                                                                   square_values[capture][FLIP(dst)] + piece_material[capture]: 0; 
+    result 	+= (is_capture(board, move)) ? (COLOR(capture) == WHITE) ? square_values[capture][dst] + piece_material[capture] : 
+                                                                       square_values[capture][FLIP(dst)] + piece_material[capture]: 0; 
     if (IS_PROMO(flag))
         result 	+= (color == WHITE) ? square_values[PROMO_PT(flag)][dst] - square_values[WHITE_PAWN][dst] :  
                                       square_values[PROMO_PT(flag)][FLIP(dst)] - square_values[BLACK_PAWN][FLIP(dst)];
