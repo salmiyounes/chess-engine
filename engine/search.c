@@ -96,12 +96,15 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     int flag = ALPHA, value = -INF, count, can_move = 0, moves_searched = 0;
     const int isPv    = (alpha != beta - 1);
     const int isRootN = (ply != 0);
+    const int InCheck = is_check(board);
     Undo undo;
     Move moves[MAX_MOVES];
 
     if (!isRootN) {
+        if (board_drawn_by_insufficient_material(board)) 
+            return 0;
         if (ply >= MAX_PLY)
-            return is_check(board) ? 0 : eval(board);
+            return  InCheck ? 0 : eval(board);
         int rAlpha = MAX(alpha, -MATE + ply);
         int rBeta  = MIN(beta ,  MATE - ply - 1);
         if (rAlpha >= rBeta) return rAlpha;
@@ -113,7 +116,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     
     depth = MAX(depth, 0); // Make sure depth >= 0
 
-    if (depth == 0 && !is_check(board)) {
+    if (depth == 0 && !InCheck) {
         value = quiescence_search(search, board, alpha, beta);
         table_set(&search->table, board->hash, depth, value, EXACT);
         return value;
@@ -121,8 +124,14 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
 
     value = eval(board);
 
+    // Reverse Futility Pruning
+    if (!InCheck && !isPv && depth <= 3) {
+        int margine = 150 * depth;
+        if (value >= beta + margine) return quiescence_search(search, board, alpha, beta);
+    }
+    
     // Razoring
-    if (!is_check(board) && !isPv) {
+    if (!InCheck && !isPv) {
         if (depth <= 5 && value + 214 * depth <= alpha) {
             int score = quiescence_search(search, board, alpha, beta);
             if (score <= alpha)
@@ -131,7 +140,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     }
 
     // Extended Null-Move Reductions
-    if (!is_check(board) && !isPv && depth >= 3) { 
+    if (!InCheck && !isPv && depth >= 3) { 
         do_null_move_pruning(board, &undo);
         int R = depth > 6 ? MAX_R : MIN_R;
         int score = -negamax(search, board, depth - R - 1, ply + 1, -beta, -beta + 1);
@@ -334,7 +343,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
     for (int depth = 1; depth <= MAX_DEPTH; depth++) {
             best_score = root_search(search, board, depth, alpha, beta, result);
 
-#if !defined(DEBUG)
+#if defined(DEBUG)
             printf("info score=%d, depth=%d, pv ", best_score, depth);
             print_pv(search, board, depth);
             printf("\n");
