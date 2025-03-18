@@ -95,6 +95,12 @@ struct Score {
     int index;
 }; 
 
+typedef struct {
+    bb 		key;
+    bb 	  value;
+    int   depth;
+} Entry_t;
+
 #define SQUARE_NB 64
 #define COLOR_NB   2
 #define FILE_NB    8

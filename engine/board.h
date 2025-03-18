@@ -71,4 +71,6 @@ int board_drawn_by_insufficient_material(ChessBoard* board);
 int is_draw(ChessBoard *board, 
             int ply);
 
+bb perft_test(ChessBoard *board, 
+              int depth);
 #endif
