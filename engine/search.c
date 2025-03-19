@@ -127,7 +127,8 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     // Reverse Futility Pruning
     if (!InCheck && !isPv && depth <= 3) {
         int margine = 150 * depth;
-        if (value >= beta + margine) return quiescence_search(search, board, alpha, beta);
+        if (value >= beta + margine) 
+            return  beta + (value - beta) / 3; // https://www.chessprogramming.org/Reverse_Futility_Pruning#Return_Value
     }
     
     // Razoring
