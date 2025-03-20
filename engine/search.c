@@ -58,9 +58,13 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
         return beta;
     }
     
-    if (score > alpha) {
-        alpha = score;
+    // https://www.chessprogramming.org/Delta_Pruning
+    int Delta = 975; // queen value
+    if (score + Delta < alpha) {
+        return alpha;
     }
+
+    alpha = MAX(alpha, score);
 
     count = gen_attacks(board, moves);
     sort_moves(search, board, moves, count, true);
@@ -68,8 +72,8 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
 
-        if (!staticExchangeEvaluation(board, move, 0)) continue;
-
+        if (!is_tactical_move(board, move) && !staticExchangeEvaluation(board, move, 0)) 
+            continue;
         search->nodes++;
         do_move(board, move, &undo);
         int value = -quiescence_search(search, board, -beta, -alpha);
@@ -82,9 +86,8 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
         if (value >= beta) {
             return beta;
         }
-        if (value > alpha) {
-            alpha = value;
-        }
+
+        alpha = MAX(alpha, value);
     }
 
     return alpha;
@@ -128,7 +131,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     if (!InCheck && !isPv && depth <= 3) {
         int margine = 150 * depth;
         if (value >= beta + margine) 
-            return  beta + (value - beta) / 3; // https://www.chessprogramming.org/Reverse_Futility_Pruning#Return_Value
+            return (value + beta) / 2 ; // https://www.chessprogramming.org/Reverse_Futility_Pruning#Return_Value
     }
     
     // Razoring
