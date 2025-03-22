@@ -3,6 +3,7 @@
 #define FullDepthMoves 5
 #define ReductionLimit 3
 #define MAX_PLY      100
+static int History_Heuristic[COLOR_NB][SQUARE_NB][SQUARE_NB] = {0};
 
 int compare(const void *p, const void *q) {
     // https://en.cppreference.com/w/c/algorithm/qsort
@@ -27,8 +28,10 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
         score_functions[capture](board, move, &scores[i].score);
         if (best && (best == move)) {
             scores[i].score += INF;
+        } else {
+            scores[i].score += (!is_capture(board, move)) ? History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] : 0;
         }
-        scores[i].index = i; 
+        scores[i].index  = i; 
     }
 
     qsort(scores, count, sizeof(struct Score), compare);
@@ -203,6 +206,8 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         }
 
         if (value > alpha) {
+            if (!is_capture(board, move)) 
+                History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] += depth * depth;
             flag = EXACT;
             alpha = value;
             table_set_move(&search->table, board->hash, depth, move);
@@ -343,6 +348,8 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
     if (!table_alloc(&search->table, 20)) {
         return -best_score;
     }
+
+    memset(History_Heuristic, 0, sizeof(History_Heuristic));
 
     for (int depth = 1; depth <= MAX_DEPTH; depth++) {
             best_score = root_search(search, board, depth, alpha, beta, result);
