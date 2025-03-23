@@ -28,8 +28,8 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool 
         score_functions[capture](board, move, &scores[i].score);
         if (best && (best == move)) {
             scores[i].score += INF;
-        } else {
-            scores[i].score += (!is_capture(board, move)) ? History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] : 0;
+        } else if (!is_capture(board, move)) { 
+            scores[i].score += History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
         }
         scores[i].index  = i; 
     }
@@ -83,7 +83,7 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
         undo_move(board, move, &undo);
         
         if (search->stop) {
-            break;
+            goto stop_loop;
         }
 
         if (value >= beta) {
@@ -93,13 +93,14 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
         alpha = MAX(alpha, value);
     }
 
+stop_loop:
     return alpha;
 }
 
-int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, int beta) {
+int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, int beta, bool cutnode) {
     if (illegal_to_move(board)) return INF;
 
-    int flag = ALPHA, value = -INF, count, can_move = 0, moves_searched = 0;
+    int flag = ALPHA, value = -INF, count, TtHit, can_move = 0, moves_searched = 0;
     const int isPv    = (alpha != beta - 1);
     const int isRootN = (ply != 0);
     const int InCheck = is_check(board);
@@ -116,8 +117,15 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         if (rAlpha >= rBeta) return rAlpha;
     }
 
-    if ((table_get(&search->table, board->hash, depth, alpha, beta, &value))) {
+    if ((TtHit = table_get(&search->table, board->hash, depth, alpha, beta, &value))) {
         return value;
+    }
+
+    // https://www.chessprogramming.org/Internal_Iterative_Reductions
+    if (!InCheck) {
+        Entry *entry = table_entry(&search->table, board->hash);
+        if ((isPv || cutnode) && depth >= 4 && entry->move == NULL_MOVE)
+            depth--;
     }
     
     depth = MAX(depth, 0); // Make sure depth >= 0
@@ -150,7 +158,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     if (!InCheck && !isPv && depth >= 3) { 
         do_null_move_pruning(board, &undo);
         int R = depth > 6 ? MAX_R : MIN_R;
-        int score = -negamax(search, board, depth - R - 1, ply + 1, -beta, -beta + 1);
+        int score = -negamax(search, board, depth - R - 1, ply + 1, -beta, -beta + 1, !cutnode);
         undo_null_move_pruning(board, &undo);
         if (score >= beta) {
             depth -= DR;
@@ -169,22 +177,22 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         do_move(board, move, &undo);
 
         if (moves_searched == 0) {
-            value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
+            value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha, !cutnode);
         } else {
             if (moves_searched >= FullDepthMoves 
                 && depth >= ReductionLimit
                 && !isPv
                 && !is_check(board) 
                 && ok_to_reduce(board, move)) {
-                value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha);
+                value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha, true);
             } else {
                 value = alpha + 1;
             } 
 
             if (value > alpha) {
-                value = -negamax(search, board, depth - 1, ply + 1, -alpha - 1, -alpha);
+                value = -negamax(search, board, depth - 1, ply + 1, -alpha - 1, -alpha, !cutnode);
                 if (value > alpha && value < beta) {
-                    value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha);
+                    value = -negamax(search, board, depth - 1, ply + 1, -beta, -alpha, !cutnode);
                 }
             }
         }
@@ -194,7 +202,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         moves_searched++;
 
         if (search->stop) {
-            break;
+            goto stop_loop;
         }
 
         if (value > -INF) can_move = 1;
@@ -213,7 +221,8 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
             table_set_move(&search->table, board->hash, depth, move);
         }
     }
-    
+
+stop_loop:
     if (!can_move) return is_check(board) ? -MATE + ply : 0;
     
     table_set(&search->table, board->hash, depth, alpha, flag);
@@ -300,11 +309,11 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
 
         search->nodes++;
         do_move(board, move, &undo);
-        int score = -negamax(search , board, depth - 1, 1, -beta, -alpha);
+        int score = -negamax(search , board, depth - 1, 1, -beta, -alpha, false);
         undo_move(board, move, &undo);
 
         if (search->stop) {
-            break;
+            goto stop_loop;
         }
 
         if (score > alpha) {
@@ -314,11 +323,11 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
         }
     }
 
+stop_loop:
     if (can_move) {
         *result = best_move;
         table_set_move(&search->table, board->hash, depth, best_move);
     }
-
     return alpha;
 } 
 
@@ -360,7 +369,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
             printf("\n");
 #endif
             if (search->stop) {
-                break;
+                goto cleanup;
             }
 
             if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
@@ -374,7 +383,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
             alpha = best_score - VALID_WINDOW;
             beta  = best_score + VALID_WINDOW;
     }
-
+cleanup:
     table_free(&search->table);
     return best_score;
 }
