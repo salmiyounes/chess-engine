@@ -62,7 +62,9 @@
 #define EXTRACT_PIECE(move) \
   ((int)(((move) >> 12) & 0xf))
 
-
+extern int History_Heuristic[COLOR_NB][SQUARE_NB][SQUARE_NB];
+extern Move KILLER_MOVES[COLOR_NB][SQUARE_NB]; 
+  
 extern const int MVV_LVA[6][6];
 static const int SEEPieceValues[] = {
        103,  422,  437,  694,
@@ -84,11 +86,7 @@ void undo_move(ChessBoard *board,
                Move move, 
                Undo *undo);
 
-void score_move(ChessBoard *board, 
-               Move move,
-               int *score);
-
-void score_capture(ChessBoard *board, 
+void score_moves(ChessBoard *board, 
                   Move move,
                   int *score);
 

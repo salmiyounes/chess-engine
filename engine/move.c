@@ -1,5 +1,9 @@
 #include "move.h"
 
+int History_Heuristic[COLOR_NB][SQUARE_NB][SQUARE_NB] = {0};
+Move KILLER_MOVES[COLOR_NB][64] = {0}; 
+
+
 const char* PROMOTION_TO_CHAR = "-nbrq-";
 
 // from https://rustic-chess.org/search/ordering/mvv_lva.html
@@ -34,7 +38,7 @@ bool is_capture(ChessBoard *board, const Move move) {
 
 bool is_tactical_move(ChessBoard *board, const Move move) {
     int flag = EXTRACT_FLAGS(move);
-    return is_capture(board, move) || IS_CAS(flag) || IS_ENP(flag) || IS_CAS(flag);
+    return is_capture(board, move) || IS_ENP(flag) || IS_PROMO(flag);
 }
 
 void notate_move(ChessBoard *board, Move move, char *result) {
@@ -115,6 +119,8 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
     ASSERT(color == WHITE || color == BLACK);
     ASSERT(flag >= EMPTY_FLAG && flag <= QUEEN_PROMO_FLAG);
 
+    board->m_history[board->numMoves++] = board->hash;
+
     TOGGLE_HASH(board);
 
     undo->capture = board->squares[dst];
@@ -185,7 +191,6 @@ void do_move(ChessBoard *board, Move move, Undo *undo) {
     SWITCH_SIDE(board);
     board->hash ^= HASH_COLOR_SIDE;
     TOGGLE_HASH(board);
-    board->m_history[board->numMoves++] = board->hash;
 }
 
 void undo_move(ChessBoard *board, Move move, Undo *undo) {
@@ -250,13 +255,13 @@ void undo_move(ChessBoard *board, Move move, Undo *undo) {
 
 
 void do_null_move_pruning(ChessBoard *board, Undo *undo) {
+    board->m_history[board->numMoves++] = board->hash;
     TOGGLE_HASH(board);
     undo->ep = board->ep;
     board->ep = U64(0);
     SWITCH_SIDE(board);
     board->hash ^= HASH_COLOR_SIDE; 
     TOGGLE_HASH(board);
-    board->m_history[board->numMoves++] = board->hash;
 }
 
 void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
@@ -268,30 +273,25 @@ void undo_null_move_pruning(ChessBoard *board, Undo *undo) {
     board->numMoves--;
 }
 
-void score_move(ChessBoard *board, Move move, int *score) {
-    int piece 	= EXTRACT_PIECE(move);
-    int src 	= EXTRACT_FROM(move), dst = EXTRACT_TO(move), flag = EXTRACT_FLAGS(move); 
-    int color = COLOR(piece), result = 0;
-    int capture = board->squares[dst];
+void score_moves(ChessBoard *board, Move move, int *score) {
+    int piece 	    = EXTRACT_PIECE(move);
+    int src 	    = EXTRACT_FROM(move), dst = EXTRACT_TO(move), flag = EXTRACT_FLAGS(move); 
+    int color       = COLOR(piece), result = 0;
+    int attacker 	= PIECE(EXTRACT_PIECE(move)), victim = PIECE(board->squares[dst]);
 
     result 	= (color == WHITE) ? square_values[piece][(dst)] - square_values[piece][(src)] :  
                                      square_values[piece][FLIP(dst)] - square_values[piece][FLIP(src)];
     
-    result 	+= (is_capture(board, move)) ? (COLOR(capture) == WHITE) ? square_values[capture][dst] + piece_material[capture] : 
-                                                                       square_values[capture][FLIP(dst)] + piece_material[capture]: 0; 
+    if (is_capture(board, move))
+        result 	+= MVV_LVA[victim][attacker];
+
     if (IS_PROMO(flag))
         result 	+= (color == WHITE) ? square_values[PROMO_PT(flag)][dst] - square_values[WHITE_PAWN][dst] :  
                                       square_values[PROMO_PT(flag)][FLIP(dst)] - square_values[BLACK_PAWN][FLIP(dst)];
     else if (IS_ENP(flag))
-        result += piece_material[WHITE_PAWN];
-
-    *score      = result;
-}
-
-void score_capture(ChessBoard *board, Move move, int *score) {
-    int dst 		= EXTRACT_TO(move);
-    int attacker 	= PIECE(EXTRACT_PIECE(move)), victim = PIECE(board->squares[dst]);
-    *score 			= MVV_LVA[victim][attacker];
+        result += MVV_LVA[PAWN][PAWN];
+    
+    *score 			= result;
 }
 
 INLINE int move_estimated_value(ChessBoard *board, Move move) {
