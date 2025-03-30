@@ -3,7 +3,6 @@
 #define FullDepthMoves 5
 #define ReductionLimit 3
 #define MAX_PLY      100
-static int History_Heuristic[COLOR_NB][SQUARE_NB][SQUARE_NB] = {0};
 
 int compare(const void *p, const void *q) {
     // https://en.cppreference.com/w/c/algorithm/qsort
@@ -13,24 +12,24 @@ int compare(const void *p, const void *q) {
     return (y->score > x->score) - (y->score < x->score);
 }
 
-void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, bool capture) {
-    ASSERT(capture == 0 || capture == 1);
-
+void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, int ply) {
     Move best = table_get_move(&search->table, board->hash);
-    
-    static void (*score_functions[2])(ChessBoard *, Move, int *) = {
-        score_move, score_capture
-    };
-    
     struct Score scores[MAX_MOVES] = {0};
+
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
-        score_functions[capture](board, move, &scores[i].score);
-        if (best && (best == move)) {
-            scores[i].score += INF;
-        } else if (!is_capture(board, move)) { 
-            scores[i].score += History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
+        score_moves(board, move, &scores[i].score);
+        if (!is_capture(board, move)) { // Quit moves scoring
+            if (KILLER_MOVES[WHITE][ply] == move)
+                scores[i].score += 9000;
+            else if (KILLER_MOVES[BLACK][ply] == move) 
+                scores[i].score += 8000;
+            else
+                scores[i].score += History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
         }
+        if (best != NULL_MOVE && (best == move)) {
+            scores[i].score += INF;
+        } 
         scores[i].index  = i; 
     }
 
@@ -48,7 +47,7 @@ int ok_to_reduce(ChessBoard *board, Move move) {
     return ((!is_tactical_move(board, move)) && (!move_gives_check(board, move)));
 } 
 
-int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
+int quiescence_search(Search *search, ChessBoard *board, int ply, int alpha, int beta) {
     if (illegal_to_move(board)) return INF;
     
     int score, count;
@@ -70,16 +69,16 @@ int quiescence_search(Search *search, ChessBoard *board, int alpha, int beta) {
     alpha = MAX(alpha, score);
 
     count = gen_attacks(board, moves);
-    sort_moves(search, board, moves, count, true);
+    sort_moves(search, board, moves, count, ply);
 
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
 
-        if (!is_tactical_move(board, move) && !staticExchangeEvaluation(board, move, 0)) 
+        if (!staticExchangeEvaluation(board, move, 0)) 
             continue;
         search->nodes++;
         do_move(board, move, &undo);
-        int value = -quiescence_search(search, board, -beta, -alpha);
+        int value = -quiescence_search(search, board, ply, -beta, -alpha);
         undo_move(board, move, &undo);
         
         if (search->stop) {
@@ -107,8 +106,10 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     Undo undo;
     Move moves[MAX_MOVES];
 
+    depth = MAX(depth, 0); // Make sure depth >= 0
+
     if (!isRootN) {
-        if (board_drawn_by_insufficient_material(board)) 
+        if (is_draw(board, ply)) 
             return 0;
         if (ply >= MAX_PLY)
             return  InCheck ? 0 : eval(board);
@@ -127,11 +128,9 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         if ((isPv || cutnode) && depth >= 4 && entry->move == NULL_MOVE)
             depth--;
     }
-    
-    depth = MAX(depth, 0); // Make sure depth >= 0
-
+   
     if (depth == 0 && !InCheck) {
-        value = quiescence_search(search, board, alpha, beta);
+        value = quiescence_search(search, board, ply, alpha, beta);
         table_set(&search->table, board->hash, depth, value, EXACT);
         return value;
     }
@@ -148,7 +147,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
     // Razoring
     if (!InCheck && !isPv) {
         if (depth <= 5 && value + 214 * depth <= alpha) {
-            int score = quiescence_search(search, board, alpha, beta);
+            int score = quiescence_search(search, board, ply, alpha, beta);
             if (score <= alpha)
               return score;
         }
@@ -163,14 +162,14 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         if (score >= beta) {
             depth -= DR;
             if (depth <= 0)
-                return quiescence_search(search, board, alpha, beta);
+                return quiescence_search(search, board, ply, alpha, beta);
             table_set(&search->table, board->hash, depth, beta, BETA);
             return beta;
         }
     }
 
     count = gen_legal_moves(board, moves);
-    sort_moves(search, board, moves, count, false);
+    sort_moves(search, board, moves, count, ply);
 
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
@@ -182,7 +181,8 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
             if (moves_searched >= FullDepthMoves 
                 && depth >= ReductionLimit
                 && !isPv
-                && !is_check(board) 
+                && !is_check(board)
+                && !staticExchangeEvaluation(board, move, 0) 
                 && ok_to_reduce(board, move)) {
                 value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha, true);
             } else {
@@ -208,13 +208,19 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         if (value > -INF) can_move = 1;
 
         if (value >= beta) {
+            if (!is_capture(board, move)) {
+                // Store Killer moves
+                KILLER_MOVES[BLACK][ply] = KILLER_MOVES[WHITE][ply];
+                KILLER_MOVES[WHITE][ply] = move;
+            }
+            
             table_set(&search->table, board->hash, depth, beta, BETA);
             table_set_move(&search->table, board->hash, depth, move);
             return beta;
         }
 
         if (value > alpha) {
-            if (!is_capture(board, move)) 
+            if (!is_capture(board, move))
                 History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] += depth * depth;
             flag = EXACT;
             alpha = value;
@@ -302,7 +308,7 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
     Move moves[MAX_MOVES];
     Undo undo;
     int count = gen_legal_moves(board, moves), can_move = 0;
-    sort_moves(search, board, moves, count, false);
+    sort_moves(search, board, moves, count, 1);
 
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
@@ -357,7 +363,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
     if (!table_alloc(&search->table, 20)) {
         return -best_score;
     }
-
+ 
     memset(History_Heuristic, 0, sizeof(History_Heuristic));
 
     for (int depth = 1; depth <= MAX_DEPTH; depth++) {
@@ -368,6 +374,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
             print_pv(search, board, depth);
             printf("\n");
 #endif
+
             if (search->stop) {
                 goto cleanup;
             }
@@ -383,6 +390,7 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
             alpha = best_score - VALID_WINDOW;
             beta  = best_score + VALID_WINDOW;
     }
+
 cleanup:
     table_free(&search->table);
     return best_score;
