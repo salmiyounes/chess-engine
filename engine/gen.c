@@ -176,15 +176,21 @@ int gen_white_king_castle(ChessBoard *board, Move *moves) {
 }
 
 INLINE int gen_white_moves(ChessBoard *board, Move *moves) {
-    Move *ptr = moves;
-    moves += gen_white_pawn_moves(board, moves);
-    moves += gen_white_knight_moves(board, moves);
-    moves += gen_white_bishop_moves(board, moves);
-    moves += gen_white_rook_moves(board, moves);
-    moves += gen_white_queen_moves(board, moves);
-    moves += gen_white_king_moves(board, moves);
-    moves += gen_white_king_castle(board, moves);
+    static const MoveGen white_generators[] = {
+        gen_white_pawn_moves,
+        gen_white_knight_moves,
+        gen_white_bishop_moves,
+        gen_white_rook_moves,
+        gen_white_queen_moves,
+        gen_white_king_moves,
+        gen_white_king_castle
+    };
 
+    Move *ptr = moves;
+    for (size_t i = 0; i < sizeof(white_generators)/sizeof(white_generators[0]); i++) {
+        moves += white_generators[i](board, moves);
+    }
+    
     return moves - ptr;
 }
 
@@ -234,14 +240,20 @@ INLINE int gen_white_king_attacks_against(ChessBoard *board, Move *moves, bb mas
 }
 
 INLINE int gen_white_attacks_against(ChessBoard *board, Move *moves, bb mask) {
-    Move *ptr = moves;
-    moves += gen_white_pawn_attacks_against(board, moves, mask);
-    moves += gen_white_knight_attacks_against(board, moves, mask);
-    moves += gen_white_bishop_attacks_against(board, moves, mask);
-    moves += gen_white_rook_attacks_against(board, moves, mask);
-    moves += gen_white_queen_attacks_against(board, moves, mask);
-    moves += gen_white_king_attacks_against(board, moves, mask);
+    static const AttacksGen white_attack_generators[] = {
+        gen_white_pawn_attacks_against,
+        gen_white_knight_attacks_against,
+        gen_white_bishop_attacks_against,
+        gen_white_rook_attacks_against,
+        gen_white_queen_attacks_against,
+        gen_white_king_attacks_against
+    };
 
+    Move *ptr = moves;
+    for (size_t i = 0; i < sizeof(white_attack_generators)/sizeof(white_attack_generators[0]); i++) {
+        moves += white_attack_generators[i](board, moves, mask);
+    }
+    
     return moves - ptr;
 }
 
@@ -353,15 +365,21 @@ int gen_black_king_castle(ChessBoard *board, Move *moves) {
 }
 
 INLINE int gen_black_moves(ChessBoard *board, Move *moves) {
-    Move *ptr = moves;
-    moves += gen_black_pawn_moves(board, moves);
-    moves += gen_black_knight_moves(board, moves);
-    moves += gen_black_bishop_moves(board, moves);
-    moves += gen_black_rook_moves(board, moves);
-    moves += gen_black_queen_moves(board, moves);
-    moves += gen_black_king_moves(board, moves);
-    moves += gen_black_king_castle(board, moves);
+    static const MoveGen black_generators[] = {
+        gen_black_pawn_moves,
+        gen_black_knight_moves, 
+        gen_black_bishop_moves,
+        gen_black_rook_moves,
+        gen_black_queen_moves,
+        gen_black_king_moves,
+        gen_black_king_castle
+    };
 
+    Move *ptr = moves;
+    for (size_t i = 0; i < sizeof(black_generators)/sizeof(black_generators[0]); i++) {
+        moves += black_generators[i](board, moves);
+    }
+    
     return moves - ptr;
 }
 
@@ -411,14 +429,20 @@ INLINE int gen_black_king_attacks_agianst(ChessBoard *board, Move *moves, bb mas
 }
 
 INLINE int gen_black_attacks_against(ChessBoard *board, Move *moves, bb mask) {
-    Move *ptr = moves;
-    moves += gen_black_pawn_attacks_against(board, moves, mask);
-    moves += gen_black_knight_attacks_against(board, moves, mask);
-    moves += gen_black_bishop_attacks_against(board, moves, mask);
-    moves += gen_black_rook_attacks_against(board, moves, mask);
-    moves += gen_black_queen_attacks_against(board, moves, mask);
-    moves += gen_black_king_attacks_agianst(board, moves, mask);
+    static const AttacksGen black_attack_generators[] = {
+        gen_black_pawn_attacks_against,
+        gen_black_knight_attacks_against,
+        gen_black_bishop_attacks_against,
+        gen_black_rook_attacks_against,
+        gen_black_queen_attacks_against,
+        gen_black_king_attacks_agianst
+    };
 
+    Move *ptr = moves;
+    for (size_t i = 0; i < sizeof(black_attack_generators)/sizeof(black_attack_generators[0]); i++) {
+        moves += black_attack_generators[i](board, moves, mask);
+    }
+    
     return moves - ptr;
 }
 

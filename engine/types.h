@@ -45,6 +45,9 @@ typedef struct {
 
 typedef uint32_t Move;
 
+typedef int (*MoveGen)(ChessBoard *, Move *);
+typedef int (*AttacksGen)(ChessBoard *, Move *, bb);
+
 typedef struct {
   int capture;
   int castle;
