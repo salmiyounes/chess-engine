@@ -87,13 +87,13 @@ bb ATTACK_ROOK[102400];
 int get_lsb(bb bbit) {
     // https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fclz
     // If bbit is 0, the result is undefined
-    ASSERT(bbit);
+    assert(bbit);
 
     return __builtin_ctzll(bbit);
 }
 
 int get_msb(bb bbit) {
-    ASSERT(bbit);
+    assert(bbit);
     
     return __builtin_ctzll(bbit) ^ 63;
 }
@@ -107,7 +107,7 @@ int several(bb bbit) {
 }
 
 bool test_bit(bb bbit, const int sq) {
-    ASSERT(sq >= 0 && sq < SQUARE_NB);
+    assert(sq >= 0 && sq < SQUARE_NB);
 
     return (bool) (bbit & BIT(sq));
 } 
@@ -129,8 +129,8 @@ int rank_of(int sq) {
 }
 
 int make_piece_type(int pc, int color) {
-    ASSERT(color == WHITE || color == BLACK);
-    ASSERT(pc >= PAWN && pc <= KING);
+    assert(color == WHITE || color == BLACK);
+    assert(pc >= PAWN && pc <= KING);
    
     return  (pc << 1) + color;
 }
@@ -146,7 +146,7 @@ int bb_squares(bb value, int squares[64]) {
 }
 
 bb bb_pawns_attacks(int sq, int color) {
-    ASSERT(sq >= 0 && sq < SQUARE_NB);
+    assert(sq >= 0 && sq < SQUARE_NB);
 
     const bb board = BIT(sq);
     return color ? 
