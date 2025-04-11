@@ -197,7 +197,7 @@ class LegalMoveGenerater(object):
     def __init__(self, moves, count: int) -> None:
         self.count = count
         self.legal_moves = {
-            Chess().notate_move(moves[i]) : moves[i] for i in range(self.count) 
+            Chess().move_str(moves[i]) : moves[i] for i in range(self.count) 
         }
 
     def __repr__(self) -> str:

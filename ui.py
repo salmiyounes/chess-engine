@@ -3,18 +3,16 @@ from chess import Chess, Color, LegalMoveGenerater
 
 def start():
     board = Chess()
-
-    board.player = (
-        Color.BLACK if input("You want to play [w]hite of [b]lack: ").strip() == 'b' else Color.WHITE    
-    ).value
-    
+    fen: str = (
+        f"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR {'b' if input("You want to play [w]hite of [b]lack: ").strip() == 'b' else 'w'} KQkq - 0 1"    
+    )
+    board.load_fen(fen=fen.encode('utf-8'))
     while True:
         n = board.gen_legal_moves()
         next_move = get_next_move(n) 
         board.do_move(next_move)
         print ('\n')
         board.print_board()
-
         start: float = time.monotonic()
         m = board.computer_move()
         end: float   = time.monotonic()
