@@ -17,7 +17,7 @@
 #define  MATE 100000
 
 #define MAX_DEPTH    	 100
-#define VALID_WINDOW      50
+#define VALID_WINDOW     100
 
 #define MAX_R 		 	   4
 #define MIN_R 		       3 

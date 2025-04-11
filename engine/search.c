@@ -19,17 +19,14 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count, int p
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
         score_moves(board, move, &scores[i].score);
-        if (!is_capture(board, move)) { // Quit moves scoring
-            if (KILLER_MOVES[WHITE][ply] == move)
-                scores[i].score += 9000;
-            else if (KILLER_MOVES[BLACK][ply] == move) 
-                scores[i].score += 8000;
-            else
-                scores[i].score += History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
-        }
-        if (best != NULL_MOVE && (best == move)) {
+        if (best != NULL_MOVE && (best == move))
             scores[i].score += INF;
-        } 
+        else if (KILLER_MOVES[WHITE][ply] == move)
+            scores[i].score += 9000;
+        else if (KILLER_MOVES[BLACK][ply] == move) 
+            scores[i].score += 8000;
+        else
+            scores[i].score += History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
         scores[i].index  = i; 
     }
 
@@ -78,10 +75,11 @@ int quiescence_search(Search *search, ChessBoard *board, int ply, int alpha, int
             continue;
         search->nodes++;
         do_move(board, move, &undo);
-        int value = -quiescence_search(search, board, ply, -beta, -alpha);
+        int value = -quiescence_search(search, board, ply + 1, -beta, -alpha);
         undo_move(board, move, &undo);
         
         if (search->stop) {
+            alpha = 0;
             goto stop_loop;
         }
 
@@ -202,17 +200,16 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         moves_searched++;
 
         if (search->stop) {
+            alpha = 0;
             goto stop_loop;
         }
 
         if (value > -INF) can_move = 1;
 
         if (value >= beta) {
-            if (!is_capture(board, move)) {
-                // Store Killer moves
-                KILLER_MOVES[BLACK][ply] = KILLER_MOVES[WHITE][ply];
-                KILLER_MOVES[WHITE][ply] = move;
-            }
+            // Store Killer moves
+            KILLER_MOVES[BLACK][ply] = KILLER_MOVES[WHITE][ply];
+            KILLER_MOVES[WHITE][ply] = move;
             
             table_set(&search->table, board->hash, depth, beta, BETA);
             table_set_move(&search->table, board->hash, depth, move);
@@ -220,8 +217,7 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         }
 
         if (value > alpha) {
-            if (!is_capture(board, move))
-                History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] += depth * depth;
+            History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] += depth * depth;
             flag = EXACT;
             alpha = value;
             table_set_move(&search->table, board->hash, depth, move);
@@ -319,6 +315,7 @@ int root_search(Search *search, ChessBoard *board, int depth, int alpha, int bet
         undo_move(board, move, &undo);
 
         if (search->stop) {
+            alpha = 0;
             goto stop_loop;
         }
 
@@ -369,26 +366,31 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
     for (int depth = 1; depth <= MAX_DEPTH; depth++) {
             best_score = root_search(search, board, depth, alpha, beta, result);
 
-#if defined(DEBUG)
-            printf("info score=%d, depth=%d, pv ", best_score, depth);
-            print_pv(search, board, depth);
-            printf("\n");
-#endif
-
-            if (search->stop) {
-                goto cleanup;
-            }
-
-            if (best_score >= MATE - depth || best_score <= -MATE + depth) break;
-
             // Aspiration window https://www.frayn.net/beowulf/theory.html#aspiration
             if ((best_score <= alpha) || (best_score >= beta)) {  
                 alpha = -INF;
                 beta  =  INF;
                 continue;  
             }
+
             alpha = best_score - VALID_WINDOW;
             beta  = best_score + VALID_WINDOW;
+
+#if defined(DEBUG)
+            printf("info score=%d, depth=%d, pv ", best_score, depth);
+            print_pv(search, board, depth);
+            printf("\n");
+#endif
+            if (best_score == -INF) {
+                best_score = 0;
+                goto cleanup;
+            }
+
+            if (search->stop)
+                goto cleanup;
+
+            if (best_score >= MATE - depth || best_score <= -MATE + depth) 
+                goto cleanup;
     }
 
 cleanup:
