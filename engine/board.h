@@ -52,9 +52,9 @@ extern int castling_rights[64];
 #define COLOR(x) ((x) & 1)
 #define SWITCH_SIDE(x) (x->color ^= BLACK) 
 
-void  initializeBoard(ChessBoard *b);
+void  board_init(ChessBoard *b);
 
-void  printBoard(ChessBoard *b);
+void  print_board(ChessBoard *b);
 
 void  board_load_fen(ChessBoard *board, 
                      const char *fen);

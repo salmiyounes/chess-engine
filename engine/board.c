@@ -153,7 +153,7 @@ void  board_update(ChessBoard *board, int sq, int piece) {
         }
 }
 
-void initializeBoard(ChessBoard *board) {
+void board_init(ChessBoard *board) {
     if (board == NULL) return;
 
     board_clear(board);
@@ -182,7 +182,7 @@ void initializeBoard(ChessBoard *board) {
 }
 
 
-void printBoard(ChessBoard *board) {
+void print_board(ChessBoard *board) {
     char fen[256];
 
     for (int r = RANK_NB - 1; r >= 0; r--) {
