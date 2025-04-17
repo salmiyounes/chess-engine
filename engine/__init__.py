@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional, List, TypeAlias, Iterator
+from typing import Optional, List, Tuple, TypeAlias, Iterator, Self
 import ctypes, os 
+from ctypes import pointer
 
 # Starting possition fen
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -233,19 +234,17 @@ class utils:
 class Move(object):
     def __init__(self, move: ctypes.c_uint32) -> None:
         self.move: ctypes.c_uint32 = move
-        self.move_san: str =  self.move_str()
-        self.src:      int =  self.extract_from(move)
-        self.dst:      int =  self.extract_to(move)
-        self.flag:     int =  self.extract_flag(move)
-        self.piece:    int =  self.extract_piece(move)
-    
+
     def __repr__(self):
-        return f'Move(san={self.move_san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
+        return f'Move(san={self.san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
     
     def __eq__(self, other):
         if isinstance(other, Move):
             return self.move == other.move
         return False
+    
+    def __str__(self) -> str:
+        return self.san
 
     def move_str(self) -> str:
         try:
@@ -269,7 +268,27 @@ class Move(object):
     
     def is_castling(self) -> bool:
         return bool(self.flag == 1)
+    
+    @property
+    def src(self) -> int:
+        return self.extract_from(self.move)
+    
+    @property
+    def dst(self) -> int:
+        return self.extract_to(self.move)
 
+    @property
+    def piece(self) -> int:
+        return self.extract_piece(self.move)
+    
+    @property
+    def flag(self) -> int:
+        return self.extract_flag(self.move)
+    
+    @property
+    def san(self) -> str:
+        return self.move_str()
+    
     @staticmethod
     def extract_from(x: ctypes.c_uint32) -> int:
         return (((x) >> 0) & 0x3f)
@@ -289,30 +308,35 @@ class Move(object):
 class MoveGenerator(object):
     def __init__(self, board: Board) -> None:
         self.board: Board                   = board
-        self.legal_moves       : List[Move] = self.gen_legal_moves()
-        self.pseudo_legal_move : List[Move] = self.gen_pseudo_legal_move()
-
-    def gen_legal_moves(self) -> List[Move]:
-        array: ctypes.Array = utils.create_uint32_array(MAX_MOVES) 
-        size: int = chess_lib.gen_legal_moves(ctypes.byref(self.board._get_board_struct()), array)
-        legal_moves = [Move(array[i]) for i in range(size)]
-        return  legal_moves
+        self._cache                         = {}
     
-    def gen_pseudo_legal_move(self) -> List[Move]:
-        array: ctypes.Array = utils.create_uint32_array(MAX_MOVES) 
-        size: int = chess_lib.gen_moves(ctypes.byref(self.board._get_board_struct()), array)
-        pseudo_legal_move = [Move(array[i]) for i in range(size)]
-        return  pseudo_legal_move
+    def _generate(self, func: str) -> List[Move]:
+        if func not in self._cache:
+            array: ctypes.Array = utils.create_uint32_array(MAX_MOVES)
+            size: int = getattr(chess_lib, func)(self.board.ptr, array)
+            self._cache[func] = list(map(Move, array[:size]))
+        return self._cache[func]
+
+    @property
+    def legal_moves(self) -> List[Move]:
+        return self._generate('gen_legal_moves')
+
+    @property
+    def pseudo_legal_move(self) -> List[Move]:
+        return self._generate('gen_moves')
 
     def __len__(self) -> int:
         return len(self.legal_moves)
      
     def __repr__(self) -> str:
-        sans: str = ', '.join(m.move_san for m in self)
+        sans: str = ', '.join(m.san for m in self)
         return f"<MoveGenerator at {id(self):#x} ({sans})>"
 
-    def __contains__(self, move: str) -> bool:
-        return any(move == m.move_san for m in self)
+    def __contains__(self, move: Move) -> bool:
+        return any(move == m for m in self)
+    
+    def __getitem__(self, index: int) -> Move:
+        return self.legal_moves[index]
     
     def __iter__(self) -> Iterator[Move]:
         for move in self.legal_moves:
@@ -324,26 +348,27 @@ class Board(object):
         self.board_init()
         if fen != None:
             self.set_fen(fen=fen)
-        self.handle_moves: HandleMoves = HandleMoves(self)
+        self._handle_moves: HandleMoves = HandleMoves(self)
 
     def board_init(self) -> None:
         chess_lib.bb_init()
-        chess_lib.board_init(ctypes.byref(self.board))
+        chess_lib.board_init(self.ptr)
 
     def drawn_by_insufficient_material(self) -> bool:
-        return bool(chess_lib.board_drawn_by_insufficient_material(ctypes.byref(self.board)))
+        return bool(chess_lib.board_drawn_by_insufficient_material(self.ptr))
 
     def clear(self) -> None:
-        chess_lib.board_clear(ctypes.byref(self.board))
-        self.handle_moves.clear()
+        chess_lib.board_clear(self.ptr)
+        self._handle_moves.clear()
         self.set_fen(fen=STARTING_FEN)
 
     def gen_moves(self) -> MoveGenerator:
         return MoveGenerator(self)
     
+    @property
     def gen_fen(self) -> str:
         buffer: ctypes.Array[ctypes.c_char] = utils.create_string_buffre(256)
-        chess_lib.board_to_fen(ctypes.byref(self.board), buffer)
+        chess_lib.board_to_fen(self.ptr, buffer)
         return buffer.value.decode('utf-8')
 
     def set_fen(self, fen: str) -> None:
@@ -351,76 +376,95 @@ class Board(object):
             raise TypeError("FEN must be a string")
         if not fen:
             raise ValueError("FEN cannot be empty")
-        chess_lib.board_load_fen(ctypes.byref(self.board), fen.encode())
+        chess_lib.board_load_fen(self.ptr, fen.encode())
 
     def perft_test(self, depth: Optional[int] = 1) -> ctypes.c_uint64:
-        return chess_lib.perft_test(ctypes.byref(self.board), depth)
+        return chess_lib.perft_test(self.ptr, depth)
     
     def is_check(self) -> bool:
-        return bool(chess_lib.is_check(ctypes.byref(self.board))) 
+        return bool(chess_lib.is_check(self.ptr)) 
+    
+    def illegal_to_move(self) -> bool:
+        return bool(chess_lib.illegal_to_move(self.ptr))
 
     def is_attacked_by(self, color: Color, sq: Square) -> bool:
         return NotImplemented
     
     def push(self, move: Move) -> None:
-        self.handle_moves.push(move)
+        self._handle_moves.push(move)
 
     def pop(self) -> Move:
-        return self.handle_moves.pop()
+        return self._handle_moves.pop()
 
     def peek(self) -> Move:
-        return self.handle_moves.peek()
+        return self._handle_moves.peek()
 
-    def _get_board_struct(self) -> ChessBoard:
-        return self.board
+    def copy(self) -> Self:
+        # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
+        dst = type(self)(None)
+        pointer(dst.board)[0] = self.board 
+        return dst 
+
+    @property
+    def ptr(self) -> ChessBoard:
+        return ctypes.byref(self.board)
     
-    def _get_board_bb_sq(self) :
-        return self.board.bb_squares
-
+    @property
+    def get_struct(self) :
+        raise NotImplemented
+    
+    def __copy__(self) -> Self:
+        return self.copy()
+    
     def __repr__(self):
-        return f'Board(fen={self.gen_fen()})'
+        return f'{type(self).__name__}(fen={self.gen_fen!r})'
     
     def __str__(self) -> None:
-        chess_lib.print_board(ctypes.byref(self.board))
+        chess_lib.print_board(self.ptr)
         return ""
-    
-class HandleMoves(object):
-    def __init__(self, board: Board):
-        self.board: Board = board
-        self.moves_stack: List[Move] = []
-        self.undo_stack:  List[Undo] = [] 
+
+class HandleMoves:
+    def __init__(self, board: Board) -> None:
+        self.board = board
+        self._moves_history: List[Tuple[Move, Undo]] = []
     
     def push(self, move: Move) -> None:
-        #TODO: raise value error if the 'move' is not in legal moves
         if not isinstance(move, Move):
-            raise TypeError("Expected Move object")
-        undo: Undo = Undo()
-        chess_lib.do_move(ctypes.byref(self.board._get_board_struct()), move.move, ctypes.byref(undo))
-        self.moves_stack.append(move)
-        self.undo_stack.append(undo)
+            raise TypeError(f"Expected Move instance, got {type(move).__name__}")
+        if move not in MoveGenerator(self.board):
+            raise ValueError(f"Move {move.san} is not legal in the current position.")
         
+        undo: Undo = Undo()
+        chess_lib.do_move(self.board.ptr, move.move, ctypes.byref(undo))
+        self._moves_history.append((move, undo))
 
-    def pop(self)  -> Move:
-        if len(self) >= 1:
-            move: Move = self.moves_stack.pop()
-            undo: Undo = self.undo_stack.pop()
-            chess_lib.undo_move(ctypes.byref(self.board._get_board_struct()), move.move, ctypes.byref(undo))
-            return move
-        else:
-            raise IndexError('pop from empty Move list')
-    
+    def pop(self) -> Move:
+        try:
+            move, undo = self._moves_history.pop()
+        except IndexError:
+            raise IndexError("pop from empty move history")
+
+        chess_lib.undo_move(self.board.ptr, move.move, ctypes.byref(undo))
+        return move
+
     def peek(self) -> Optional[Move]:
-        if not self.moves_stack:
-            return None
-        return self.moves_stack[-1]
+        return self._moves_history[-1][0] if self._moves_history else None
 
     def clear(self) -> None:
-        self.moves_stack.clear()
-        self.undo_stack.clear()
-        return None
-
+        self._moves_history.clear()
+    
     def __len__(self) -> int:
-        return len(self.moves_stack)
-        
+        return len(self._moves_history)
+    
+    def __iter__(self) -> Iterator[Move]:
+        return (mv for mv, _ in self._moves_history)
+
+    def __contains__(self, move: Move) -> bool:
+        return any(mv == move for mv, _ in self._moves_history)
+
+    def __repr__(self) -> str:
+        moves = ', '.join(mv.san for mv, _ in self._moves_history)
+        return f"<HandleMoves id={id(self):#x} moves=[{moves}]>"
+    
 class NotImplentedYet(Exception):
     pass
