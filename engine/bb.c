@@ -315,11 +315,12 @@ bb bb_queen(int sq, bb obs) {
 }
 
 void bb_print(bb bbit) {
-    for (int sq = SQUARE_NB - 1; sq >= 0; sq--) {
-        printf(" %c", (test_bit(bbit, sq)) ? '1' : '0');
-        
-        if (!(sq % 8)) 
-            printf("\n");
+    for (int r = RANK_NB - 1; r >= 0; r--) {
+        for (int f = 0; f < FILE_NB; f++) {
+            printf(" %c", (test_bit(bbit, square(r, f))) ? '1' : '0');
+        }
+        printf("\n");
     }
+
     printf("\n");
 }
