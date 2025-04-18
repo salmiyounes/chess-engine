@@ -8,6 +8,7 @@ from ctypes import pointer
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #
+BitBoard: TypeAlias = ctypes.c_uint64
 Square: TypeAlias = int
 A1: Square = 0
 B1: Square = 1
@@ -84,31 +85,44 @@ WHITE: Color = 0
 BLACK: Color = 1
 BOTH:  Color = 2
 
+Piece: TypeAlias = int
+WHITE_PAWN: Piece       =  0
+BLACK_PAWN: Piece       =  1
+WHITE_KNIGHT: Piece	    =  2
+BLACK_KNIGHT: Piece     =  3
+WHITE_BISHOP: Piece     =  4
+BLACK_BISHOP: Piece     =  5
+WHITE_ROOK: Piece       =  6
+BLACK_ROOK: Piece       =  7
+WHITE_QUEEN: Piece      =  8
+BLACK_QUEEN: Piece      =  9
+WHITE_KING: Piece       = 10
+BLACK_KING: Piece       = 11 
+NONE: Piece		        = 12
+
 class ChessBoard(ctypes.Structure):
     _fields_ = [
-        ('m_history',   ctypes.c_uint64 * 8192),
+        ("squares", ctypes.c_int * SQUARE_NB),
+        ("numMoves", ctypes.c_int),
+        ("color", ctypes.c_int),
+        ("castle", ctypes.c_int),
 
-        ('squares', ctypes.c_int * SQUARE_NB),
-        ('numMoves',     ctypes.c_int),
-        ('color',        ctypes.c_int),
-        ('castle',       ctypes.c_int),
+        ("mg", ctypes.c_int * 2),
+        ("eg", ctypes.c_int * 2),
+        ("gamePhase", ctypes.c_int),
 
-        ('mg',       ctypes.c_int * COLOR_NB),
-        ('eg',       ctypes.c_int * COLOR_NB),
-        ('gamePhase',    ctypes.c_int),
+        ("bb_squares", BitBoard * 12),
+        ("m_history", BitBoard * 8192),
+        ("occ", BitBoard * 3),
 
-        ('bb_squares',  ctypes.c_uint64 * 12),
-        ('occ',         ctypes.c_uint64 *  3),
-
-        ('ep',        ctypes.c_uint64),
-        ('hash',      ctypes.c_uint64),
-        ('pawn_hash', ctypes.c_uint64)
+        ("ep", BitBoard),
+        ("hash", BitBoard),
+        ("pawn_hash", BitBoard),
     ]
-
 #
 class Entry(ctypes.Structure):
     _fields_ = [
-        ('key', ctypes.c_uint64),
+        ('key', BitBoard),
         ('score', ctypes.c_int),
         ('depth', ctypes.c_int),
         ('flag', ctypes.c_int),
@@ -135,20 +149,39 @@ class Undo(ctypes.Structure):
     _fields_ = [
         ('capture',  ctypes.c_int),
         ('castle' ,  ctypes.c_int),
-        ('ep'     ,  ctypes.c_uint64)
+        ('ep'     ,  BitBoard)
     ]
 
-chess_lib: ctypes.CDLL = ctypes.CDLL(os.path.join(os.getcwd(), 'engine/libchess.so'))
+try:
+    chess_lib: ctypes.CDLL = ctypes.CDLL(os.path.join(os.getcwd(), 'engine/libchess.so'))
+except OSError as e:
+    raise RuntimeError(f"Could not load chess engine library: {e}")
 
 # bit board init functions
+chess_lib.get_lsb.argtypes  = [BitBoard]
+chess_lib.get_lsb.restype   = ctypes.c_int
+chess_lib.get_msb.argtypes  = [BitBoard]
+chess_lib.get_msb.restype   = ctypes.c_int
+chess_lib.popcount.argtypes = [BitBoard]
+chess_lib.popcount.restype  = ctypes.c_int
+chess_lib.several.argtypes  = [BitBoard]
+chess_lib.several.restype   = ctypes.c_int
+chess_lib.test_bit.argtypes = [BitBoard, ctypes.c_int]
+chess_lib.test_bit.restype  = ctypes.c_bool
+chess_lib.square.argtypes   = [ctypes.c_int, ctypes.c_int]
+chess_lib.square.restype    = ctypes.c_int
+chess_lib.file_of.argtypes  = [ctypes.c_int]
+chess_lib.file_of.restype   = ctypes.c_int
+chess_lib.rank_of.argtypes  = [ctypes.c_int]
+chess_lib.rank_of.restype   = ctypes.c_int
 chess_lib.bb_init.argtypes  = []
 chess_lib.bb_init.restype   = ctypes.c_void_p
-chess_lib.bb_print.argtypes = [ctypes.c_uint64]
+chess_lib.bb_print.argtypes = [BitBoard]
 chess_lib.bb_print.restype  = ctypes.c_void_p
-chess_lib.attacks_to_king_square.argtypes = [ctypes.POINTER(ChessBoard), ctypes.c_uint64]
+chess_lib.attacks_to_king_square.argtypes = [ctypes.POINTER(ChessBoard), BitBoard]
 chess_lib.attacks_to_king_square.restype  = ctypes.c_uint
-chess_lib.attacks_to_square.argtypes      = [ctypes.POINTER(ChessBoard), ctypes.c_int, ctypes.c_uint64]
-chess_lib.attacks_to_square.restype       = ctypes.c_uint64
+chess_lib.attacks_to_square.argtypes      = [ctypes.POINTER(ChessBoard), ctypes.c_int, BitBoard]
+chess_lib.attacks_to_square.restype       = BitBoard
 
 # board init functions 
 chess_lib.board_init.argtypes     = [ctypes.POINTER(ChessBoard)]
@@ -160,7 +193,7 @@ chess_lib.print_board.restype     = ctypes.c_void_p
 chess_lib.board_to_fen.argtypes   = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_char)]
 chess_lib.board_to_fen.restype    = ctypes.c_void_p
 chess_lib.perft_test.argtypes     = [ctypes.POINTER(ChessBoard), ctypes.c_int]
-chess_lib.perft_test.restype      = ctypes.c_uint64
+chess_lib.perft_test.restype      = BitBoard
 chess_lib.board_clear.argtypes    = [ctypes.POINTER(ChessBoard)]
 chess_lib.board_clear.restype     = ctypes.c_void_p
 
@@ -200,19 +233,19 @@ class utils:
         return (ctypes.c_uint32 * size)()
 
     @staticmethod
-    def get_lsb(bbit: ctypes.c_uint64) -> ctypes.c_int: 
+    def get_lsb(bbit: BitBoard) -> ctypes.c_int: 
         return chess_lib.get_lsb(bbit)
 
     @staticmethod
-    def get_msb(bbit: ctypes.c_uint64) -> ctypes.c_int: 
+    def get_msb(bbit: BitBoard) -> ctypes.c_int: 
         return chess_lib.get_msb(bbit)
 
     @staticmethod
-    def popcount(bbit: ctypes.c_uint64) -> ctypes.c_int: 
+    def popcount(bbit: BitBoard) -> ctypes.c_int: 
         return chess_lib.popcount(bbit)
 
     @staticmethod
-    def test_bit(bbit: ctypes.c_uint64, sq: int) -> ctypes.c_int: 
+    def test_bit(bbit: BitBoard, sq: Square) -> ctypes.c_int: 
         return chess_lib.test_bit(bbit, sq)
 
     @staticmethod
@@ -220,17 +253,86 @@ class utils:
         return chess_lib.make_piece_type(pc, color)
 
     @staticmethod
-    def square(rank: int, file: int) -> ctypes.c_int: 
+    def square(rank: Square, file: Square) -> ctypes.c_int: 
         return chess_lib.square(rank, file)
     
     @staticmethod
-    def file_of(sq: int) -> ctypes.c_int: 
+    def file_of(sq: Square) -> ctypes.c_int: 
         return chess_lib.file_of(sq)
     
     @staticmethod
-    def rank_of(sq: int) -> ctypes.c_int: 
+    def rank_of(sq: Square) -> ctypes.c_int: 
         return chess_lib.rank_of(sq)
+    
+    @staticmethod
+    def bit(sq: Square) -> int:
+        return (1 << sq)
+    
+    @staticmethod
+    def scan_forward(bb: BitBoard) -> Iterator[Square]:
+        while (bb):
+            r = bb & -bb
+            yield r.bit_length() - 1
+            bb ^= r
 
+class SquareSet:
+    def __init__(self, mask: Optional[BitBoard] = BitBoard(0)):
+        self.mask = mask
+
+    def __len__(self) -> int:
+        return int(utils.popcount(self.mask))
+    
+    def __str__(self) -> str:
+        chess_lib.bb_print(self.mask)
+        return ""
+    
+    def __repr__(self) -> str:
+        return f"SquareSet({self.mask:#021_x})"
+        
+    def __add__(self, other: object) -> SquareSet:
+        return SquareSet(self.mask | other.mask)
+
+    def __and__(self, other: object) -> SquareSet:
+        return SquareSet(other.mask & self.mask)
+
+    def __xor__(self, other: object) -> SquareSet:
+        return SquareSet(self.mask ^ other.mask)
+
+    def __int__(self) -> int:
+        return self.mask 
+    def __iter__(self) -> Iterator[Square]:
+        return utils.scan_forward(self.mask)
+
+    def __bool__(self) -> bool:
+        return bool(self.mask)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SquareSet):
+            return NotImplemented
+        return self.mask == other.mask
+
+    def __contains__(self, sq: Square) -> bool:
+        return bool(utils.bit(sq) & int(self))
+    
+    def pop(self) -> Square:
+        if not self.mask:
+            raise KeyError("pop from empty SquareSet")
+        square: Square = utils.get_lsb(self.mask)
+        self.mask &= (self.mask - 1)
+        return square
+    
+    def clear(self) -> None:
+        self.mask = BitBoard(0)
+    
+    def copy(self) -> SquareSet:
+        return SquareSet(self.mask)
+    
+    def tolist(self) -> List[bool]:
+        arr: List[bool] = [False] * SQUARE_NB
+        for sq in self:
+            arr[sq] = True
+        return arr
+        
 class Move(object):
     def __init__(self, move: ctypes.c_uint32) -> None:
         self.move: ctypes.c_uint32 = move
@@ -361,7 +463,8 @@ class Board(object):
         chess_lib.board_clear(self.ptr)
         self._handle_moves.clear()
         self.set_fen(fen=STARTING_FEN)
-
+    
+    @property
     def gen_moves(self) -> MoveGenerator:
         return MoveGenerator(self)
     
@@ -378,7 +481,7 @@ class Board(object):
             raise ValueError("FEN cannot be empty")
         chess_lib.board_load_fen(self.ptr, fen.encode())
 
-    def perft_test(self, depth: Optional[int] = 1) -> ctypes.c_uint64:
+    def perft_test(self, depth: Optional[int] = 1) -> BitBoard:
         return chess_lib.perft_test(self.ptr, depth)
     
     def is_check(self) -> bool:
@@ -387,8 +490,16 @@ class Board(object):
     def illegal_to_move(self) -> bool:
         return bool(chess_lib.illegal_to_move(self.ptr))
 
-    def is_attacked_by(self, color: Color, sq: Square) -> bool:
-        return NotImplemented
+    def king_threats(self, color: Color) -> SquareSet:
+        king_bb: BitBoard          = self.board.bb_squares[BLACK_KING if not color else WHITE_KING]
+        king_sq: ctypes.c_int      = utils.get_lsb(king_bb)
+        return self.is_square_attacked_by(color, king_sq)
+
+    def is_square_attacked_by(self, color: Color, square: Square) -> SquareSet:
+        assert color >= WHITE and color <= BOTH
+        assert square >= 0 and square < SQUARE_NB
+        mask: BitBoard = chess_lib.attacks_to_square(self.ptr, square, self.board.occ[BOTH]) & self.board.occ[color]
+        return SquareSet(mask)
     
     def push(self, move: Move) -> None:
         self._handle_moves.push(move)
@@ -400,9 +511,9 @@ class Board(object):
         return self._handle_moves.peek()
 
     def copy(self) -> Self:
-        # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
         dst = type(self)(None)
-        pointer(dst.board)[0] = self.board 
+        pointer(dst.board)[0] = self.board # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
+        dst._handle_moves = self._handle_moves.copy(dst)
         return dst 
 
     @property
@@ -453,17 +564,25 @@ class HandleMoves:
     def clear(self) -> None:
         self._moves_history.clear()
     
+    def copy(self, other: object) -> Self:
+        dst = type(self)(other)
+        dst._moves_history = self._moves_history.copy()
+        return dst
+    
+    def __copy__(self) -> Self:
+        return self.copy()
+    
     def __len__(self) -> int:
         return len(self._moves_history)
     
-    def __iter__(self) -> Iterator[Move]:
-        return (mv for mv, _ in self._moves_history)
+    def __iter__(self) -> Iterator[Tuple[Move, Undo]]:
+        return ((mv , undo) for mv, undo in self._moves_history)
 
     def __contains__(self, move: Move) -> bool:
-        return any(mv == move for mv, _ in self._moves_history)
+        return any(mv == move for mv, _ in self)
 
     def __repr__(self) -> str:
-        moves = ', '.join(mv.san for mv, _ in self._moves_history)
+        moves = ', '.join(mv.san for mv, _ in self)
         return f"<HandleMoves id={id(self):#x} moves=[{moves}]>"
     
 class NotImplentedYet(Exception):
