@@ -606,8 +606,8 @@ class Board(object):
 
     def is_square_attacked_by(self, color: Color, square: Square) -> SquareSet:
         assert square >= 0 and square < SQUARE_NB
-        mask: BitBoard = chess_lib.attacks_to_square(self.board._ptr, square, self.board.occ(BOTH)) & self.board.occ(color)
-        return SquareSet(mask)
+        mask: BitBoard = chess_lib.attacks_to_square(self.board._ptr, square, self.board.occ(BOTH).mask)
+        return SquareSet(mask) & self.board.occ(color)
     
     def push(self, move: Move) -> None:
         self._handle_moves.push(move)
