@@ -333,7 +333,73 @@ class SquareSet:
         for sq in self:
             arr[sq] = True
         return arr
-        
+
+class BaseBoard:
+    def __init__(self) -> None:
+        self._board: ChessBoard = ChessBoard()
+    
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}({self.occ(BOTH).mask:#021_x})'
+
+    def __str__(self) -> str:
+        mask: BitBoard = self.occ(BOTH).mask
+        chess_lib.bb_print(mask)
+        return ""
+
+    def __iter__(self) -> Iterator[Square]:
+        mask: BitBoard = self.occ(BOTH).mask
+        return utils.scan_forward(mask)
+
+    def occ(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.occ[color]
+        return SquareSet(mask)
+    
+    def pawns(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_PAWN if color else WHITE_PAWN]
+        return SquareSet(mask)
+    
+    def knights(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_KNIGHT if color else WHITE_KNIGHT]
+        return SquareSet(mask)
+
+    def rooks(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_ROOK if color else WHITE_ROOK]
+        return SquareSet(mask)
+
+    def bishops(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_BISHOP if color else WHITE_BISHOP]
+        return SquareSet(mask)
+
+    def queens(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_QUEEN if color else WHITE_QUEEN]
+        return SquareSet(mask)
+
+    def kings(self, color: Color) -> SquareSet:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self._board.bb_squares[BLACK_KING if color else WHITE_KING]
+        return SquareSet(mask)
+    
+    def king_sq(self, color: Color) -> Square:
+        assert(color >= WHITE and color <= BOTH)
+        mask: BitBoard = self.kings(color)
+        return utils.get_lsb(mask)
+    
+    def tolist(self) -> List[Piece]:
+        arr: List[Piece] = [NONE] * SQUARE_NB
+        for sq in self:
+            arr[sq] = self._board.squares[sq]
+        return arr
+    
+    @property
+    def _ptr(self):
+        return ctypes.byref(self._board)
+      
 class Move(object):
     def __init__(self, move: ctypes.c_uint32) -> None:
         self.move: ctypes.c_uint32 = move
@@ -459,7 +525,7 @@ class MoveGenerator(object):
     def _generate(self, func: str) -> List[Move]:
         if func not in self._cache:
             array: ctypes.Array = utils.create_uint32_array(MAX_MOVES)
-            size: int = getattr(chess_lib, func)(self.board.ptr, array)
+            size: int = getattr(chess_lib, func)(self.board.board._ptr, array)
             self._cache[func] = list(map(Move, array[:size]))
         return self._cache[func]
 
@@ -490,7 +556,7 @@ class MoveGenerator(object):
     
 class Board(object):
     def __init__(self, fen: Optional[str] = None):
-        self.board: ChessBoard = ChessBoard()
+        self.board: BaseBoard = BaseBoard()
         self.board_init()
         if fen != None:
             self.set_fen(fen=fen)
@@ -498,13 +564,13 @@ class Board(object):
 
     def board_init(self) -> None:
         chess_lib.bb_init()
-        chess_lib.board_init(self.ptr)
+        chess_lib.board_init(self.board._ptr)
 
     def drawn_by_insufficient_material(self) -> bool:
-        return bool(chess_lib.board_drawn_by_insufficient_material(self.ptr))
+        return bool(chess_lib.board_drawn_by_insufficient_material(self.board._ptr))
 
     def clear(self) -> None:
-        chess_lib.board_clear(self.ptr)
+        chess_lib.board_clear(self.board._ptr)
         self._handle_moves.clear()
         self.set_fen(fen=STARTING_FEN)
     
@@ -515,7 +581,7 @@ class Board(object):
     @property
     def gen_fen(self) -> str:
         buffer: ctypes.Array[ctypes.c_char] = utils.create_string_buffre(256)
-        chess_lib.board_to_fen(self.ptr, buffer)
+        chess_lib.board_to_fen(self.board._ptr, buffer)
         return buffer.value.decode('utf-8')
 
     def set_fen(self, fen: str) -> None:
@@ -523,26 +589,24 @@ class Board(object):
             raise TypeError("FEN must be a string")
         if not fen:
             raise ValueError("FEN cannot be empty")
-        chess_lib.board_load_fen(self.ptr, fen.encode())
+        chess_lib.board_load_fen(self.board._ptr, fen.encode())
 
     def perft_test(self, depth: Optional[int] = 1) -> BitBoard:
-        return chess_lib.perft_test(self.ptr, depth)
+        return chess_lib.perft_test(self.board._ptr, depth)
     
     def is_check(self) -> bool:
-        return bool(chess_lib.is_check(self.ptr)) 
+        return bool(chess_lib.is_check(self.board._ptr)) 
     
     def illegal_to_move(self) -> bool:
-        return bool(chess_lib.illegal_to_move(self.ptr))
+        return bool(chess_lib.illegal_to_move(self.board._ptr))
 
     def king_threats(self, color: Color) -> SquareSet:
-        king_bb: BitBoard          = self.board.bb_squares[BLACK_KING if not color else WHITE_KING]
-        king_sq: ctypes.c_int      = utils.get_lsb(king_bb)
+        king_sq: int = self.board.king_sq(color)
         return self.is_square_attacked_by(color, king_sq)
 
     def is_square_attacked_by(self, color: Color, square: Square) -> SquareSet:
-        assert color >= WHITE and color <= BOTH
         assert square >= 0 and square < SQUARE_NB
-        mask: BitBoard = chess_lib.attacks_to_square(self.ptr, square, self.board.occ[BOTH]) & self.board.occ[color]
+        mask: BitBoard = chess_lib.attacks_to_square(self.board._ptr, square, self.board.occ(BOTH)) & self.board.occ(color)
         return SquareSet(mask)
     
     def push(self, move: Move) -> None:
@@ -556,17 +620,9 @@ class Board(object):
 
     def copy(self) -> Self:
         dst = type(self)(None)
-        pointer(dst.board)[0] = self.board # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
+        pointer(dst.board._board)[0] = self.board._board # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
         dst._handle_moves = self._handle_moves.copy(dst)
         return dst 
-
-    @property
-    def ptr(self) -> ChessBoard:
-        return ctypes.byref(self.board)
-    
-    @property
-    def get_struct(self) :
-        raise NotImplemented
     
     def __copy__(self) -> Self:
         return self.copy()
@@ -575,7 +631,7 @@ class Board(object):
         return f'{type(self).__name__}(fen={self.gen_fen!r})'
     
     def __str__(self) -> None:
-        chess_lib.print_board(self.ptr)
+        chess_lib.print_board(self.board._ptr)
         return ""
 
 class HandleMoves:
@@ -590,7 +646,7 @@ class HandleMoves:
             raise ValueError(f"Move {move.san} is not legal in the current position.")
         
         undo: MoveUndo = MoveUndo(move)
-        chess_lib.do_move(self.board.ptr, move.move, undo._ptr)
+        chess_lib.do_move(self.board.board._ptr, move.move, undo._ptr)
         self._moves_history.append((move, undo))
 
     def pop(self) -> Move:
@@ -599,7 +655,7 @@ class HandleMoves:
         except IndexError:
             raise IndexError("pop from empty move history")
 
-        chess_lib.undo_move(self.board.ptr, move.move, undo._ptr)
+        chess_lib.undo_move(self.board.board._ptr, move.move, undo._ptr)
         return move
 
     def peek(self) -> Optional[Move]:
