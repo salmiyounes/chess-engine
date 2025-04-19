@@ -300,6 +300,7 @@ class SquareSet:
 
     def __int__(self) -> int:
         return self.mask 
+  
     def __iter__(self) -> Iterator[Square]:
         return utils.scan_forward(self.mask)
 
@@ -338,7 +339,7 @@ class Move(object):
         self.move: ctypes.c_uint32 = move
 
     def __repr__(self):
-        return f'Move(san={self.san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
+        return f'{type(self).__name__}(san={self.san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
     
     def __eq__(self, other):
         if isinstance(other, Move):
@@ -347,7 +348,10 @@ class Move(object):
     
     def __str__(self) -> str:
         return self.san
-
+    
+    def __hash__(self):
+        return hash(self)
+    
     def move_str(self) -> str:
         try:
             result = chess_lib.move_to_str(self.move)
@@ -392,6 +396,10 @@ class Move(object):
         return self.move_str()
     
     @staticmethod
+    def empty_move() -> Move:
+        return Move(ctypes.c_uint32(0))
+    
+    @staticmethod
     def extract_from(x: ctypes.c_uint32) -> int:
         return (((x) >> 0) & 0x3f)
 
@@ -407,6 +415,42 @@ class Move(object):
     def extract_flag(x: ctypes.c_uint32) -> int:
         return (((x) >> 16) & 0xf)
 
+class MoveUndo:
+    def __init__(self, move: Optional[Move] = Move.empty_move()):
+        self._move = move
+        self.undo = Undo()
+    
+    @property
+    def piece(self) -> Piece:
+        return self._move.piece
+    
+    @property
+    def capture(self) -> Piece:
+        return self.undo.capture
+
+    @property
+    def enp_square(self) -> Optional[Square]:
+        if self._move.is_enp():
+            return utils.get_lsb(self.undo.ep)
+        return None
+
+    @property
+    def _ptr(self) :
+        return ctypes.byref(self.undo)
+    
+    def __repr__(self) -> str:
+        return (f'{type(self).__name__}(san={self._move.san}, '
+                f'piece={self.piece}, capture={self.capture}, '
+                f'enp_square={self.enp_square})')
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, MoveUndo):
+            return self._move == other._move
+        return False
+    
+    def __hash__(self):
+        return hash(self._move)
+        
 class MoveGenerator(object):
     def __init__(self, board: Board) -> None:
         self.board: Board                   = board
@@ -537,7 +581,7 @@ class Board(object):
 class HandleMoves:
     def __init__(self, board: Board) -> None:
         self.board = board
-        self._moves_history: List[Tuple[Move, Undo]] = []
+        self._moves_history: List[Tuple[Move, MoveUndo]] = []
     
     def push(self, move: Move) -> None:
         if not isinstance(move, Move):
@@ -545,8 +589,8 @@ class HandleMoves:
         if move not in MoveGenerator(self.board):
             raise ValueError(f"Move {move.san} is not legal in the current position.")
         
-        undo: Undo = Undo()
-        chess_lib.do_move(self.board.ptr, move.move, ctypes.byref(undo))
+        undo: MoveUndo = MoveUndo(move)
+        chess_lib.do_move(self.board.ptr, move.move, undo._ptr)
         self._moves_history.append((move, undo))
 
     def pop(self) -> Move:
@@ -555,7 +599,7 @@ class HandleMoves:
         except IndexError:
             raise IndexError("pop from empty move history")
 
-        chess_lib.undo_move(self.board.ptr, move.move, ctypes.byref(undo))
+        chess_lib.undo_move(self.board.ptr, move.move, undo._ptr)
         return move
 
     def peek(self) -> Optional[Move]:
@@ -583,7 +627,7 @@ class HandleMoves:
 
     def __repr__(self) -> str:
         moves = ', '.join(mv.san for mv, _ in self)
-        return f"<HandleMoves id={id(self):#x} moves=[{moves}]>"
+        return f"<{type(self).__name__} id={id(self):#x} moves=[{moves}]>"
     
 class NotImplentedYet(Exception):
     pass
