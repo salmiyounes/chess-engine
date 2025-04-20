@@ -85,6 +85,7 @@ WHITE: Color = 0
 BLACK: Color = 1
 BOTH:  Color = 2
 
+#
 Piece: TypeAlias = int
 WHITE_PAWN: Piece       =  0
 BLACK_PAWN: Piece       =  1
@@ -196,8 +197,16 @@ chess_lib.perft_test.argtypes     = [ctypes.POINTER(ChessBoard), ctypes.c_int]
 chess_lib.perft_test.restype      = BitBoard
 chess_lib.board_clear.argtypes    = [ctypes.POINTER(ChessBoard)]
 chess_lib.board_clear.restype     = ctypes.c_void_p
+chess_lib.board_drawn_by_insufficient_material.argtypes = [ctypes.POINTER(ChessBoard)]
+chess_lib.board_drawn_by_insufficient_material.restype  = ctypes.c_int
 
 # move generater functions
+chess_lib.gen_black_attacks_against.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32), BitBoard]
+chess_lib.gen_black_attacks_against.restype  = ctypes.c_int
+chess_lib.gen_white_attacks_against.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32), BitBoard]
+chess_lib.gen_white_attacks_against.restype  = ctypes.c_int
+chess_lib.gen_attacks.argtypes = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32)]
+chess_lib.gen_attacks.restype  = ctypes.c_int
 chess_lib.gen_moves.argtypes        = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32)]
 chess_lib.gen_moves.restype          = ctypes.c_int
 chess_lib.gen_legal_moves.argtypes  = [ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32)] 
@@ -337,6 +346,7 @@ class SquareSet:
 class BaseBoard:
     def __init__(self) -> None:
         self._board: ChessBoard = ChessBoard()
+        self.board_init()
     
     def __repr__(self) -> str:
         return f'{type(self).__name__}({self.occ(BOTH).mask:#021_x})'
@@ -349,52 +359,125 @@ class BaseBoard:
     def __iter__(self) -> Iterator[Square]:
         mask: BitBoard = self.occ(BOTH).mask
         return utils.scan_forward(mask)
-
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BaseBoard):
+            return NotImplemented
+            
+        return (
+            self._board.castle == other._board.castle and
+            self._board.ep == other._board.ep and
+            all(self._board.squares[i] == other._board.squares[i] 
+                for i in range(SQUARE_NB))
+        )
+    
+    def board_init(self) -> None:
+        chess_lib.bb_init()
+        chess_lib.board_init(self._ptr)
+    
+    def zobrist_key(self) -> BitBoard:
+        return self._board.hash
+    
     def occ(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.occ[color]
         return SquareSet(mask)
     
     def pawns(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_PAWN if color else WHITE_PAWN]
         return SquareSet(mask)
     
     def knights(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_KNIGHT if color else WHITE_KNIGHT]
         return SquareSet(mask)
 
     def rooks(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_ROOK if color else WHITE_ROOK]
         return SquareSet(mask)
 
     def bishops(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_BISHOP if color else WHITE_BISHOP]
         return SquareSet(mask)
 
     def queens(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_QUEEN if color else WHITE_QUEEN]
         return SquareSet(mask)
 
     def kings(self, color: Color) -> SquareSet:
-        assert(color >= WHITE and color <= BOTH)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self._board.bb_squares[BLACK_KING if color else WHITE_KING]
         return SquareSet(mask)
     
     def king_sq(self, color: Color) -> Square:
-        assert(color >= WHITE and color <= BOTH)
-        mask: BitBoard = self.kings(color)
+        if not isinstance(color, Color) or color < WHITE or color > BOTH:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
+        mask: BitBoard = self.kings(color).mask
         return utils.get_lsb(mask)
     
+    def color_at(self, square: Square) -> Optional[Color]:
+        mask: BitBoard = utils.bit(square)
+        if self.occ(WHITE).mask & mask:
+            return WHITE
+        elif self.occ(BLACK).mask & mask:
+            return BLACK
+        else:
+            return None
+    
+    def attacks_mask(self, square: Square) -> BitBoard:
+        mask: BitBoard = chess_lib.attacks_to_square(self._ptr, square, self.occ(BOTH).mask)
+        return mask
+
+    def attacks(self, color: Color, square: Square) -> SquareSet:
+        mask: BitBoard = self.attacks_mask(square)
+        return SquareSet(mask) & self.occ(color)
+
+    def _castling_rights(self) -> int:
+        return self._board.castle
+    
+    def clear(self) -> None:
+        chess_lib.board_clear(self._ptr)
+
     def tolist(self) -> List[Piece]:
         arr: List[Piece] = [NONE] * SQUARE_NB
         for sq in self:
             arr[sq] = self._board.squares[sq]
         return arr
+
+    def _drawn_by_insufficient_material(self) -> bool:
+        return bool(chess_lib.board_drawn_by_insufficient_material(self._ptr))
+
+    def _prety_print(self) -> None:
+        chess_lib.print_board(self._ptr)
+        return None
+    
+    def _board_to_fen(self) -> str:
+        buffer: ctypes.Array[ctypes.c_char] = utils.create_string_buffre(256)
+        chess_lib.board_to_fen(self._ptr, buffer)
+        return buffer.value.decode('utf-8')
+
+    def _set_fen(self, fen: str) -> None:
+        chess_lib.board_load_fen(self._ptr, fen.encode())
+
+    def _is_check(self) -> bool:
+        return bool(chess_lib.is_check(self._ptr)) 
+
+    def _illegal_to_move(self) -> bool:
+        return bool(chess_lib.illegal_to_move(self._ptr))
+
+    def _perft(self, depth: Optional[int] = 1) -> int:
+        return chess_lib.perft_test(self._ptr, depth)
     
     @property
     def _ptr(self):
@@ -529,6 +612,20 @@ class MoveGenerator(object):
             self._cache[func] = list(map(Move, array[:size]))
         return self._cache[func]
 
+    def gen_attacks(self, color: Color) -> List[Move]:
+        array = utils.create_uint32_array(MAX_MOVES)
+        if color == BLACK:
+            occ_mask = self.board.board.occ(WHITE).mask
+            func = chess_lib.gen_black_attacks_against
+        elif color == WHITE:
+            occ_mask = self.board.board.occ(BLACK).mask
+            func = chess_lib.gen_white_attacks_against
+        else:
+            raise ValueError("Invalid color provided!")
+
+        size = func(self.board.board._ptr, array, occ_mask)
+        return list(map(Move, array[:size])) #TODO: return only legal attacks
+
     @property
     def legal_moves(self) -> List[Move]:
         return self._generate('gen_legal_moves')
@@ -542,7 +639,7 @@ class MoveGenerator(object):
      
     def __repr__(self) -> str:
         sans: str = ', '.join(m.san for m in self)
-        return f"<MoveGenerator at {id(self):#x} ({sans})>"
+        return f"<{type(self).__name__} at {id(self):#x} ({sans})>"
 
     def __contains__(self, move: Move) -> bool:
         return any(move == m for m in self)
@@ -553,26 +650,27 @@ class MoveGenerator(object):
     def __iter__(self) -> Iterator[Move]:
         for move in self.legal_moves:
             yield move
+
+    def __bool__(self) -> bool:
+        return len(self)  
     
 class Board(object):
     def __init__(self, fen: Optional[str] = None):
         self.board: BaseBoard = BaseBoard()
-        self.board_init()
         if fen != None:
             self.set_fen(fen=fen)
         self._handle_moves: HandleMoves = HandleMoves(self)
 
-    def board_init(self) -> None:
-        chess_lib.bb_init()
-        chess_lib.board_init(self.board._ptr)
-
     def drawn_by_insufficient_material(self) -> bool:
-        return bool(chess_lib.board_drawn_by_insufficient_material(self.board._ptr))
+        return self.board._drawn_by_insufficient_material()
 
     def clear(self) -> None:
-        chess_lib.board_clear(self.board._ptr)
+        self.board.clear()
         self._handle_moves.clear()
         self.set_fen(fen=STARTING_FEN)
+    
+    def castling_rights(self) -> int:
+        return self.board._castling_rights()
     
     @property
     def gen_moves(self) -> MoveGenerator:
@@ -580,35 +678,43 @@ class Board(object):
     
     @property
     def gen_fen(self) -> str:
-        buffer: ctypes.Array[ctypes.c_char] = utils.create_string_buffre(256)
-        chess_lib.board_to_fen(self.board._ptr, buffer)
-        return buffer.value.decode('utf-8')
-
+        return self.board._board_to_fen()
+    
     def set_fen(self, fen: str) -> None:
         if not isinstance(fen, str):
             raise TypeError("FEN must be a string")
         if not fen:
             raise ValueError("FEN cannot be empty")
-        chess_lib.board_load_fen(self.board._ptr, fen.encode())
+        self.board._set_fen(fen)
 
     def perft_test(self, depth: Optional[int] = 1) -> BitBoard:
-        return chess_lib.perft_test(self.board._ptr, depth)
+        return self.board._perft(depth)
+
+    def is_stalemate(self) -> bool:
+        if not self.is_check():
+            return False
+        return not any(self.gen_moves)
     
     def is_check(self) -> bool:
-        return bool(chess_lib.is_check(self.board._ptr)) 
+        return self.board._is_check()
     
     def illegal_to_move(self) -> bool:
-        return bool(chess_lib.illegal_to_move(self.board._ptr))
-
-    def king_threats(self, color: Color) -> SquareSet:
-        king_sq: int = self.board.king_sq(color)
-        return self.is_square_attacked_by(color, king_sq)
-
-    def is_square_attacked_by(self, color: Color, square: Square) -> SquareSet:
-        assert square >= 0 and square < SQUARE_NB
-        mask: BitBoard = chess_lib.attacks_to_square(self.board._ptr, square, self.board.occ(BOTH).mask)
-        return SquareSet(mask) & self.board.occ(color)
+        return self.board._illegal_to_move()
     
+    def checkers(self, color: Color) -> SquareSet:
+        king_sq: int = self.board.king_sq(color)
+        return self.attackers(not color, king_sq)
+
+    def is_square_attacked_by(self, color: Color, square: Square) -> bool:
+        if not isinstance(square, int) or not (0 <= square < SQUARE_NB):
+            raise ValueError(f"Invalid square index: {square}")
+        return bool(self.board.attacks(color, square))
+    
+    def attackers(self, color: Color, square: Square) -> SquareSet:
+        if not isinstance(square, int) or not (0 <= square < SQUARE_NB):
+            raise ValueError(f"Invalid square index: {square}")
+        return self.board.attacks(color, square) 
+        
     def push(self, move: Move) -> None:
         self._handle_moves.push(move)
 
@@ -631,9 +737,12 @@ class Board(object):
         return f'{type(self).__name__}(fen={self.gen_fen!r})'
     
     def __str__(self) -> None:
-        chess_lib.print_board(self.board._ptr)
+        self.board._prety_print()
         return ""
-
+    
+    def __hash__(self):
+        return self.board.zobrist_key()
+    
 class HandleMoves:
     def __init__(self, board: Board) -> None:
         self.board = board
@@ -684,6 +793,3 @@ class HandleMoves:
     def __repr__(self) -> str:
         moves = ', '.join(mv.san for mv, _ in self)
         return f"<{type(self).__name__} id={id(self):#x} moves=[{moves}]>"
-    
-class NotImplentedYet(Exception):
-    pass

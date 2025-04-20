@@ -317,7 +317,7 @@ bb bb_queen(int sq, bb obs) {
 void bb_print(bb bbit) {
     for (int r = RANK_NB - 1; r >= 0; r--) {
         for (int f = 0; f < FILE_NB; f++) {
-            printf(" %c", (test_bit(bbit, square(r, f))) ? '1' : '0');
+            printf(" %c", (test_bit(bbit, square(r, f))) ? '1' : '.');
         }
         printf("\n");
     }

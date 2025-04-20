@@ -224,11 +224,12 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha, in
         }
     }
 
-stop_loop:
-    if (!can_move) return is_check(board) ? -MATE + ply : 0;
+    if (!can_move) 
+        return is_check(board) ? -MATE + ply : 0;
     
     table_set(&search->table, board->hash, depth, alpha, flag);
-    
+
+stop_loop:
     return alpha;
 }
 

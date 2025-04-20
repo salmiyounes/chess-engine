@@ -40,7 +40,6 @@ typedef struct {
     bb 	 	  	    ep;
     bb 			  hash;
     bb 		 pawn_hash;
-
 } ChessBoard;
 
 typedef uint32_t Move;
