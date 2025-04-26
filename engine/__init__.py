@@ -85,6 +85,8 @@ WHITE: Color = 0
 BLACK: Color = 1
 BOTH:  Color = 2
 
+Flags: TypeAlias = int
+
 #
 Piece: TypeAlias = int
 WHITE_PAWN: Piece       =  0
@@ -232,6 +234,9 @@ chess_lib.thread_init.restype     = ctypes.c_void_p
 chess_lib.best_move.argtypes      = [ctypes.POINTER(Search), ctypes.POINTER(ChessBoard), ctypes.POINTER(ctypes.c_uint32)]
 chess_lib.best_move.restype       = ctypes.c_int
 
+class IllegalMoveError(ValueError):
+    pass
+
 class utils:
     @staticmethod
     def create_string_buffre(size: int) -> ctypes.Array[ctypes.c_char]:
@@ -283,6 +288,14 @@ class utils:
             r = bb & -bb
             yield r.bit_length() - 1
             bb ^= r
+
+    @staticmethod
+    def square_distance(a: Square, b: Square) -> int:
+        return max(abs(utils.file_of(a) - utils.file_of(b)), abs(utils.rank_of(a) - utils.rank_of(b)))
+
+    @staticmethod
+    def square_manhattan_distance(a: Square, b: Square) -> int:
+        return abs(utils.file_of(a) - utils.file_of(b)) + abs(utils.rank_of(a) - utils.rank_of(b))
 
 class SquareSet:
     def __init__(self, mask: Optional[BitBoard] = BitBoard(0)):
@@ -343,6 +356,16 @@ class SquareSet:
             arr[sq] = True
         return arr
 
+class Searcher:
+    def __init__(self, board: Board, debug: bool = False):
+        self.board  = board
+        self.search = Search()
+        self.move   = ctypes.c_uint32()
+    
+    def start(self) -> None:
+        chess_lib.thread_init( ctypes.byref(self.search), self.board.board._ptr, ctypes.byref(self.move))
+        return Move(self.move.value)
+            
 class BaseBoard:
     def __init__(self) -> None:
         self._board: ChessBoard = ChessBoard()
@@ -479,14 +502,16 @@ class BaseBoard:
     def _perft(self, depth: Optional[int] = 1) -> int:
         return chess_lib.perft_test(self._ptr, depth)
     
+    def turn(self) -> Color:
+        return Color(self._board.color)
+
     @property
     def _ptr(self):
         return ctypes.byref(self._board)
       
 class Move(object):
-    def __init__(self, move: ctypes.c_uint32) -> None:
+    def __init__(self, move: Optional[ctypes.c_uint32]) -> None:
         self.move: ctypes.c_uint32 = move
-
     def __repr__(self):
         return f'{type(self).__name__}(san={self.san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
     
@@ -544,6 +569,9 @@ class Move(object):
     def san(self) -> str:
         return self.move_str()
     
+    def construct_move(self, from_sq: Square, to_sq: Square, piece: Piece, flag: Flags) -> Move:
+        return self((((from_sq) | ((to_sq) << 6) | ((piece) << 12) | ((flag) << 16))))
+
     @staticmethod
     def empty_move() -> Move:
         return Move(ctypes.c_uint32(0))
@@ -611,7 +639,7 @@ class MoveGenerator(object):
             size: int = getattr(chess_lib, func)(self.board.board._ptr, array)
             self._cache[func] = list(map(Move, array[:size]))
         return self._cache[func]
-
+    
     def gen_attacks(self, color: Color) -> List[Move]:
         array = utils.create_uint32_array(MAX_MOVES)
         if color == BLACK:
@@ -625,6 +653,14 @@ class MoveGenerator(object):
 
         size = func(self.board.board._ptr, array, occ_mask)
         return list(map(Move, array[:size])) #TODO: return only legal attacks
+
+    @property
+    def castling_moves(self) -> List[Move]:
+        return list(filter(lambda x : x.is_castling(), self))
+
+    @property
+    def ep_moves(self) -> List[Move]:
+        return list(filter(lambda x : x.is_enp(), self))
 
     @property
     def legal_moves(self) -> List[Move]:
@@ -654,12 +690,12 @@ class MoveGenerator(object):
     def __bool__(self) -> bool:
         return len(self)  
     
-class Board(object):
+class Board:
     def __init__(self, fen: Optional[str] = None):
         self.board: BaseBoard = BaseBoard()
         if fen != None:
             self.set_fen(fen=fen)
-        self._handle_moves: HandleMoves = HandleMoves(self)
+        self._handle_moves: MovesStack = MovesStack(self)
 
     def drawn_by_insufficient_material(self) -> bool:
         return self.board._drawn_by_insufficient_material()
@@ -671,6 +707,10 @@ class Board(object):
     
     def castling_rights(self) -> int:
         return self.board._castling_rights()
+    
+    @property
+    def turn(self) -> Color:
+        return self.board.turn()
     
     @property
     def gen_moves(self) -> MoveGenerator:
@@ -688,12 +728,33 @@ class Board(object):
         self.board._set_fen(fen)
 
     def perft_test(self, depth: Optional[int] = 1) -> BitBoard:
+        if depth <= 0:
+            raise ValueError("Depth must be non-negative")
         return self.board._perft(depth)
 
+    def color_at(self, square: Square) -> Optional[Color]:
+        return self.board.color_at(square)
+
+    def is_game_over(self) -> bool:
+        return (
+            self.is_checkmate() or 
+            self.is_stalemate() or
+            self.is_insufficient_material() or
+            self.is_fifty_moves() or
+            self.is_threefold_repetition()
+        )
+    
+    def is_checkmate(self) -> bool:
+        return self.is_check() and not any(self.gen_moves)
+    
+    def is_fifty_moves(self) -> bool:
+        return False
+
+    def is_threefold_repetition(self) -> bool:
+        return False
+
     def is_stalemate(self) -> bool:
-        if not self.is_check():
-            return False
-        return not any(self.gen_moves)
+        return not self.is_check() and not any(self.gen_moves)
     
     def is_check(self) -> bool:
         return self.board._is_check()
@@ -727,6 +788,7 @@ class Board(object):
     def copy(self) -> Self:
         dst = type(self)(None)
         pointer(dst.board._board)[0] = self.board._board # https://stackoverflow.com/questions/1470343/python-ctypes-copying-structures-contents
+
         dst._handle_moves = self._handle_moves.copy(dst)
         return dst 
     
@@ -743,7 +805,7 @@ class Board(object):
     def __hash__(self):
         return self.board.zobrist_key()
     
-class HandleMoves:
+class MovesStack:
     def __init__(self, board: Board) -> None:
         self.board = board
         self._moves_history: List[Tuple[Move, MoveUndo]] = []
@@ -752,16 +814,16 @@ class HandleMoves:
         if not isinstance(move, Move):
             raise TypeError(f"Expected Move instance, got {type(move).__name__}")
         if move not in MoveGenerator(self.board):
-            raise ValueError(f"Move {move.san} is not legal in the current position.")
+            raise IllegalMoveError(f"Move {move.san} is not legal in the current position.")
         
         undo: MoveUndo = MoveUndo(move)
         chess_lib.do_move(self.board.board._ptr, move.move, undo._ptr)
         self._moves_history.append((move, undo))
 
     def pop(self) -> Move:
-        try:
+        if len(self):
             move, undo = self._moves_history.pop()
-        except IndexError:
+        else:
             raise IndexError("pop from empty move history")
 
         chess_lib.undo_move(self.board.board._ptr, move.move, undo._ptr)
@@ -784,7 +846,7 @@ class HandleMoves:
     def __len__(self) -> int:
         return len(self._moves_history)
     
-    def __iter__(self) -> Iterator[Tuple[Move, Undo]]:
+    def __iter__(self) -> Iterator[Tuple[Move, MoveUndo]]:
         return ((mv , undo) for mv, undo in self._moves_history)
 
     def __contains__(self, move: Move) -> bool:
