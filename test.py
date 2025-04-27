@@ -42,7 +42,7 @@ class UtilsTestCase(unittest.TestCase):
 class BoardTestCase(unittest.TestCase):
     def test_default_position(self):
         board = engine.Board()
-        self.assertEqual(board.gen_fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -")
+        self.assertEqual(board.fen, engine.STARTING_FEN)
         self.assertEqual(board.turn, engine.WHITE)
 
     def test_fen(self):
@@ -57,7 +57,7 @@ class BoardTestCase(unittest.TestCase):
         
         for fen in test_positions:
             board.set_fen(fen)
-            self.assertEqual(board.gen_fen, fen)
+            self.assertEqual(board.fen, fen)
             
         with self.assertRaises(ValueError):
             board.set_fen("")
@@ -76,12 +76,22 @@ class BoardTestCase(unittest.TestCase):
                 board.pop()
             board.pop()
         self.assertEqual(count, 400)
+        with self.assertRaises(TypeError):
+            board.push(None)
 
     def test_color_at(self):
         board = engine.Board()
         self.assertEqual(board.color_at(engine.A1), engine.WHITE)
         self.assertEqual(board.color_at(engine.G7), engine.BLACK)
         self.assertEqual(board.color_at(engine.E4), None)
+
+    def test_clear(self):
+        board = engine.Board()
+        moves = board.gen_moves
+        board.push(moves[0])
+        board.clear()
+        self.assertEqual(board.fen, engine.STARTING_FEN)
+        self.assertEqual(len(board._handle_moves), 0)
 
     def test_perft(self):
         test_positions = {
@@ -175,6 +185,9 @@ class BaseBoardTestCase(unittest.TestCase):
         a1 = engine.BaseBoard()
         a2 = engine.BaseBoard()
         self.assertEqual(a1, a2)
+
+class SquareSetTestCase(unittest.TestCase):
+    pass
 
 if __name__ == "__main__":
     verbosity = sum(arg.count("v") for arg in sys.argv if all(c == "v" for c in arg.lstrip("-")))
