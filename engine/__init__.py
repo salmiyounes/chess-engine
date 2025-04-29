@@ -848,7 +848,8 @@ class Board:
         if not isinstance(other, Board):
             return NotImplemented
         return (self.fen == other.fen and
-                self._handle_moves == other._handle_moves)
+                self._handle_moves == other._handle_moves and 
+                self.board == other.board)
     
     def __repr__(self) -> str:
         return f'{type(self).__name__}(fen={self.fen!r})'
@@ -895,6 +896,11 @@ class MovesStack:
         dst._moves_history = self._moves_history.copy()
         return dst
     
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MovesStack):
+            return NotImplemented
+        return self._moves_history == other._moves_history
+
     def __len__(self) -> int:
         return len(self._moves_history)
     
