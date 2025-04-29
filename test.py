@@ -16,7 +16,7 @@ class UtilsTestCase(unittest.TestCase):
             self.assertEqual(engine.utils.square(rank_of, file_sq), square)
     
     def test_bit_operations(self):
-        bb = 1 << 10  
+        bb = engine.utils.bit(engine.C2)  
         self.assertEqual(engine.utils.get_lsb(bb), 10)
         self.assertEqual(engine.utils.popcount(bb), 1)
         self.assertTrue(engine.utils.test_bit(bb, 10))
@@ -44,6 +44,11 @@ class BoardTestCase(unittest.TestCase):
         board = engine.Board()
         self.assertEqual(board.fen, engine.STARTING_FEN)
         self.assertEqual(board.turn, engine.WHITE)
+    
+    def test_eq(self):
+        b1 = engine.Board('r1bqkb1r/ppppppp1/2n2n1p/6B1/3P4/2N5/PPP1PPPP/R2QKBNR w KQkq - 0 1')
+        b2 = engine.Board('r1bqkb1r/ppppppp1/2n2n1p/6B1/3P4/2N5/PPP1PPPP/R2QKBNR w KQkq - 0 1')
+        self.assertEqual(b1, b2)
 
     def test_fen(self):
         test_positions = [
@@ -168,6 +173,7 @@ class BoardTestCase(unittest.TestCase):
         self.assertTrue(board.is_checkmate())
     
     def test_castling_rights(self):
+        #TODO: add castling rights tests
         pass
     
     def test_peek(self):
@@ -187,7 +193,26 @@ class BaseBoardTestCase(unittest.TestCase):
         self.assertEqual(a1, a2)
 
 class SquareSetTestCase(unittest.TestCase):
-    pass
+    def test_len(self):
+        mask = engine.utils.bit(engine.A1) | engine.utils.bit(engine.B1)
+        a1   = engine.SquareSet(mask)
+        self.assertTrue(bool(a1))
+        self.assertEqual(len(a1), 2)
+    
+    def test_contains(self):
+        mask = engine.utils.bit(engine.A5)
+        a1   = engine.SquareSet(mask)
+
+        self.assertTrue(engine.A5 in a1)
+        self.assertFalse(engine.B1 in a1)
+    
+    def test_pop(self):
+        mask = engine.utils.bit(engine.A5)
+        a1   = engine.SquareSet(mask)
+
+        self.assertEqual(a1.pop(), engine.A5)
+        with self.assertRaises(KeyError):
+            a1.pop()
 
 if __name__ == "__main__":
     verbosity = sum(arg.count("v") for arg in sys.argv if all(c == "v" for c in arg.lstrip("-")))
