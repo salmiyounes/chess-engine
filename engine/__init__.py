@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import dataclasses
 from typing import (
     Optional,
     List,
@@ -8,7 +9,6 @@ from typing import (
     Tuple,
     TypeAlias,
     Iterator,
-    Callable,
     Self,
     Any,
 )
@@ -32,9 +32,11 @@ from ctypes import (
 # Starting possition fen
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
-#
+
 BitBoard: TypeAlias = int
+
 Square: TypeAlias = int
+SQUARE_NB: Square = 64
 A1: Square = 0
 B1: Square = 1
 C1: Square = 2
@@ -100,34 +102,42 @@ F8: Square = 61
 G8: Square = 62
 H8: Square = 63
 
+# Max moves 
 MAX_MOVES: int = 218
-COLOR_NB : int = 2
-SQUARE_NB: Square = 64
 
-#
+# Color number
+COLOR_NB : int = 2
+
+# Colors
 Color: TypeAlias = int
 WHITE: Color = 0
 BLACK: Color = 1
 BOTH:  Color = 2
 
-Flags: TypeAlias = int
+# Flags 
+Flags: TypeAlias            = int
+EMPTY_FLAG: Flags           = 0
+ENP_FLAG: Flags             = 6
+CAPTURE_FLAG: Flags         = 1
+PROMO_FLAG: Flags           = 8
+KNIGHT_PROMO_FLAG: Flags    = 8
+ROOK_PROMO_FLAG : Flags     = 9
+BISHOP_PROMO_FLAG: Flags    = 10
+QUEEN_PROMO_FLAG: Flags     = 11
 
-#
+# piece 
 Piece: TypeAlias = int
-WHITE_PAWN: Piece       =  0
-BLACK_PAWN: Piece       =  1
-WHITE_KNIGHT: Piece	    =  2
-BLACK_KNIGHT: Piece     =  3
-WHITE_BISHOP: Piece     =  4
-BLACK_BISHOP: Piece     =  5
-WHITE_ROOK: Piece       =  6
-BLACK_ROOK: Piece       =  7
-WHITE_QUEEN: Piece      =  8
-BLACK_QUEEN: Piece      =  9
-WHITE_KING: Piece       = 10
-BLACK_KING: Piece       = 11 
-NONE: Piece		        = 12
+PAWN  :Piece = 0
+KNIGHT:Piece = 1
+BISHOP:Piece = 2
+ROOK  :Piece = 3
+QUEEN :Piece = 4
+KING  :Piece = 5
 
+# Piece symbols list
+PIECE_SYMBOLS: List[str] = ['p', 'n', 'b', 'r', 'q', 'k']
+
+# ChesBoard struct
 class ChessBoard(Structure):
     _fields_ = [
         ("squares", c_int * SQUARE_NB),
@@ -147,7 +157,7 @@ class ChessBoard(Structure):
         ("hash", c_uint64),
         ("pawn_hash", c_uint64),
     ]
-#
+# Table Entry struct
 class Entry(Structure):
     _fields_ = [
         ('key', c_uint64),
@@ -156,7 +166,7 @@ class Entry(Structure):
         ('flag', c_int),
     ]
 
-#
+# Table struct
 class Table(Structure):
     _fields_ = [
         ('size', c_int),
@@ -164,7 +174,7 @@ class Table(Structure):
         ('entry', POINTER(Entry))
     ]
 
-#
+# Search struct
 class Search(Structure):
     _fields_ = [
         ('nodes', c_int),
@@ -185,7 +195,7 @@ try:
 except OSError as e:
     raise RuntimeError(f"Could not load chess engine library: {e}")
 
-# bit board init functions
+# main bit board functions
 chess_lib.get_lsb.argtypes  = [c_uint64]
 chess_lib.get_lsb.restype   = c_int
 chess_lib.get_msb.argtypes  = [c_uint64]
@@ -211,7 +221,7 @@ chess_lib.attacks_to_king_square.restype  = c_int
 chess_lib.attacks_to_square.argtypes      = [POINTER(ChessBoard), c_int, c_uint64]
 chess_lib.attacks_to_square.restype       = c_uint64
 
-# board init functions 
+# main board functions 
 chess_lib.board_init.argtypes     = [POINTER(ChessBoard)]
 chess_lib.board_init.restype      = c_void_p
 chess_lib.board_load_fen.argtypes = [POINTER(ChessBoard), POINTER(c_char)]
@@ -227,7 +237,7 @@ chess_lib.board_clear.restype     = c_void_p
 chess_lib.board_drawn_by_insufficient_material.argtypes = [POINTER(ChessBoard)]
 chess_lib.board_drawn_by_insufficient_material.restype  = c_int
 
-# move generater functions
+# Move Generation functions 
 chess_lib.gen_black_attacks_against.argtypes = [POINTER(ChessBoard), POINTER(c_uint32), c_uint64]
 chess_lib.gen_black_attacks_against.restype  = c_int
 chess_lib.gen_white_attacks_against.argtypes = [POINTER(ChessBoard), POINTER(c_uint32), c_uint64]
@@ -243,7 +253,7 @@ chess_lib.illegal_to_move.restype   = c_int
 chess_lib.is_check.argtypes         = [POINTER(ChessBoard)]
 chess_lib.is_check.restype          = c_int
 
-# do move and undo move functions
+# Move Handling functions 
 chess_lib.do_move.argtypes     = [POINTER(ChessBoard), c_uint32, POINTER(Undo)]
 chess_lib.do_move.restype      = c_void_p
 chess_lib.undo_move.argtypes   = [POINTER(ChessBoard), c_uint32, POINTER(Undo)]
@@ -253,7 +263,7 @@ chess_lib.move_to_str.restype  = c_char_p
 chess_lib.make_move.argtypes   = [POINTER(ChessBoard), c_uint32]
 chess_lib.make_move.restype    = c_void_p
 
-# search functions
+# 
 chess_lib.thread_init.argtypes    = [POINTER(Search), POINTER(ChessBoard), POINTER(c_uint32)]
 chess_lib.thread_init.restype     = c_void_p
 chess_lib.best_move.argtypes      = [POINTER(Search), POINTER(ChessBoard), POINTER(c_uint32)]
@@ -292,11 +302,6 @@ class utils:
         return bool(bit)
     
     @staticmethod
-    def make_piece_type(pc: int, color: int) -> Piece: 
-        piece = chess_lib.make_piece_type(pc, color)
-        return Piece(piece)
-    
-    @staticmethod
     def square(rank: Square, file: Square) -> Square: 
         sq = chess_lib.square(rank, file)
         return Square(sq)
@@ -333,6 +338,40 @@ class utils:
     @staticmethod
     def square_mirror(square: Square) -> Square:
         return square ^ 56
+
+@dataclasses.dataclass
+class PieceType:
+    piece: Piece
+    """A piece wth type and color"""
+
+    color: Color
+    """The piece color"""
+
+    def symbol(self, piece: Piece) -> str:
+        return PIECE_SYMBOLS[piece].upper() if self.color else PIECE_SYMBOLS[piece]
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}{self.symbol(self.piece)!r}'
+
+    @property
+    def to_index(self) -> int:
+        """Convert piece type and color into a numerical index representation"""
+        return (self.piece * BOTH) + self.color
+
+    @classmethod
+    def from_index(cls, index: int) -> Optional[PieceType]:
+        if index != 12: # Check if index is not a NONE piece type
+            return cls(
+                (index & ~BLACK) >> BLACK, # Get piece type
+                index & BLACK              # Get color type
+            )
+        else:
+            return None
+        
+    @classmethod
+    def from_symbol(cls, symbol: str) -> PieceType:
+        return cls(PIECE_SYMBOLS.index(symbol.lower()), not symbol.islower())
+
 
 class SquareSet:
     def __init__(self, mask: Optional[BitBoard] = 0):
@@ -425,7 +464,7 @@ class BaseBoard:
     def __iter__(self) -> Iterator[Square]:
         mask: BitBoard = self.occ(BOTH).mask
         return utils.scan_forward(mask)
-    
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BaseBoard):
             return NotImplemented
@@ -433,8 +472,8 @@ class BaseBoard:
         return (
             self._board.castle == other._board.castle and
             self._board.ep == other._board.ep and
-            all(self._board.squares[i] == other._board.squares[i] 
-                for i in range(SQUARE_NB))
+            all(self.piece_at(sq) == other.piece_at(sq) 
+                for sq in range(SQUARE_NB))
         )
     
     def board_init(self) -> None:
@@ -454,37 +493,43 @@ class BaseBoard:
     def pawns(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_PAWN if color else WHITE_PAWN]
+        piece: PieceType = PieceType(PAWN, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
     
     def knights(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_KNIGHT if color else WHITE_KNIGHT]
+        piece: PieceType = PieceType(KNIGHT, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
 
     def rooks(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_ROOK if color else WHITE_ROOK]
+        piece: PieceType = PieceType(ROOK, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
 
     def bishops(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_BISHOP if color else WHITE_BISHOP]
+        piece: PieceType = PieceType(BISHOP, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
 
     def queens(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_QUEEN if color else WHITE_QUEEN]
+        piece: PieceType = PieceType(QUEEN, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
 
     def kings(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        mask: BitBoard = self._board.bb_squares[BLACK_KING if color else WHITE_KING]
+        piece: PieceType = PieceType(KING, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[piece.to_index]
         return SquareSet(mask)
     
     def king_sq(self, color: Color) -> Square:
@@ -492,6 +537,12 @@ class BaseBoard:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         mask: BitBoard = self.kings(color).mask
         return utils.get_lsb(mask)
+    
+    def piece_at(self, square: Square) -> Optional[PieceType]:
+        if not square in range(SQUARE_NB):
+            raise IndexError
+        piece = self._board.squares[square]
+        return PieceType.from_index(piece)
     
     def color_at(self, square: Square) -> Optional[Color]:
         mask: BitBoard = utils.bit(square)
@@ -517,10 +568,10 @@ class BaseBoard:
     def clear(self) -> None:
         chess_lib.board_clear(self._ptr)
 
-    def tolist(self) -> List[Piece]:
-        arr: List[Piece] = [NONE] * SQUARE_NB
+    def tolist(self) -> List[Optional[PieceType]]:
+        arr: List[Optional[PieceType]] = [None] * SQUARE_NB
         for sq in self:
-            arr[sq] = self._board.squares[sq]
+            arr[sq] = self.piece_at(sq)
         return arr
 
     def _drawn_by_insufficient_material(self) -> bool:
@@ -549,12 +600,13 @@ class BaseBoard:
         return int(nodes)
     
     def turn(self) -> Color:
-        return Color(self._board.color)
+        color = self._board.color
+        return Color(color)
 
     @property
     def _ptr(self) -> object:
         return byref(self._board)
-      
+
 class Move:
     def __init__(self, move: Optional[int] = None):
         self.move: int = move if move is not None else 0 
@@ -585,7 +637,7 @@ class Move:
             return ""
     
     def get_promo_piece_type(self) -> int:
-        return (self.flag & 0x3) + 1
+        return (self.flag & 0x3) + KNIGHT
 
     def is_promotion(self) -> bool:
         return bool(self.flag & 8)
@@ -635,6 +687,10 @@ class Move:
     @staticmethod
     def extract_flag(x: int) -> int:
         return (((x) >> 16) & 0xf)
+    
+    @classmethod
+    def null(cls) -> Self:
+        return cls(None)
 
 class MoveUndo:
     def __init__(self, move: Move = Move(0)):
@@ -642,15 +698,15 @@ class MoveUndo:
         self.undo = Undo()
     
     @property
-    def piece(self) -> Piece:
+    def piece(self) -> Optional[PieceType]:
         if self._move:
-            return self._move.piece
-        return NONE
+            return PieceType.from_index(self._move.piece)
+        return None
     
     @property
-    def capture(self) -> Piece:
+    def capture(self) -> Optional[PieceType]:
         capture = self.undo.capture
-        return Piece(capture)
+        return PieceType.from_index(capture)
     
     @property
     def enp_square(self) -> Optional[Square]:
