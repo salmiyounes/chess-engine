@@ -42,6 +42,7 @@ class UtilsTestCase(unittest.TestCase):
 class BoardTestCase(unittest.TestCase):
     def test_default_position(self):
         board = engine.Board()
+        self.assertEqual(board.turn, engine.WHITE)
         self.assertEqual(board.fen, engine.STARTING_FEN)
         self.assertEqual(board.turn, engine.WHITE)
     
@@ -191,6 +192,36 @@ class BaseBoardTestCase(unittest.TestCase):
         a1 = engine.BaseBoard()
         a2 = engine.BaseBoard()
         self.assertEqual(a1, a2)
+    
+    def test_init(self):
+        board = engine.BaseBoard()
+        
+        for c in range(engine.BOTH):
+            self.assertEqual(len(board.pawns(c)),   8)
+            self.assertEqual(len(board.knights(c)), 2)
+            self.assertEqual(len(board.bishops(c)), 2)
+            self.assertEqual(len(board.rooks(c)),   2)
+            self.assertEqual(len(board.queens(c)),  1)
+            self.assertEqual(len(board.kings(c)),   1)
+
+    def test_king_sq(self):
+        board = engine.BaseBoard()
+        self.assertEqual(board.king_sq(engine.WHITE), engine.E1)
+        self.assertEqual(board.king_sq(engine.BLACK), engine.E8)
+
+    def test_piece_at(self):
+        board = engine.BaseBoard()
+        self.assertEqual(board.piece_at(engine.D1), engine.PieceType.from_symbol('q'))
+        self.assertEqual(board.piece_at(engine.F8), engine.PieceType.from_symbol('B'))
+        self.assertEqual(board.piece_at(engine.D3), None)
+
+        with self.assertRaises(IndexError):
+            board.piece_at(-1)
+
+    def test_color_at(self):
+        board = engine.BaseBoard()
+        self.assertEqual(board.color_at(engine.A2), engine.WHITE)
+        self.assertEqual(board.color_at(engine.A7), engine.BLACK)
 
 class SquareSetTestCase(unittest.TestCase):
     def test_len(self):
