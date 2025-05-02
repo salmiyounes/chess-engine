@@ -118,7 +118,7 @@ BOTH:  Color = 2
 Flags: TypeAlias            = int
 EMPTY_FLAG: Flags           = 0
 ENP_FLAG: Flags             = 6
-CAPTURE_FLAG: Flags         = 1
+CASTLE_FLAG: Flags          = 1
 PROMO_FLAG: Flags           = 8
 KNIGHT_PROMO_FLAG: Flags    = 8
 ROOK_PROMO_FLAG : Flags     = 9
@@ -339,6 +339,21 @@ class utils:
     def square_mirror(square: Square) -> Square:
         return square ^ 56
 
+    @classmethod
+    def encode_move(self, from_sq: int, to_sq: int, piece: int, flag: int) -> int:
+        return (from_sq & 0x3F) | ((to_sq & 0x3F) << 6) | ((piece & 0xF) << 12) | ((flag & 0xF) << 16)
+
+    @staticmethod
+    def scan_move_list(arr: List[int]) -> Iterator[List[int]]:
+        extractors = [
+            lambda x: (x >> 0) & 0x3F,   # extract source square
+            lambda x: (x >> 6) & 0x3F,   # extract target square
+            lambda x: (x >> 12) & 0xF,   # extract piece type
+            lambda x: (x >> 16) & 0xF    # extract flag type
+        ]
+        for m in arr:
+            yield [extr(m) for extr in extractors]
+
 @dataclasses.dataclass
 class PieceType:
     piece: Piece
@@ -360,7 +375,7 @@ class PieceType:
 
     @classmethod
     def from_index(cls, index: int) -> Optional[PieceType]:
-        if index != 12: # Check if index is not a NONE piece type
+        if index != 12: # Check if 'index' is not a NONE piece type
             return cls(
                 (index & ~BLACK) >> BLACK, # Get piece type
                 index & BLACK              # Get color type
@@ -607,93 +622,69 @@ class BaseBoard:
     def _ptr(self) -> object:
         return byref(self._board)
 
+@dataclasses.dataclass
 class Move:
-    def __init__(self, move: Optional[int] = None):
-        self.move: int = move if move is not None else 0 
+    from_sq: Square
+    """From square"""
+
+    dst_sq: Square
+    """Destenation square"""
+
+    piece: Optional[PieceType] = None
+    """Piece type"""
+
+    flag: Flags = EMPTY_FLAG
+    """Flag type"""
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}(san={self.san}, from={self.src}, to={self.dst}, piece={self.piece}, flag={self.flag})'
-    
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Move):
-            return self.move == other.move
-        return False
+        return f'{type(self).__name__}(san={self.san}, from={self.from_sq}, to={self.dst_sq}, piece={self.piece}, flag={self.flag})'
     
     def __str__(self) -> str:
         return self.san
     
-    def __hash__(self) -> int:
-        return hash(self)
+    def __hash__(self):
+        return utils.encode_move(self.from_sq, 
+                                 self.dst_sq, 
+                                 self.piece,
+                                 self.flag)
     
     def move_str(self) -> str:
         try:
-            result = chess_lib.move_to_str(self.move)
+            result = chess_lib.move_to_str(hash(self))
             if not result:
                 return ""
-
             return str(result.decode('utf-8'))
         except Exception as e:
             print(f"Error converting move to string: {e}")
             return ""
     
-    def get_promo_piece_type(self) -> int:
+    @classmethod
+    def from_uci(cls) -> Move:
+        #TODO: parse move from the uci
+        pass
+
+    def promo_piece_type(self) -> Piece:
         return (self.flag & 0x3) + KNIGHT
 
     def is_promotion(self) -> bool:
-        return bool(self.flag & 8)
+        return bool(self.flag & PROMO_FLAG)
     
     def is_enp(self) -> bool:
-        return bool(self.flag == 6)
+        return bool(self.flag == ENP_FLAG)
     
     def is_castling(self) -> bool:
-        return bool(self.flag == 1)
-    
-    @property
-    def src(self) -> int:
-        return self.extract_from(self.move)
-    
-    @property
-    def dst(self) -> int:
-        return self.extract_to(self.move)
-
-    @property
-    def piece(self) -> int:
-        return self.extract_piece(self.move)
-    
-    @property
-    def flag(self) -> int:
-        return self.extract_flag(self.move)
+        return bool(self.flag == CASTLE_FLAG)
     
     @property
     def san(self) -> str:
         return self.move_str()
-
-    @staticmethod
-    def empty_move() -> Move:
-        return Move(None)
-    
-    @staticmethod
-    def extract_from(x: int) -> int:
-        return (((x) >> 0) & 0x3f)
-
-    @staticmethod
-    def extract_to(x: int) -> int:
-        return (((x) >> 6) & 0x3f)
-    
-    @staticmethod
-    def extract_piece(x: int) -> int:
-        return (((x) >> 12) & 0xf)
-
-    @staticmethod
-    def extract_flag(x: int) -> int:
-        return (((x) >> 16) & 0xf)
     
     @classmethod
-    def null(cls) -> Self:
-        return cls(None)
+    def null(cls) -> Move:
+        return cls(0, 0)
 
 class MoveUndo:
-    def __init__(self, move: Move = Move(0)):
+    def __init__(self, move: Move = Move.null()):
         self._move = move
         self.undo = Undo()
     
@@ -727,9 +718,6 @@ class MoveUndo:
         if isinstance(other, MoveUndo):
             return self._move == other._move
         return False
-    
-    def __hash__(self) -> int:
-        return hash(self._move)
         
 class MoveGenerator(object):
     def __init__(self, board: Board) -> None:
@@ -740,7 +728,7 @@ class MoveGenerator(object):
         if func_name not in self._cache:
             array: Array[Any] = utils.create_uint32_array(MAX_MOVES)
             size: int = getattr(chess_lib, func_name)(self.board.board._ptr, array)
-            self._cache[func_name] = list(map(Move, array[:size]))
+            self._cache[func_name] = [Move(*data) for data in utils.scan_move_list(array[:size])]
         return self._cache[func_name]
     
     def gen_attacks(self, color: Color) -> List[Move]:
@@ -755,7 +743,7 @@ class MoveGenerator(object):
             raise ValueError("Invalid color provided!")
 
         size = func(self.board.board._ptr, array, occ_mask)
-        return list(map(Move, array[:size])) #TODO: return only legal attacks
+        return [Move(*data) for data in utils.scan_move_list(array[:size])] #TODO: return only legal attacks
 
     @property
     def castling_moves(self) -> List[Move]:
@@ -886,6 +874,15 @@ class Board:
 
     def pop(self) -> Move:
         return self._handle_moves.pop()
+    
+    def push_null(self) -> None:
+        """Push a null move this will just flip the color
+        and update the zobrist hash
+        """
+        pass
+    
+    def pop_null(self) -> Move:
+        pass
 
     def peek(self) -> Optional[Move]:
         return self._handle_moves.peek()
@@ -929,7 +926,7 @@ class MovesStack:
             raise IllegalMoveError(f"Move {move.san} is not legal in the current position.")
         
         undo: MoveUndo = MoveUndo(move)
-        chess_lib.do_move(self.board.board._ptr, move.move, undo._ptr)
+        chess_lib.do_move(self.board.board._ptr, hash(move), undo._ptr)
         self._moves_history.append((move, undo))
 
     def pop(self) -> Move:
@@ -938,7 +935,7 @@ class MovesStack:
         else:
             raise IndexError("pop from empty move history")
 
-        chess_lib.undo_move(self.board.board._ptr, move.move, undo._ptr)
+        chess_lib.undo_move(self.board.board._ptr, hash(move), undo._ptr)
         return move
 
     def peek(self) -> Optional[Move]:
