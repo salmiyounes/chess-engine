@@ -88,13 +88,11 @@ int get_lsb(bb bbit) {
     // https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fclz
     // If bbit is 0, the result is undefined
     assert(bbit);
-
     return __builtin_ctzll(bbit);
 }
 
 int get_msb(bb bbit) {
     assert(bbit);
-    
     return __builtin_ctzll(bbit) ^ 63;
 }
 
@@ -108,7 +106,6 @@ int several(bb bbit) {
 
 bool test_bit(bb bbit, const int sq) {
     assert(sq >= 0 && sq < SQUARE_NB);
-
     return (bool) (bbit & BIT(sq));
 } 
 
@@ -131,7 +128,6 @@ int rank_of(int sq) {
 int make_piece_type(int pc, int color) {
     assert(color == WHITE || color == BLACK);
     assert(pc >= PAWN && pc <= KING);
-   
     return  (pc << 1) + color;
 }
 
@@ -147,11 +143,9 @@ int bb_squares(bb value, int squares[64]) {
 
 bb bb_pawns_attacks(int sq, int color) {
     assert(sq >= 0 && sq < SQUARE_NB);
-
     const bb board = BIT(sq);
-    return color ? 
-            ((board & ~FILE_H) >> 7) | ((board & ~FILE_A) >> 9) :
-            ((board & ~FILE_A) << 7) | ((board & ~FILE_H) << 9) ;
+    return color ? ((board & ~FILE_H) >> 7) | ((board & ~FILE_A) >> 9) :
+                   ((board & ~FILE_A) << 7) | ((board & ~FILE_H) << 9) ;
 } 
 
 bb bb_slide(int sq, int truncate, bb obs, int directions[4][2]) {
@@ -321,6 +315,5 @@ void bb_print(bb bbit) {
         }
         printf("\n");
     }
-
     printf("\n");
 }

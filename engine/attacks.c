@@ -33,9 +33,7 @@ INLINE bb get_king_attacks(int sq) {
 
 int attacks_to_king_square(ChessBoard *board, const bb b_king) {
     assert(b_king);
-    return (attacks_to_square(board, 
-                              get_lsb(b_king), 
-                              board->occ[BOTH]) & board->occ[board->color]) ? 1 : 0;
+    return (attacks_to_square(board, get_lsb(b_king), board->occ[BOTH]) & board->occ[board->color]) ? 1 : 0;
 }
 
 bb attacks_to_square(ChessBoard *board, int sq, bb occ) {

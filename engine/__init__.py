@@ -339,8 +339,8 @@ class utils:
     def square_mirror(square: Square) -> Square:
         return square ^ 56
 
-    @classmethod
-    def encode_move(self, from_sq: int, to_sq: int, piece: int, flag: int) -> int:
+    @staticmethod
+    def encode_move(from_sq: int, to_sq: int, piece: int, flag: int) -> int:
         return (from_sq & 0x3F) | ((to_sq & 0x3F) << 6) | ((piece & 0xF) << 12) | ((flag & 0xF) << 16)
 
     @staticmethod
@@ -663,8 +663,11 @@ class Move:
         #TODO: parse move from the uci
         pass
 
-    def promo_piece_type(self) -> Piece:
-        return (self.flag & 0x3) + KNIGHT
+    def promo_piece_type(self) -> Optional[Piece]:
+        if self.is_promotion():
+            return (self.flag & 0x3) + KNIGHT
+        else:
+            return None
 
     def is_promotion(self) -> bool:
         return bool(self.flag & PROMO_FLAG)
@@ -719,7 +722,7 @@ class MoveUndo:
             return self._move == other._move
         return False
         
-class MoveGenerator(object):
+class MoveGenerator:
     def __init__(self, board: Board) -> None:
         self.board: Board = board
         self._cache: Dict[str, List[Move]] = {}
@@ -779,7 +782,7 @@ class MoveGenerator(object):
             yield move
 
     def __bool__(self) -> bool:
-        return bool(len(self))   
+        return bool(len(self))
     
 class Board:
     def __init__(self, fen: Optional[str] = None):
