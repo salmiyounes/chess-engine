@@ -10,7 +10,7 @@ from typing import (
     TypeAlias,
     Iterator,
     Self,
-    Any,
+    Any
 )
 from ctypes import (
     CDLL,
@@ -133,6 +133,7 @@ BISHOP:Piece = 2
 ROOK  :Piece = 3
 QUEEN :Piece = 4
 KING  :Piece = 5
+NONE  :Piece = 12   
 
 # Piece symbols list
 PIECE_SYMBOLS: List[str] = ['p', 'n', 'b', 'r', 'q', 'k']
@@ -340,17 +341,34 @@ class utils:
         return square ^ 56
 
     @staticmethod
-    def encode_move(from_sq: int, to_sq: int, piece: int, flag: int) -> int:
-        return (from_sq & 0x3F) | ((to_sq & 0x3F) << 6) | ((piece & 0xF) << 12) | ((flag & 0xF) << 16)
+    def encode_move(from_sq: int, 
+                    to_sq: int, 
+                    piece: int, 
+                    flag: int) -> int:
+        return ((from_sq & 0x3F) | ((to_sq & 0x3F) << 6) | 
+                ((piece & 0xF) << 12) | ((flag & 0xF) << 16))
 
     @staticmethod
-    def scan_move_list(arr: List[int]) -> Iterator[List[int]]:
+    def scan_move_list(arr: List[int]) -> Iterator[List[Any]]:
+       
+        # Helper Functions to extract specific fields
+        def extract_source_sq(x: int) -> Square:
+            return (x >> 0) & 0x3F
+        def extract_target_sq(x: int) -> Square:
+            return (x >> 6) & 0x3F
+        def extract_piece_type(x: int) -> Optional[PieceType]:
+            index: int = (x >> 12) & 0XF
+            return PieceType.from_index(index)
+        def extract_flag_type(x: int) -> Flags:
+            return (x >> 16) & 0XF
+        
         extractors = [
-            lambda x: (x >> 0) & 0x3F,   # extract source square
-            lambda x: (x >> 6) & 0x3F,   # extract target square
-            lambda x: (x >> 12) & 0xF,   # extract piece type
-            lambda x: (x >> 16) & 0xF    # extract flag type
+            extract_source_sq,
+            extract_target_sq,
+            extract_piece_type,
+            extract_flag_type
         ]
+
         for m in arr:
             yield [extr(m) for extr in extractors]
 
@@ -362,20 +380,19 @@ class PieceType:
     color: Color
     """The piece color"""
 
-    def symbol(self, piece: Piece) -> str:
-        return PIECE_SYMBOLS[piece].upper() if self.color else PIECE_SYMBOLS[piece]
+    def symbol(self) -> str:
+        return PIECE_SYMBOLS[self.piece].upper() if self.color else PIECE_SYMBOLS[self.piece]
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}{self.symbol(self.piece)!r}'
+        return f'{type(self).__name__}{self.symbol()!r}'
 
-    @property
-    def to_index(self) -> int:
+    def __hash__(self) -> int:
         """Convert piece type and color into a numerical index representation"""
         return (self.piece * BOTH) + self.color
 
     @classmethod
     def from_index(cls, index: int) -> Optional[PieceType]:
-        if index != 12: # Check if 'index' is not a NONE piece type
+        if index != NONE: # Check if 'index' is not a NONE piece type
             return cls(
                 (index & ~BLACK) >> BLACK, # Get piece type
                 index & BLACK              # Get color type
@@ -509,42 +526,42 @@ class BaseBoard:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(PAWN, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
     
     def knights(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(KNIGHT, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
 
     def rooks(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(ROOK, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
 
     def bishops(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(BISHOP, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
 
     def queens(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(QUEEN, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
 
     def kings(self, color: Color) -> SquareSet:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
             raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
         piece: PieceType = PieceType(KING, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[piece.to_index]
+        mask: BitBoard = self._board.bb_squares[hash(piece)]
         return SquareSet(mask)
     
     def king_sq(self, color: Color) -> Square:
@@ -625,12 +642,12 @@ class BaseBoard:
 @dataclasses.dataclass
 class Move:
     from_sq: Square
-    """From square"""
+    """Source square"""
 
     dst_sq: Square
     """Destenation square"""
 
-    piece: Optional[PieceType] = None
+    piece: Optional[PieceType] = None 
     """Piece type"""
 
     flag: Flags = EMPTY_FLAG
@@ -642,10 +659,10 @@ class Move:
     def __str__(self) -> str:
         return self.san
     
-    def __hash__(self):
+    def __hash__(self) -> int:
         return utils.encode_move(self.from_sq, 
                                  self.dst_sq, 
-                                 self.piece,
+                                 hash(self.piece) if self.piece else 0,
                                  self.flag)
     
     def move_str(self) -> str:
@@ -659,8 +676,8 @@ class Move:
             return ""
     
     @classmethod
-    def from_uci(cls) -> Move:
-        #TODO: parse move from the uci
+    def parse_uci(cls) -> Move:
+        #TODO: parse move from the uci, make it simple
         pass
 
     def promo_piece_type(self) -> Optional[Piece]:
@@ -694,7 +711,7 @@ class MoveUndo:
     @property
     def piece(self) -> Optional[PieceType]:
         if self._move:
-            return PieceType.from_index(self._move.piece)
+            return PieceType.from_index(hash(self._move.piece) if self._move.piece else 0)
         return None
     
     @property
@@ -780,7 +797,7 @@ class MoveGenerator:
     def __iter__(self) -> Iterator[Move]:
         for move in self.legal_moves:
             yield move
-
+    
     def __bool__(self) -> bool:
         return bool(len(self))
     
@@ -806,6 +823,7 @@ class Board:
     
     @property
     def turn(self) -> Color:
+        """Get the turn color '0' for WHITE, '1' for BLACK"""
         return self.board.turn()
     
     @property
@@ -882,10 +900,10 @@ class Board:
         """Push a null move this will just flip the color
         and update the zobrist hash
         """
-        pass
+        return None
     
     def pop_null(self) -> Move:
-        pass
+        return NotImplemented
 
     def peek(self) -> Optional[Move]:
         return self._handle_moves.peek()
