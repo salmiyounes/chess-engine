@@ -522,47 +522,30 @@ class BaseBoard:
         mask: BitBoard = self._board.occ[color]
         return SquareSet(mask)
     
-    def pawns(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(PAWN, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
+    def _get_piece_squares(self, piece: Piece, color: Color) -> SquareSet:
+        if not isinstance(color, Color) or color < WHITE or color > BLACK:
+            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1)")
+        piece_type = PieceType(piece, BLACK if color else WHITE)
+        mask: BitBoard = self._board.bb_squares[hash(piece_type)]
         return SquareSet(mask)
     
+    def pawns(self, color: Color) -> SquareSet:
+        return self._get_piece_squares(PAWN, color)
+    
     def knights(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(KNIGHT, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
-        return SquareSet(mask)
-
+        return self._get_piece_squares(KNIGHT, color)
+     
     def rooks(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(ROOK, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
-        return SquareSet(mask)
+        return self._get_piece_squares(ROOK, color)
 
     def bishops(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(BISHOP, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
-        return SquareSet(mask)
+        return self._get_piece_squares(BISHOP, color)
 
     def queens(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(QUEEN, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
-        return SquareSet(mask)
+        return self._get_piece_squares(QUEEN, color)
 
     def kings(self, color: Color) -> SquareSet:
-        if not isinstance(color, Color) or color < WHITE or color > BOTH:
-            raise ValueError(f"Invalid color value: {color}. Must be WHITE (0), BLACK (1) or BOTH (2)")
-        piece: PieceType = PieceType(KING, BLACK if color else WHITE)
-        mask: BitBoard = self._board.bb_squares[hash(piece)]
-        return SquareSet(mask)
+        return self._get_piece_squares(KING, color)
     
     def king_sq(self, color: Color) -> Square:
         if not isinstance(color, Color) or color < WHITE or color > BOTH:
