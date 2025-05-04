@@ -245,6 +245,44 @@ class SquareSetTestCase(unittest.TestCase):
         with self.assertRaises(KeyError):
             a1.pop()
 
+class MoveTestCase(unittest.TestCase):
+    def test_default(self):
+        board = engine.Board()
+        m1  = engine.Move(engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE))
+        self.assertIn(m1, board.gen_moves)
+
+        board.push(m1) # Do move
+        board.pop()    # Undo move
+
+    def test_parse_uci(self):
+        pass
+
+    def test_san(self):
+        move = engine.Move(engine.G1, engine.F3, engine.PieceType(engine.KNIGHT, engine.WHITE))
+        self.assertEqual(move.san, 'g1f3')
+
+class PiecTypeTestCase(unittest.TestCase):
+    def test_symbol(self):
+        p1 = engine.PieceType(engine.PAWN, engine.WHITE)
+        p2 = engine.PieceType(engine.KING, engine.WHITE)
+        p3 = engine.PieceType(engine.QUEEN, engine.BLACK)
+
+        self.assertEqual(p1.symbol(), 'p')
+        self.assertEqual(p2.symbol(), 'k')
+        self.assertEqual(p3.symbol(), 'Q')
+
+    def test_to_index(self):
+        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
+        self.assertEqual(hash(piece), 9)
+
+    def test_from_index(self):
+        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
+        self.assertEqual(engine.PieceType.from_index(9), piece)
+
+    def test_from_symbol(self):
+        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
+        self.assertEqual(engine.PieceType.from_symbol('Q'), piece)         
+
 if __name__ == "__main__":
     verbosity = sum(arg.count("v") for arg in sys.argv if all(c == "v" for c in arg.lstrip("-")))
     verbosity += sys.argv.count("--verbose")
