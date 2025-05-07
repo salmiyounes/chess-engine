@@ -74,9 +74,9 @@ class BoardTestCase(unittest.TestCase):
     def test_move_making(self):
         board = engine.Board()
         count = 0
-        for move in board.gen_moves:
+        for move in board.gen_legal_moves:
             board.push(move)
-            for move in board.gen_moves:
+            for move in board.gen_legal_moves:
                 board.push(move)
                 count += 1
                 board.pop()
@@ -93,8 +93,9 @@ class BoardTestCase(unittest.TestCase):
 
     def test_clear(self):
         board = engine.Board()
-        moves = board.gen_moves
-        board.push(moves[0])
+        moves = board.gen_legal_moves
+        move = engine.Move(engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE))
+        board.push(move)
         board.clear()
         self.assertEqual(board.fen, engine.STARTING_FEN)
         self.assertEqual(len(board._handle_moves), 0)
@@ -179,10 +180,9 @@ class BoardTestCase(unittest.TestCase):
     
     def test_peek(self):
         board = engine.Board()
-        moves = board.gen_moves
-        
-        board.push(moves[0])
-        self.assertEqual(board.peek(), moves[0])
+        move  = engine.Move(engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE))
+        board.push(move)
+        self.assertEqual(board.peek(), move)
         board.pop()
 
         self.assertEqual(board.peek(), None)
@@ -249,7 +249,7 @@ class MoveTestCase(unittest.TestCase):
     def test_default(self):
         board = engine.Board()
         m1  = engine.Move(engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE))
-        self.assertIn(m1, board.gen_moves)
+        self.assertIn(m1, board.gen_legal_moves)
 
         board.push(m1) # Do move
         board.pop()    # Undo move
