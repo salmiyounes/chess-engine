@@ -275,7 +275,7 @@ class IllegalMoveError(ValueError):
 
 class utils:
     @staticmethod
-    def create_string_buffre(size: int) -> Array[Any]:
+    def create_string_buffer(size: int) -> Array[Any]:
         return create_string_buffer(size)
 
     @staticmethod
@@ -404,6 +404,78 @@ class PieceType:
     def from_symbol(cls, symbol: str) -> PieceType:
         return cls(PIECE_SYMBOLS.index(symbol.lower()), not symbol.islower())
 
+@dataclasses.dataclass(slots=True)
+class Move:
+    from_sq: Square
+    """Source square"""
+
+    dst_sq: Square
+    """Destenation square"""
+
+    piece: Optional[PieceType] = None 
+    """Piece type"""
+
+    flag: Flags = EMPTY_FLAG
+    """Flag type"""
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}(san={self.san}, from={self.from_sq}, to={self.dst_sq}, piece={self.piece}, flag={self.flag})'
+    
+    def __str__(self) -> str:
+        return self.san
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Move):
+            return NotImplemented
+        return (
+            self.dst_sq == other.dst_sq and
+            self.from_sq == other.from_sq and 
+            self.piece == other.piece
+        ) 
+    
+    def __hash__(self) -> int:
+        return utils.encode_move(self.from_sq, 
+                                 self.dst_sq, 
+                                 hash(self.piece) if self.piece else 0,
+                                 self.flag)
+    
+    def move_str(self) -> str:
+        try:
+            result = chess_lib.move_to_str(hash(self))
+            if not result:
+                return ""
+            return str(result.decode('utf-8'))
+        except Exception as e:
+            print(f"Error converting move to string: {e}")
+            return ""
+    
+    @classmethod
+    def parse_uci(cls) -> Move:
+        #TODO: parse move from the uci, make it simple
+        pass
+
+    def promo_piece_type(self) -> Optional[Piece]:
+        if self.is_promotion():
+            return (self.flag & 0x3) + KNIGHT
+        else:
+            return None
+
+    def is_promotion(self) -> bool:
+        return bool(self.flag & PROMO_FLAG)
+    
+    def is_enp(self) -> bool:
+        return bool(self.flag == ENP_FLAG)
+    
+    def is_castling(self) -> bool:
+        return bool(self.flag == CASTLE_FLAG)
+    
+    @property
+    def san(self) -> str:
+        return self.move_str()
+    
+    @classmethod
+    def null(cls) -> Move:
+        return cls(0, 0)
 
 class SquareSet:
     def __init__(self, mask: Optional[BitBoard] = 0):
@@ -597,7 +669,7 @@ class BaseBoard:
         return None
     
     def _board_to_fen(self) -> str:
-        buffer: Array[c_char] = utils.create_string_buffre(256)
+        buffer: Array[c_char] = utils.create_string_buffer(256)
         chess_lib.board_to_fen(self._ptr, buffer)
         return buffer.value.decode('utf-8')
 
@@ -621,70 +693,6 @@ class BaseBoard:
     @property
     def _ptr(self) -> object:
         return byref(self._board)
-
-@dataclasses.dataclass
-class Move:
-    from_sq: Square
-    """Source square"""
-
-    dst_sq: Square
-    """Destenation square"""
-
-    piece: Optional[PieceType] = None 
-    """Piece type"""
-
-    flag: Flags = EMPTY_FLAG
-    """Flag type"""
-
-    def __repr__(self) -> str:
-        return f'{type(self).__name__}(san={self.san}, from={self.from_sq}, to={self.dst_sq}, piece={self.piece}, flag={self.flag})'
-    
-    def __str__(self) -> str:
-        return self.san
-    
-    def __hash__(self) -> int:
-        return utils.encode_move(self.from_sq, 
-                                 self.dst_sq, 
-                                 hash(self.piece) if self.piece else 0,
-                                 self.flag)
-    
-    def move_str(self) -> str:
-        try:
-            result = chess_lib.move_to_str(hash(self))
-            if not result:
-                return ""
-            return str(result.decode('utf-8'))
-        except Exception as e:
-            print(f"Error converting move to string: {e}")
-            return ""
-    
-    @classmethod
-    def parse_uci(cls) -> Move:
-        #TODO: parse move from the uci, make it simple
-        pass
-
-    def promo_piece_type(self) -> Optional[Piece]:
-        if self.is_promotion():
-            return (self.flag & 0x3) + KNIGHT
-        else:
-            return None
-
-    def is_promotion(self) -> bool:
-        return bool(self.flag & PROMO_FLAG)
-    
-    def is_enp(self) -> bool:
-        return bool(self.flag == ENP_FLAG)
-    
-    def is_castling(self) -> bool:
-        return bool(self.flag == CASTLE_FLAG)
-    
-    @property
-    def san(self) -> str:
-        return self.move_str()
-    
-    @classmethod
-    def null(cls) -> Move:
-        return cls(0, 0)
 
 class MoveUndo:
     def __init__(self, move: Move = Move.null()):
@@ -721,69 +729,7 @@ class MoveUndo:
         if isinstance(other, MoveUndo):
             return self._move == other._move
         return False
-        
-class MoveGenerator:
-    def __init__(self, board: Board) -> None:
-        self.board: Board = board
-        self._cache: Dict[str, List[Move]] = {}
-    
-    def _generate(self, func_name: str) -> List[Move]:
-        if func_name not in self._cache:
-            array: Array[Any] = utils.create_uint32_array(MAX_MOVES)
-            size: int = getattr(chess_lib, func_name)(self.board.board._ptr, array)
-            self._cache[func_name] = [Move(*data) for data in utils.scan_move_list(array[:size])]
-        return self._cache[func_name]
-    
-    def gen_attacks(self, color: Color) -> List[Move]:
-        array = utils.create_uint32_array(MAX_MOVES)
-        if color == BLACK:
-            occ_mask = self.board.board.occ(WHITE).mask
-            func = chess_lib.gen_black_attacks_against
-        elif color == WHITE:
-            occ_mask = self.board.board.occ(BLACK).mask
-            func = chess_lib.gen_white_attacks_against
-        else:
-            raise ValueError("Invalid color provided!")
 
-        size = func(self.board.board._ptr, array, occ_mask)
-        return [Move(*data) for data in utils.scan_move_list(array[:size])] #TODO: return only legal attacks
-
-    @property
-    def castling_moves(self) -> List[Move]:
-        return list(filter(lambda x : x.is_castling(), self))
-
-    @property
-    def ep_moves(self) -> List[Move]:
-        return list(filter(lambda x : x.is_enp(), self))
-
-    @property
-    def legal_moves(self) -> List[Move]:
-        return self._generate('gen_legal_moves')
-
-    @property
-    def pseudo_legal_move(self) -> List[Move]:
-        return self._generate('gen_moves')
-
-    def __len__(self) -> int:
-        return len(self.legal_moves)
-     
-    def __repr__(self) -> str:
-        sans: str = ', '.join(m.san for m in self)
-        return f"<{type(self).__name__} at {id(self):#x} ({sans})>"
-
-    def __contains__(self, move: Move) -> bool:
-        return any(move == m for m in self)
-    
-    def __getitem__(self, index: int) -> Move:
-        return self.legal_moves[index]
-    
-    def __iter__(self) -> Iterator[Move]:
-        for move in self.legal_moves:
-            yield move
-    
-    def __bool__(self) -> bool:
-        return bool(len(self))
-    
 class Board:
     def __init__(self, fen: Optional[str] = None):
         self.board: BaseBoard = BaseBoard()
@@ -804,14 +750,30 @@ class Board:
     def castling_rights(self) -> int:
         return self.board._castling_rights()
     
+    def _generate_moves(self, func_name: str):
+        array: Array[Any] = utils.create_uint32_array(MAX_MOVES)
+        size: int = getattr(chess_lib, func_name)(self.board._ptr, array)
+        for data in utils.scan_move_list(array[:size]):
+            yield Move(*data)
+
+    def generate_pseudo_legal_moves(self):
+        return self._generate_moves('gen_moves')
+
+    def generate_legal_moves(self):
+        return self._generate_moves('gen_legal_moves')
+    
     @property
     def turn(self) -> Color:
         """Get the turn color '0' for WHITE, '1' for BLACK"""
         return self.board.turn()
     
     @property
-    def gen_moves(self) -> MoveGenerator:
-        return MoveGenerator(self)
+    def gen_legal_moves(self) -> LegalMoveGenerator:
+        return LegalMoveGenerator(self)
+    
+    @property
+    def gen_pseudo_legal_moves(self) -> PseudoLegalMoveGenerator:
+        return PseudoLegalMoveGenerator(self)
     
     @property
     def fen(self) -> str:
@@ -842,7 +804,7 @@ class Board:
         )
     
     def is_checkmate(self) -> bool:
-        return self.is_check() and not any(self.gen_moves)
+        return self.is_check() and not any(self.gen_legal_moves)
     
     def is_fifty_moves(self) -> bool:
         return False
@@ -851,7 +813,7 @@ class Board:
         return False
 
     def is_stalemate(self) -> bool:
-        return not self.is_check() and not any(self.gen_moves)
+        return not self.is_check() and not any(self.gen_legal_moves)
     
     def is_check(self) -> bool:
         return self.board._is_check()
@@ -917,7 +879,46 @@ class Board:
     
     def __hash__(self) -> int:
         return self.board.zobrist_key()
+
+class PseudoLegalMoveGenerator:
+    def __init__(self, board: Board):
+        self.board = board
+
+    def __bool__(self) -> bool:
+        return any(self.board.generate_pseudo_legal_moves())
     
+    def __len__(self) -> int:
+        return len(list(self))
+    
+    def __iter__(self) -> Iterator[Move]:
+        return self.board.generate_pseudo_legal_moves()
+    
+    def __contains__(self, move: Move) -> bool:
+        return any(move == m for m in self) #TODO: add a function that check if a move is psaudo legal
+      
+    def __repr__(self) -> str:
+        sans = ", ".join(m.san for m in self)
+        return f"{type(self).__name__} at {id(self):#x} ({sans})"
+        
+        
+class LegalMoveGenerator:
+
+    def __init__(self, board: Board):
+        self.board = board
+
+    def __bool__(self) -> bool:
+        return any(self.board.generate_legal_moves())
+    
+    def __iter__(self) -> Iterator[Move]:
+        return self.board.generate_legal_moves()
+    
+    def __contains__(self, move: Move) -> bool:
+        return any(move == m for m in self) #TODO: add a function that check if a move is a legal move
+
+    def __repr__(self) -> str:
+        sans = ", ".join(m.san for m in self)
+        return f"{type(self).__name__} at {id(self):#x} ({sans})"
+
 class MovesStack:
     def __init__(self, board: Board) -> None:
         self.board = board
@@ -926,7 +927,7 @@ class MovesStack:
     def push(self, move: Move) -> None:
         if not isinstance(move, Move):
             raise TypeError(f"Expected Move instance, got {type(move).__name__}")
-        if move not in MoveGenerator(self.board):
+        if not move in LegalMoveGenerator(self.board):
             raise IllegalMoveError(f"Move {move.san} is not legal in the current position.")
         
         undo: MoveUndo = MoveUndo(move)
