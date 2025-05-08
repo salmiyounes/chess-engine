@@ -1,9 +1,9 @@
 #ifndef ZOBRIST_H
 #define ZOBRIST_H
 
-#include <stdio.h>
 #include "bb.h"
 #include "types.h"
+#include <stdio.h>
 
 extern bb HASH_PIECES[12][64];
 extern bb HASH_EP[8];
@@ -16,4 +16,4 @@ void gen_curr_state_zobrist(ChessBoard *board);
 
 void gen_pawn_zobrist(ChessBoard *board);
 
-#endif 
+#endif

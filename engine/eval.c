@@ -5,14 +5,16 @@ int eval(ChessBoard *board) {
 }
 
 int pesto_eval(ChessBoard *board) {
-    if (board_drawn_by_insufficient_material(board)) return 0;
-    
-    int side2move   =   board->color;
-    int mgScore     =   board->mg[side2move] - board->mg[side2move ^ BLACK];
-    int egScore     =   board->eg[side2move] - board->eg[side2move ^ BLACK];
-    int mgPhase     =   board->gamePhase;
-    if (mgPhase > 24) mgPhase = 24;
-    int egPhase     = 24 - mgPhase;
+    if (board_drawn_by_insufficient_material(board))
+        return 0;
+
+    int side2move = board->color;
+    int mgScore = board->mg[side2move] - board->mg[side2move ^ BLACK];
+    int egScore = board->eg[side2move] - board->eg[side2move ^ BLACK];
+    int mgPhase = board->gamePhase;
+    if (mgPhase > 24)
+        mgPhase = 24;
+    int egPhase = 24 - mgPhase;
     return (mgScore * mgPhase + egScore * egPhase) / 24;
 }
 
@@ -49,6 +51,6 @@ int evaluate_pawns(ChessBoard *board) {
     int score = 0;
     score += evaluate_white_pawns(board);
     score -= evaluate_black_pawns(board);
-    
-    return (board->color == WHITE) ? score : -score; 
+
+    return (board->color == WHITE) ? score : -score;
 }

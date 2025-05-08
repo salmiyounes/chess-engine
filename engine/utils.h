@@ -1,9 +1,9 @@
 #ifndef UTILS_H
-#define UTILS_H 
+#define UTILS_H
 
-#include <string.h>
-#include <stdlib.h>
 #include "types.h"
+#include <stdlib.h>
+#include <string.h>
 
 char *strdup(const char *src);
 
