@@ -23,7 +23,7 @@
 #define MIN_R 3
 #define DR 4
 
-int best_move(Search *search, ChessBoard *board, Move *result);
+int best_move(Search *search, ChessBoard *board, Move *result, bool debug);
 
 int staticExchangeEvaluation(ChessBoard *board, Move move, int threshold);
 

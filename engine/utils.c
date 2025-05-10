@@ -1,5 +1,13 @@
 #include "utils.h"
 
+void swap_any(void *a, void *b, size_t s) {
+    void *temp = malloc(s);
+    memcpy(temp, a, s);
+    memcpy(a, b, s);
+    memcpy(b, temp, s);
+    free(temp);
+}
+
 char *strdup(const char *src) {
     if (src == NULL)
         return NULL;

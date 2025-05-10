@@ -1,43 +1,45 @@
 #include "search.h"
+#include "utils.h"
 
 #define FullDepthMoves 5
 #define ReductionLimit 3
 #define MAX_PLY 100
 
-int compare(const void *p, const void *q) {
-    // https://en.cppreference.com/w/c/algorithm/qsort
-    struct Score *x = (struct Score *)p;
-    struct Score *y = (struct Score *)q;
-
-    return (y->score > x->score) - (y->score < x->score);
-}
-
 void sort_moves(Search *search, ChessBoard *board, Move *moves, int count,
                 int ply) {
-    Move best = table_get_move(&search->table, board->hash);
-    struct Score scores[MAX_MOVES] = {0};
+    Move temp[MAX_MOVES];
+    int scores[MAX_MOVES];
+    int indexes[MAX_MOVES];
 
+    Move best = table_get_move(&search->table, board->hash);
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
-        score_moves(board, move, &scores[i].score);
+        score_moves(board, move, &scores[i]);
         if (best != NULL_MOVE && (best == move))
-            scores[i].score += INF;
+            scores[i] += INF;
         else if (KILLER_MOVES[WHITE][ply] == move)
-            scores[i].score += 9000;
+            scores[i] += 9000;
         else if (KILLER_MOVES[BLACK][ply] == move)
-            scores[i].score += 8000;
+            scores[i] += 8000;
         else
-            scores[i].score +=
+            scores[i] +=
                 History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
-        scores[i].index = i;
+        indexes[i] = i;
     }
 
-    qsort(scores, count, sizeof(struct Score), compare);
+    for (int i = 1; i < count; i++) {
+        int j = i;
+        while (j > 0 && scores[j - 1] < scores[j]) {
+            swap_any(&scores[j - 1], &scores[j], sizeof(int));
+            swap_any(&indexes[j - 1], &indexes[j], sizeof(int));
+            j--;
+        }
+    }
 
-    Move temp[MAX_MOVES];
     memcpy(temp, moves, sizeof(Move) * count);
+
     for (int i = 0; i < count; i++) {
-        moves[i] = temp[scores[i].index];
+        moves[i] = temp[indexes[i]];
     }
 }
 
@@ -380,7 +382,7 @@ void print_pv(Search *search, ChessBoard *board, int depth) {
     }
 }
 
-int best_move(Search *search, ChessBoard *board, Move *result) {
+int best_move(Search *search, ChessBoard *board, Move *result, bool debug) {
     int best_score = -INF;
     int alpha = -INF, beta = INF;
     search->stop = false;
@@ -404,11 +406,12 @@ int best_move(Search *search, ChessBoard *board, Move *result) {
         alpha = best_score - VALID_WINDOW;
         beta = best_score + VALID_WINDOW;
 
-#if defined(DEBUG)
-        printf("info score=%d, depth=%d, pv ", best_score, depth);
-        print_pv(search, board, depth);
-        printf("\n");
-#endif
+        if (debug) {
+            printf("info score=%d, depth=%d, pv ", best_score, depth);
+            print_pv(search, board, depth);
+            printf("\n");
+        }
+        
         if (best_score == -INF) {
             best_score = 0;
             goto cleanup;
