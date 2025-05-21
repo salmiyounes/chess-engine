@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import dataclasses
-from typing import Optional, List, Dict, Tuple, TypeAlias, Iterator, Self, Any
+from typing import Optional, List, Tuple, TypeAlias, Iterator, Self, Any
 from ctypes import (
     CDLL,
     Structure,
@@ -259,8 +259,12 @@ chess_lib.thread_init.argtypes = [
     POINTER(Search),
     POINTER(ChessBoard),
     POINTER(c_uint32),
+    c_int,
+    c_bool,
 ]
 chess_lib.thread_init.restype = c_void_p
+chess_lib.thread_stop.argtypes = [POINTER(Search)]
+chess_lib.thread_stop.restype = c_void_p
 chess_lib.best_move.argtypes = [POINTER(Search), POINTER(ChessBoard), POINTER(c_uint32)]
 chess_lib.best_move.restype = c_int
 
@@ -417,6 +421,12 @@ class PieceType:
 
 @dataclasses.dataclass(slots=True)
 class Move:
+    """Represents a chess move with source and destination squares.
+
+    Contains information about the piece being moved, move flags (castling, en passant, etc),
+    and methods for move validation and notation.
+    """
+
     from_sq: Square
     """Source square"""
 
@@ -554,17 +564,95 @@ class SquareSet:
         return arr
 
 
-"""
 class Searcher:
+    """Chess engine searcher that manages search parameters and execution."""
+
     def __init__(self, board: Board, debug: bool = False):
-        self.board  = board
+        """Initialize the searcher with a board position.
+
+        Args:
+            board: The chess board to analyze
+            debug: Enable debug output during search
+        """
+        self.board = board
         self.search = Search()
-        self.move   = c_uint32()
-    
-    def start(self) -> Move:
-        chess_lib.thread_init( byref(self.search), self.board.board._ptr, byref(self.move))
-        return Move(self.move.value)
-"""
+        self.move = c_uint32()
+        self.debug = debug
+        self._is_searching = False
+
+    def start(self, depth: int = 6, time_s: int = 1) -> Move:
+        """Start the search for the best move.
+
+        Args:
+            depth: Maximum search depth (default 6 ply)
+
+        Returns:
+            The best move found
+
+        Raises:
+            ValueError: If depth is not positive
+        """
+        if depth <= 0:
+            raise ValueError("Search depth must be positive")
+
+        if self._is_searching:
+            raise RuntimeError("Search already in progress")
+
+        self._is_searching = True
+        try:
+            # Initialize search thread
+            chess_lib.thread_init(
+                byref(self.search),
+                self.board.board.ptr,
+                byref(self.move),
+                time_s,
+                self.debug,
+            )
+
+            # Convert move value to Move object
+            best_move = self._convert_move(self.move.value)
+
+            return best_move
+
+        finally:
+            self._is_searching = False
+
+    def stop(self) -> None:
+        """Stop the current search."""
+        if self._is_searching:
+            # Stop the search
+            chess_lib.thread_stop(byref(self.search))
+            self._is_searching = False
+
+    def clear(self) -> None:
+        """Clear search state and hash tables."""
+        self.search = Search()
+        self.move = c_uint32()
+        self._is_searching = False
+
+    def _convert_move(self, move_val: int) -> Move:
+        """Convert raw move value to Move object."""
+        if not move_val:
+            return Move.null()
+
+        from_sq = (move_val >> 0) & 0x3F
+        to_sq = (move_val >> 6) & 0x3F
+        piece_val = (move_val >> 12) & 0xF
+        flag = (move_val >> 16) & 0xF
+
+        piece = PieceType.from_index(piece_val) if piece_val != NONE else None
+
+        return Move(from_sq, to_sq, piece, flag)
+
+    @property
+    def nodes(self) -> int:
+        """Number of nodes searched."""
+        return self.search.nodes
+
+    @property
+    def is_searching(self) -> bool:
+        """Whether a search is currently in progress."""
+        return self._is_searching
 
 
 class BaseBoard:
@@ -596,7 +684,7 @@ class BaseBoard:
 
     def board_init(self) -> None:
         chess_lib.bb_init()
-        chess_lib.board_init(self._ptr)
+        chess_lib.board_init(self.ptr)
 
     def zobrist_key(self) -> BitBoard:
         hash = self._board.hash
@@ -662,7 +750,7 @@ class BaseBoard:
 
     def attacks_mask(self, square: Square) -> BitBoard:
         mask: BitBoard = chess_lib.attacks_to_square(
-            self._ptr, square, self.occ(BOTH).mask
+            self.ptr, square, self.occ(BOTH).mask
         )
         return mask
 
@@ -675,7 +763,7 @@ class BaseBoard:
         return int(rights)
 
     def clear(self) -> None:
-        chess_lib.board_clear(self._ptr)
+        chess_lib.board_clear(self.ptr)
 
     def tolist(self) -> List[Optional[PieceType]]:
         arr: List[Optional[PieceType]] = [None] * SQUARE_NB
@@ -684,28 +772,28 @@ class BaseBoard:
         return arr
 
     def _drawn_by_insufficient_material(self) -> bool:
-        return bool(chess_lib.board_drawn_by_insufficient_material(self._ptr))
+        return bool(chess_lib.board_drawn_by_insufficient_material(self.ptr))
 
-    def _prety_print(self) -> None:
-        chess_lib.print_board(self._ptr)
+    def unicode_print(self) -> None:
+        chess_lib.print_board(self.ptr)
         return None
 
     def _board_to_fen(self) -> str:
         buffer: Array[c_char] = utils.create_string_buffer(256)
-        chess_lib.board_to_fen(self._ptr, buffer)
+        chess_lib.board_to_fen(self.ptr, buffer)
         return buffer.value.decode("utf-8")
 
     def _set_fen(self, fen: str) -> None:
-        chess_lib.board_load_fen(self._ptr, fen.encode())
+        chess_lib.board_load_fen(self.ptr, fen.encode())
 
     def _is_check(self) -> bool:
-        return bool(chess_lib.is_check(self._ptr))
+        return bool(chess_lib.is_check(self.ptr))
 
     def _illegal_to_move(self) -> bool:
-        return bool(chess_lib.illegal_to_move(self._ptr))
+        return bool(chess_lib.illegal_to_move(self.ptr))
 
     def _perft(self, depth: Optional[int] = 1) -> int:
-        nodes = chess_lib.perft_test(self._ptr, depth)
+        nodes = chess_lib.perft_test(self.ptr, depth)
         return int(nodes)
 
     def turn(self) -> Color:
@@ -713,7 +801,7 @@ class BaseBoard:
         return Color(color)
 
     @property
-    def _ptr(self) -> object:
+    def ptr(self) -> object:
         return byref(self._board)
 
 
@@ -742,7 +830,7 @@ class MoveUndo:
         return None
 
     @property
-    def _ptr(self) -> Any:
+    def ptr(self) -> Any:
         return byref(self.undo)
 
     def __repr__(self) -> str:
@@ -780,7 +868,7 @@ class Board:
 
     def _generate_moves(self, func_name: str):
         array: Array[Any] = utils.create_uint32_array(MAX_MOVES)
-        size: int = getattr(chess_lib, func_name)(self.board._ptr, array)
+        size: int = getattr(chess_lib, func_name)(self.board.ptr, array)
         for data in utils.scan_move_list(array[:size]):
             yield Move(*data)
 
@@ -908,8 +996,69 @@ class Board:
         return f"{type(self).__name__}(fen={self.fen!r})"
 
     def __str__(self) -> str:
-        self.board._prety_print()
-        return ""
+        """
+        Returns a string representation of the board with ranks and files.
+
+        >>> import engine
+        >>>
+        >>> board = engine.Board()
+        >>> print (board)
+
+        8 R N B Q K B N R
+        7 P P P P P P P P
+        6 . . . . . . . .
+        5 . . . . . . . .
+        4 . . . . . . . .
+        3 . . . . . . . .
+        2 p p p p p p p p
+        1 r n b q k b n r
+        a b c d e f g h
+
+        """
+        builder: List[str] = []
+
+        for rank in range(7, -1, -1):
+            builder.append(f"{rank + 1} ")
+
+            for file in range(8):
+                square = rank * 8 + file
+                piece = self.board.piece_at(square)
+
+                if piece:
+                    builder.append(piece.symbol())
+                else:
+                    builder.append(".")
+                builder.append(" ")
+
+            builder.append("\n")
+
+        builder.append("  a b c d e f g h")
+
+        return "".join(builder)
+
+    def unicode(self) -> None:
+        """
+        pretty-printing the current board position using Unicode chess symbols.
+
+        >>> import engine
+        >>>
+        >>> board = engine.Board()
+        >>> board.unicode()
+
+        8 ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
+        7 ♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+        6 . . . . . . . .
+        5 . . . . . . . .
+        4 . . . . . . . .
+        3 . . . . . . . .
+        2 ♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟
+        1 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+        a b c d e f g h
+
+
+        rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -
+        """
+        self.board.unicode_print()
 
     def __hash__(self) -> int:
         return self.board.zobrist_key()
@@ -939,6 +1088,7 @@ class PseudoLegalMoveGenerator:
 
 
 class LegalMoveGenerator:
+    """Generator for legal moves in a given position."""
 
     def __init__(self, board: Board):
         self.board = board
@@ -965,6 +1115,15 @@ class MovesStack:
         self._moves_history: List[Tuple[Move, MoveUndo]] = []
 
     def push(self, move: Move) -> None:
+        """Make the given move on the board.
+
+        Args:
+            move: The Move object representing the move to make
+
+        Raises:
+            TypeError: If move is not a Move instance
+            IllegalMoveError: If the move is not legal in the current position
+        """
         if not isinstance(move, Move):
             raise TypeError(f"Expected Move instance, got {type(move).__name__}")
         if not move in LegalMoveGenerator(self.board):
@@ -973,16 +1132,24 @@ class MovesStack:
             )
 
         undo: MoveUndo = MoveUndo(move)
-        chess_lib.do_move(self.board.board._ptr, hash(move), undo._ptr)
+        chess_lib.do_move(self.board.board.ptr, hash(move), undo.ptr)
         self._moves_history.append((move, undo))
 
     def pop(self) -> Move:
+        """Take back the last move made.
+
+        Returns:
+            The move that was undone
+
+        Raises:
+            IndexError: If there are no moves to undo
+        """
         if len(self):
             move, undo = self._moves_history.pop()
         else:
             raise IndexError("pop from empty move history")
 
-        chess_lib.undo_move(self.board.board._ptr, hash(move), undo._ptr)
+        chess_lib.undo_move(self.board.board.ptr, hash(move), undo.ptr)
         return move
 
     def peek(self) -> Optional[Move]:
