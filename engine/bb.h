@@ -50,4 +50,4 @@ bb bb_queen(int sq, bb obs);
 
 void bb_print(bb bbit);
 
-#endif
+#endif // BB_H

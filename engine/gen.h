@@ -68,4 +68,4 @@ int is_check(ChessBoard *board);
 
 int move_gives_check(ChessBoard *board, const Move move);
 
-#endif
+#endif // GEN_H

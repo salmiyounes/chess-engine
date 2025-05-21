@@ -27,4 +27,4 @@ int best_move(Search *search, ChessBoard *board, Move *result, bool debug);
 
 int staticExchangeEvaluation(ChessBoard *board, Move move, int threshold);
 
-#endif
+#endif // SEARCH_H

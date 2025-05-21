@@ -12,4 +12,4 @@ int attacks_to_king_square(ChessBoard *board, bb b_king);
 
 bb attacks_to_square(ChessBoard *board, int sq, bb occ);
 
-#endif
+#endif // ATTACKS_H

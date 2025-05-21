@@ -89,6 +89,7 @@ typedef struct {
 
 typedef struct {
     int score;
+    bool debug;
     Search *search;
     ChessBoard *board;
     Move *move;
@@ -168,4 +169,4 @@ typedef struct {
 #define FILE_G 0x4040404040404040ULL
 #define FILE_H 0x8080808080808080ULL
 
-#endif
+#endif // TYPES_H

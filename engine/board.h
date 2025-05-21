@@ -67,4 +67,9 @@ int board_drawn_by_insufficient_material(ChessBoard *board);
 int is_draw(ChessBoard *board, int ply);
 
 bb perft_test(ChessBoard *board, int depth);
-#endif
+
+void thread_init(Search *search, ChessBoard *board, Move *result, int duration, bool debug);
+
+void thread_stop(Search *search);
+
+#endif // BOARD_H
