@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sys
 from typing import List, Dict, Any
-from engine import Board, Move, Searcher
+from sisyphus import Board, Move, Searcher
 
 class UCI:
     """UCI protocol implementation for chess engine."""

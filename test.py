@@ -1,7 +1,7 @@
 import logging
 import sys
 import unittest
-import engine
+import sisyphus
 
 
 class RaiseLogHandler(logging.StreamHandler):
@@ -12,52 +12,52 @@ class RaiseLogHandler(logging.StreamHandler):
 
 class UtilsTestCase(unittest.TestCase):
     def test_square(self):
-        for square in list(range(engine.SQUARE_NB)):
-            file_sq = engine.utils.file_of(square)
-            rank_of = engine.utils.rank_of(square)
-            self.assertEqual(engine.utils.square(rank_of, file_sq), square)
+        for square in list(range(sisyphus.SQUARE_NB)):
+            file_sq = sisyphus.utils.file_of(square)
+            rank_of = sisyphus.utils.rank_of(square)
+            self.assertEqual(sisyphus.utils.square(rank_of, file_sq), square)
 
     def test_bit_operations(self):
-        bb = engine.utils.bit(engine.C2)
-        self.assertEqual(engine.utils.get_lsb(bb), 10)
-        self.assertEqual(engine.utils.popcount(bb), 1)
-        self.assertTrue(engine.utils.test_bit(bb, 10))
-        self.assertFalse(engine.utils.test_bit(bb, 11))
+        bb = sisyphus.utils.bit(sisyphus.C2)
+        self.assertEqual(sisyphus.utils.get_lsb(bb), 10)
+        self.assertEqual(sisyphus.utils.popcount(bb), 1)
+        self.assertTrue(sisyphus.utils.test_bit(bb, 10))
+        self.assertFalse(sisyphus.utils.test_bit(bb, 11))
 
     def test_square_distances(self):
-        self.assertEqual(engine.utils.square_distance(engine.A1, engine.H8), 7)
-        self.assertEqual(engine.utils.square_distance(engine.E4, engine.E5), 1)
+        self.assertEqual(sisyphus.utils.square_distance(sisyphus.A1, sisyphus.H8), 7)
+        self.assertEqual(sisyphus.utils.square_distance(sisyphus.E4, sisyphus.E5), 1)
         self.assertEqual(
-            engine.utils.square_manhattan_distance(engine.A1, engine.H8), 14
+            sisyphus.utils.square_manhattan_distance(sisyphus.A1, sisyphus.H8), 14
         )
         self.assertEqual(
-            engine.utils.square_manhattan_distance(engine.E4, engine.E5), 1
+            sisyphus.utils.square_manhattan_distance(sisyphus.E4, sisyphus.E5), 1
         )
 
     def test_scan_forward(self):
-        bb = (1 << engine.A1) | (1 << engine.C3) | (1 << engine.H8)
-        squares = list(engine.utils.scan_forward(bb))
-        self.assertEqual(squares, [engine.A1, engine.C3, engine.H8])
+        bb = (1 << sisyphus.A1) | (1 << sisyphus.C3) | (1 << sisyphus.H8)
+        squares = list(sisyphus.utils.scan_forward(bb))
+        self.assertEqual(squares, [sisyphus.A1, sisyphus.C3, sisyphus.H8])
 
     def test_file_and_rank(self):
-        self.assertEqual(engine.utils.file_of(engine.E4), 4)
-        self.assertEqual(engine.utils.rank_of(engine.E4), 3)
-        self.assertEqual(engine.utils.file_of(engine.H8), 7)
-        self.assertEqual(engine.utils.rank_of(engine.H8), 7)
+        self.assertEqual(sisyphus.utils.file_of(sisyphus.E4), 4)
+        self.assertEqual(sisyphus.utils.rank_of(sisyphus.E4), 3)
+        self.assertEqual(sisyphus.utils.file_of(sisyphus.H8), 7)
+        self.assertEqual(sisyphus.utils.rank_of(sisyphus.H8), 7)
 
 
 class BoardTestCase(unittest.TestCase):
     def test_default_position(self):
-        board = engine.Board()
-        self.assertEqual(board.turn, engine.WHITE)
-        self.assertEqual(board.fen, engine.STARTING_FEN)
-        self.assertEqual(board.turn, engine.WHITE)
+        board = sisyphus.Board()
+        self.assertEqual(board.turn, sisyphus.WHITE)
+        self.assertEqual(board.fen, sisyphus.STARTING_FEN)
+        self.assertEqual(board.turn, sisyphus.WHITE)
 
     def test_eq(self):
-        b1 = engine.Board(
+        b1 = sisyphus.Board(
             "r1bqkb1r/ppppppp1/2n2n1p/6B1/3P4/2N5/PPP1PPPP/R2QKBNR w KQkq - 0 1"
         )
-        b2 = engine.Board(
+        b2 = sisyphus.Board(
             "r1bqkb1r/ppppppp1/2n2n1p/6B1/3P4/2N5/PPP1PPPP/R2QKBNR w KQkq - 0 1"
         )
         self.assertEqual(b1, b2)
@@ -70,7 +70,7 @@ class BoardTestCase(unittest.TestCase):
             "8/8/8/8/8/8/8/8 w - -",
         ]
 
-        board = engine.Board()
+        board = sisyphus.Board()
 
         for fen in test_positions:
             board.set_fen(fen)
@@ -83,7 +83,7 @@ class BoardTestCase(unittest.TestCase):
             board.set_fen(None)
 
     def test_move_making(self):
-        board = engine.Board()
+        board = sisyphus.Board()
         count = 0
         for move in board.gen_legal_moves:
             board.push(move)
@@ -97,20 +97,20 @@ class BoardTestCase(unittest.TestCase):
             board.push(None)
 
     def test_color_at(self):
-        board = engine.Board()
-        self.assertEqual(board.color_at(engine.A1), engine.WHITE)
-        self.assertEqual(board.color_at(engine.G7), engine.BLACK)
-        self.assertEqual(board.color_at(engine.E4), None)
+        board = sisyphus.Board()
+        self.assertEqual(board.color_at(sisyphus.A1), sisyphus.WHITE)
+        self.assertEqual(board.color_at(sisyphus.G7), sisyphus.BLACK)
+        self.assertEqual(board.color_at(sisyphus.E4), None)
 
     def test_clear(self):
-        board = engine.Board()
+        board = sisyphus.Board()
         moves = board.gen_legal_moves
-        move = engine.Move(
-            engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE)
+        move = sisyphus.Move(
+            sisyphus.A2, sisyphus.A3, sisyphus.PieceType(sisyphus.PAWN, sisyphus.WHITE)
         )
         board.push(move)
         board.clear()
-        self.assertEqual(board.fen, engine.STARTING_FEN)
+        self.assertEqual(board.fen, sisyphus.STARTING_FEN)
         self.assertEqual(len(board._handle_moves), 0)
 
     def test_perft(self):
@@ -161,7 +161,7 @@ class BoardTestCase(unittest.TestCase):
             ],
         }
 
-        board = engine.Board()
+        board = sisyphus.Board()
 
         max_test_depth = 3
         for fen, expected_results in test_positions.items():
@@ -183,49 +183,49 @@ class BoardTestCase(unittest.TestCase):
             board.perft_test(-1)
 
     def test_attackers(self):
-        board = engine.Board(
+        board = sisyphus.Board(
             "r1b1k2r/pp1n1ppp/2p1p3/q5B1/1b1P4/P1n1PN2/1P1Q1PPP/2R1KB1R b Kkq - 3 10"
         )
 
-        attackers = board.attackers(engine.WHITE, engine.C3)
+        attackers = board.attackers(sisyphus.WHITE, sisyphus.C3)
         self.assertEqual(len(attackers), 3)
-        self.assertIn(engine.C1, attackers)
-        self.assertIn(engine.D2, attackers)
-        self.assertIn(engine.B2, attackers)
-        self.assertNotIn(engine.D4, attackers)
-        self.assertNotIn(engine.E1, attackers)
+        self.assertIn(sisyphus.C1, attackers)
+        self.assertIn(sisyphus.D2, attackers)
+        self.assertIn(sisyphus.B2, attackers)
+        self.assertNotIn(sisyphus.D4, attackers)
+        self.assertNotIn(sisyphus.E1, attackers)
 
     def test_check(self):
-        board = engine.Board(
+        board = sisyphus.Board(
             "rnbqkbnr/ppp2ppp/3p4/1B2Q3/8/8/PPPPPPPP/RN2KBNR b KQkq - 0 1"
         )
         self.assertTrue(board.is_check())
 
     def test_checkers(self):
-        board = engine.Board(
+        board = sisyphus.Board(
             "rnbqkbnr/ppp2ppp/3p4/1B2Q3/8/8/PPPPPPPP/RN2KBNR b KQkq - 0 1"
         )
-        mask = board.checkers(engine.BLACK)
+        mask = board.checkers(sisyphus.BLACK)
         self.assertEqual(len(mask), 2)
 
     def test_checkmate(self):
-        board = engine.Board()
+        board = sisyphus.Board()
         self.assertFalse(board.is_checkmate())
         board.set_fen("rnbqkbnr/ppp2ppp/3p4/1B2Q3/8/8/PPPPPPPP/RN2KBNR b KQkq - 0 1")
         self.assertTrue(board.is_checkmate())
 
     def test_castling_rights(self):
-        board = engine.Board()
-        self.assertEqual(board.castling_rights(), engine.CASTLE_ALL)
+        board = sisyphus.Board()
+        self.assertEqual(board.castling_rights(), sisyphus.CASTLE_ALL)
 
-        board = engine.Board("1q1k4/2Rr4/8/2Q3K1/8/8/8/8 w - - 0 1")
-        self.assertEqual(board.castling_rights(), engine.EMPTY_FLAG)
+        board = sisyphus.Board("1q1k4/2Rr4/8/2Q3K1/8/8/8/8 w - - 0 1")
+        self.assertEqual(board.castling_rights(), sisyphus.EMPTY_FLAG)
 
 
     def test_peek(self):
-        board = engine.Board()
-        move = engine.Move(
-            engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE)
+        board = sisyphus.Board()
+        move = sisyphus.Move(
+            sisyphus.A2, sisyphus.A3, sisyphus.PieceType(sisyphus.PAWN, sisyphus.WHITE)
         )
         board.push(move)
         self.assertEqual(board.peek(), move)
@@ -236,14 +236,14 @@ class BoardTestCase(unittest.TestCase):
 
 class BaseBoardTestCase(unittest.TestCase):
     def test_equal(self):
-        a1 = engine.BaseBoard()
-        a2 = engine.BaseBoard()
+        a1 = sisyphus.BaseBoard()
+        a2 = sisyphus.BaseBoard()
         self.assertEqual(a1, a2)
 
     def test_init(self):
-        board = engine.BaseBoard()
+        board = sisyphus.BaseBoard()
 
-        for c in range(engine.BOTH):
+        for c in range(sisyphus.BOTH):
             self.assertEqual(len(board.pawns(c)), 8)
             self.assertEqual(len(board.knights(c)), 2)
             self.assertEqual(len(board.bishops(c)), 2)
@@ -252,53 +252,53 @@ class BaseBoardTestCase(unittest.TestCase):
             self.assertEqual(len(board.kings(c)), 1)
 
     def test_king_sq(self):
-        board = engine.BaseBoard()
-        self.assertEqual(board.king_sq(engine.WHITE), engine.E1)
-        self.assertEqual(board.king_sq(engine.BLACK), engine.E8)
+        board = sisyphus.BaseBoard()
+        self.assertEqual(board.king_sq(sisyphus.WHITE), sisyphus.E1)
+        self.assertEqual(board.king_sq(sisyphus.BLACK), sisyphus.E8)
 
     def test_piece_at(self):
-        board = engine.BaseBoard()
-        self.assertEqual(board.piece_at(engine.D1), engine.PieceType.from_symbol("q"))
-        self.assertEqual(board.piece_at(engine.F8), engine.PieceType.from_symbol("B"))
-        self.assertEqual(board.piece_at(engine.D3), None)
+        board = sisyphus.BaseBoard()
+        self.assertEqual(board.piece_at(sisyphus.D1), sisyphus.PieceType.from_symbol("q"))
+        self.assertEqual(board.piece_at(sisyphus.F8), sisyphus.PieceType.from_symbol("B"))
+        self.assertEqual(board.piece_at(sisyphus.D3), None)
 
         with self.assertRaises(IndexError):
             board.piece_at(-1)
 
     def test_color_at(self):
-        board = engine.BaseBoard()
-        self.assertEqual(board.color_at(engine.A2), engine.WHITE)
-        self.assertEqual(board.color_at(engine.A7), engine.BLACK)
+        board = sisyphus.BaseBoard()
+        self.assertEqual(board.color_at(sisyphus.A2), sisyphus.WHITE)
+        self.assertEqual(board.color_at(sisyphus.A7), sisyphus.BLACK)
 
 
 class SquareSetTestCase(unittest.TestCase):
     def test_len(self):
-        mask = engine.utils.bit(engine.A1) | engine.utils.bit(engine.B1)
-        a1 = engine.SquareSet(mask)
+        mask = sisyphus.utils.bit(sisyphus.A1) | sisyphus.utils.bit(sisyphus.B1)
+        a1 = sisyphus.SquareSet(mask)
         self.assertTrue(bool(a1))
         self.assertEqual(len(a1), 2)
 
     def test_contains(self):
-        mask = engine.utils.bit(engine.A5)
-        a1 = engine.SquareSet(mask)
+        mask = sisyphus.utils.bit(sisyphus.A5)
+        a1 = sisyphus.SquareSet(mask)
 
-        self.assertTrue(engine.A5 in a1)
-        self.assertFalse(engine.B1 in a1)
+        self.assertTrue(sisyphus.A5 in a1)
+        self.assertFalse(sisyphus.B1 in a1)
 
     def test_pop(self):
-        mask = engine.utils.bit(engine.A5)
-        a1 = engine.SquareSet(mask)
+        mask = sisyphus.utils.bit(sisyphus.A5)
+        a1 = sisyphus.SquareSet(mask)
 
-        self.assertEqual(a1.pop(), engine.A5)
+        self.assertEqual(a1.pop(), sisyphus.A5)
         with self.assertRaises(KeyError):
             a1.pop()
 
 
 class MoveTestCase(unittest.TestCase):
     def test_default(self):
-        board = engine.Board()
-        m1 = engine.Move(
-            engine.A2, engine.A3, engine.PieceType(engine.PAWN, engine.WHITE)
+        board = sisyphus.Board()
+        m1 = sisyphus.Move(
+            sisyphus.A2, sisyphus.A3, sisyphus.PieceType(sisyphus.PAWN, sisyphus.WHITE)
         )
         self.assertIn(m1, board.gen_legal_moves)
 
@@ -306,41 +306,41 @@ class MoveTestCase(unittest.TestCase):
         board.pop()  # Undo move
 
     def test_parse_uci(self):
-        board = engine.Board()
-        m1 = engine.Move.parse_uci(board, "g1f3")
+        board = sisyphus.Board()
+        m1 = sisyphus.Move.parse_uci(board, "g1f3")
         self.assertIn(m1, board.gen_legal_moves)
 
         with self.assertRaises(ValueError):
-            engine.Move.parse_uci(board, "")
+            sisyphus.Move.parse_uci(board, "")
 
     def test_san(self):
-        move = engine.Move(
-            engine.G1, engine.F3, engine.PieceType(engine.KNIGHT, engine.WHITE)
+        move = sisyphus.Move(
+            sisyphus.G1, sisyphus.F3, sisyphus.PieceType(sisyphus.KNIGHT, sisyphus.WHITE)
         )
         self.assertEqual(move.san, "g1f3")
 
 
 class PiecTypeTestCase(unittest.TestCase):
     def test_symbol(self):
-        p1 = engine.PieceType(engine.PAWN, engine.WHITE)
-        p2 = engine.PieceType(engine.KING, engine.WHITE)
-        p3 = engine.PieceType(engine.QUEEN, engine.BLACK)
+        p1 = sisyphus.PieceType(sisyphus.PAWN, sisyphus.WHITE)
+        p2 = sisyphus.PieceType(sisyphus.KING, sisyphus.WHITE)
+        p3 = sisyphus.PieceType(sisyphus.QUEEN, sisyphus.BLACK)
 
         self.assertEqual(p1.symbol(), "P")
         self.assertEqual(p2.symbol(), "K")
         self.assertEqual(p3.symbol(), "q")
 
     def test_to_index(self):
-        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
+        piece = sisyphus.PieceType(sisyphus.QUEEN, sisyphus.BLACK)
         self.assertEqual(hash(piece), 9)
 
     def test_from_index(self):
-        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
-        self.assertEqual(engine.PieceType.from_index(9), piece)
+        piece = sisyphus.PieceType(sisyphus.QUEEN, sisyphus.BLACK)
+        self.assertEqual(sisyphus.PieceType.from_index(9), piece)
 
     def test_from_symbol(self):
-        piece = engine.PieceType(engine.QUEEN, engine.BLACK)
-        self.assertEqual(engine.PieceType.from_symbol("Q"), piece)
+        piece = sisyphus.PieceType(sisyphus.QUEEN, sisyphus.BLACK)
+        self.assertEqual(sisyphus.PieceType.from_symbol("Q"), piece)
 
 
 if __name__ == "__main__":
