@@ -4,17 +4,12 @@
 #include "bb.h"
 #include "types.h"
 
-bb get_bishop_attacks(int sq, 
-                      bb obs);
+bb get_bishop_attacks(int sq, bb obs);
 
-bb get_rook_attacks(int sq, 
-                    bb obs);
-                    
-int attacks_to_king_square(ChessBoard *board, 
-                          bb b_king);
+bb get_rook_attacks(int sq, bb obs);
 
-bb attacks_to_square(ChessBoard *board, 
-                     int sq, 
-                     bb occ);
+int attacks_to_king_square(ChessBoard *board, bb b_king);
 
-#endif
+bb attacks_to_square(ChessBoard *board, int sq, bb occ);
+
+#endif // ATTACKS_H

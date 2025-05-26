@@ -1,14 +1,24 @@
 #include "utils.h"
 
+void swap_any(void *a, void *b, size_t s) {
+    void *temp = malloc(s);
+    memcpy(temp, a, s);
+    memcpy(a, b, s);
+    memcpy(b, temp, s);
+    free(temp);
+}
+
 char *strdup(const char *src) {
-    if (src == NULL) return NULL;
-    
+    if (src == NULL)
+        return NULL;
+
     size_t len = strlen(src) + 1;
-    void *new_s  = malloc(len);
+    void *new_s = malloc(len);
 
-    if (new_s == NULL) return NULL;
+    if (new_s == NULL)
+        return NULL;
 
-    return (char *) memcpy(new_s, src, len);
+    return (char *)memcpy(new_s, src, len);
 }
 
 bb xorshift64() {

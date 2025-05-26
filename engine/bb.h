@@ -1,16 +1,19 @@
 #ifndef BB_H
 #define BB_H
-#include <stdio.h>
-#include <assert.h>
 #include "types.h"
-
+#include <assert.h>
+#include <stdio.h>
 
 #define BIT(sq) (U64(1) << (sq))
 
-#define POP_LSB(b, x) b = get_lsb(x); x &= ~BIT(b);
-#define POP_MSB(b, x) b = get_msb(x); x &= ~BIT(b);
+#define POP_LSB(b, x)                                                          \
+  b = get_lsb(x);                                                              \
+  x &= ~BIT(b);
+#define POP_MSB(b, x)                                                          \
+  b = get_msb(x);                                                              \
+  x &= ~BIT(b);
 
-#define SET_BIT(bbit, sq)   ((bbit) |=  BIT(sq))
+#define SET_BIT(bbit, sq) ((bbit) |= BIT(sq))
 #define CLEAR_BIT(bbit, sq) ((bbit) &= ~BIT(sq))
 
 extern bb BB_PAWNS[2][64];
@@ -29,29 +32,22 @@ int popcount(bb bbit);
 
 int several(bb bbit);
 
-bool test_bit(bb bbit, 
-              const int sq);
+bool test_bit(bb bbit, const int sq);
 
 int file_of(int sq);
 
 int rank_of(int sq);
 
-int square(int rank, 
-           int file);
+int square(int rank, int file);
 
-int make_piece_type(int pc, 
-               int color);
+int make_piece_type(int pc, int color);
 
-bb bb_bishop(int sq, 
-             bb obs);
+bb bb_bishop(int sq, bb obs);
 
-bb bb_rook(int sq, 
-           bb obs);
+bb bb_rook(int sq, bb obs);
 
-bb bb_queen(int sq, 
-            bb obs);
+bb bb_queen(int sq, bb obs);
 
 void bb_print(bb bbit);
 
-#endif
-
+#endif // BB_H

@@ -1,46 +1,47 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define INLINE  inline __attribute__((always_inline))
+#define INLINE inline __attribute__((always_inline))
 
 #if !defined(DEBUG_DISABLE_PRINT) || defined(DEBUG)
-    #define err(str) fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__); fflush(stderr)
-#else 
-    #define err(str)
+#define err(str)                                                               \
+  fprintf(stderr, "%s, at %s, line %d ", str, __FILE__, __LINE__);             \
+  fflush(stderr)
+#else
+#define err(str)
 #endif
 
 #if !defined(DISABLE_ASSERT)
-    #define ASSERT(expr) assert(expr)
-#else 
-    #define ASSERT(expr)
+#define ASSERT(expr) assert(expr)
+#else
+#define ASSERT(expr)
 #endif
 
-typedef unsigned long long  bb;
+typedef unsigned long long bb;
 
-#define U64(u) u##ULL 
+#define U64(u) u##ULL
 #define U32(u) u##U
 
-typedef struct { 
-    int    squares[64];
-    int 	  numMoves;
-    int 	     color;
-    int 	    castle;
+typedef struct {
+    int squares[64];
+    int numMoves;
+    int color;
+    int castle;
 
-    int  		 mg[2];
-    int 		 eg[2];
-    int 	 gamePhase;
+    int mg[2];
+    int eg[2];
+    int gamePhase;
 
-    bb  bb_squares[12];
-    bb  m_history[8192];
-    bb 			occ[3];
+    bb bb_squares[12];
+    bb m_history[8192];
+    bb occ[3];
 
-    bb 	 	  	    ep;
-    bb 			  hash;
-    bb 		 pawn_hash;
-
+    bb ep;
+    bb hash;
+    bb pawn_hash;
 } ChessBoard;
 
 typedef uint32_t Move;
@@ -49,17 +50,17 @@ typedef int (*MoveGen)(ChessBoard *, Move *);
 typedef int (*AttacksGen)(ChessBoard *, Move *, bb);
 
 typedef struct {
-  int capture;
-  int castle;
-  bb     ep;
+    int capture;
+    int castle;
+    bb ep;
 } Undo;
 
 typedef struct {
-    bb   	key;
-    int   score;
-    int   depth;
-    int    flag;
-    Move   move;
+    bb key;
+    int score;
+    int depth;
+    int flag;
+    Move move;
 } Entry;
 
 typedef struct {
@@ -69,8 +70,8 @@ typedef struct {
 } Table;
 
 typedef struct {
-    bb 	    key;
-    int   value;
+    bb key;
+    int value;
 } PawnEntry;
 
 typedef struct {
@@ -80,74 +81,75 @@ typedef struct {
 } PawnTable;
 
 typedef struct {
-    int   nodes;
-    bool   stop;
-    Move   move;
-    Table  table;
+    int nodes;
+    bool stop;
+    Move move;
+    Table table;
 } Search;
 
 typedef struct {
-    int 		score;
-    Search 	  *search;
+    int score;
+    bool debug;
+    Search *search;
     ChessBoard *board;
-    Move 		*move;
+    Move *move;
 } Thread_d;
 
 struct Score {
     int score;
     int index;
-}; 
+};
 
 typedef struct {
-    bb 		key;
-    bb 	  value;
-    int   depth;
+    bb key;
+    bb value;
+    int depth;
 } Entry_t;
 
 #define SQUARE_NB 64
-#define COLOR_NB   2
-#define FILE_NB    8
-#define RANK_NB    8
+#define COLOR_NB 2
+#define FILE_NB 8
+#define RANK_NB 8
 
-#define PAWN_MATERIAL   100
+#define PAWN_MATERIAL 100
 #define KNIGHT_MATERIAL 320
 #define BISHOP_MATERIAL 330
-#define ROOK_MATERIAL   500
-#define QUEEN_MATERIAL  900
-#define KING_MATERIAL   20000
+#define ROOK_MATERIAL 500
+#define QUEEN_MATERIAL 900
+#define KING_MATERIAL 20000
 
-#define CASTLE_ALL 				15
-#define CASTLE_WHITE 			 3
-#define CASTLE_BLACK 			12
-#define CASTLE_WHITE_KING_SIDE 	 1
-#define CASTLE_WHITE_QUEEN_SIDE  2
-#define CASTLE_BLACK_KING_SIDE   4
-#define CASTLE_BLACK_QUEEN_SIDE  8 
+#define CASTLE_ALL 15
+#define CASTLE_WHITE 3
+#define CASTLE_BLACK 12
+#define CASTLE_WHITE_KING_SIDE 1
+#define CASTLE_WHITE_QUEEN_SIDE 2
+#define CASTLE_BLACK_KING_SIDE 4
+#define CASTLE_BLACK_QUEEN_SIDE 8
 
 #define WHITE 0
-#define BLACK 1 
-#define BOTH  2
+#define BLACK 1
+#define BOTH 2
 
-#define PAWN   0
+#define PAWN 0
 #define KNIGHT 1
 #define BISHOP 2
-#define ROOK   3
-#define QUEEN  4
-#define KING   5
+#define ROOK 3
+#define QUEEN 4
+#define KING 5
 
-#define WHITE_PAWN      0
-#define BLACK_PAWN      1
-#define WHITE_KNIGHT	2
-#define BLACK_KNIGHT    3
-#define WHITE_BISHOP    4
-#define BLACK_BISHOP    5
-#define WHITE_ROOK      6
-#define BLACK_ROOK      7
-#define WHITE_QUEEN     8
-#define BLACK_QUEEN     9
-#define WHITE_KING     10
-#define BLACK_KING     11 
-#define NONE		   12	
+#define WHITE_PAWN 0
+#define BLACK_PAWN 1
+#define WHITE_KNIGHT 2
+#define BLACK_KNIGHT 3
+#define WHITE_BISHOP 4
+#define BLACK_BISHOP 5
+#define WHITE_ROOK 6
+#define BLACK_ROOK 7
+#define WHITE_QUEEN 8
+#define BLACK_QUEEN 9
+#define WHITE_KING 10
+#define BLACK_KING 11
+#define NONE 12
 
 #define RANK_1 0x00000000000000ffULL
 #define RANK_2 0x000000000000ff00ULL
@@ -167,4 +169,4 @@ typedef struct {
 #define FILE_G 0x4040404040404040ULL
 #define FILE_H 0x8080808080808080ULL
 
-#endif
+#endif // TYPES_H
