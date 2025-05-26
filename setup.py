@@ -1,6 +1,7 @@
 from setuptools import setup
 from setuptools.command.build_py import build_py
 import subprocess
+import sisyphus
 import os
 
 class CustomBuildPyCommand(build_py):
@@ -10,8 +11,9 @@ class CustomBuildPyCommand(build_py):
 
 setup(
     name='sisyphus',
-    version='0.1.0',
-    description='Python chess engine',
+    version=sisyphus.__version__,
+    author=sisyphus.__author__,
+    description='Sisyphus chess engine',
     packages=['sisyphus'],
     package_dir={'sisyphus': 'sisyphus'},
     package_data={'sisyphus': ['libchess.so']},  
