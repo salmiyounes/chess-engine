@@ -15,15 +15,17 @@ void sort_moves(Search *search, ChessBoard *board, Move *moves, int count,
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
         score_moves(board, move, &scores[i]);
-        if (best != NULL_MOVE && (best == move))
-            scores[i] += INF;
-        else if (KILLER_MOVES[WHITE][ply] == move)
-            scores[i] += 9000;
-        else if (KILLER_MOVES[BLACK][ply] == move)
-            scores[i] += 8000;
-        else
-            scores[i] +=
-                History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
+        if (!is_capture(board, move)) {
+            if (best != NULL_MOVE && (best == move))
+                scores[i] += INF;
+            else if (KILLER_MOVES[WHITE][ply] == move)
+                scores[i] += 9000;
+            else if (KILLER_MOVES[BLACK][ply] == move)
+                scores[i] += 8000;
+            else
+                scores[i] +=
+                    History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)];
+        }
         indexes[i] = i;
     }
 
@@ -50,9 +52,6 @@ int ok_to_reduce(ChessBoard *board, Move move) {
 
 int quiescence_search(Search *search, ChessBoard *board, int ply, int alpha,
                       int beta) {
-    if (illegal_to_move(board))
-        return INF;
-
     int score, count;
     Undo undo;
     Move moves[MAX_MOVES];
@@ -102,9 +101,6 @@ stop_loop:
 
 int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha,
             int beta, bool cutnode) {
-    if (illegal_to_move(board))
-        return INF;
-
     int flag = ALPHA, value = -INF, count, TtHit, can_move = 0,
         moves_searched = 0;
     const int isPv = (alpha != beta - 1);
@@ -185,7 +181,6 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha,
     for (int i = 0; i < count; i++) {
         Move move = moves[i];
         do_move(board, move, &undo);
-
         if (moves_searched == 0) {
             value =
                 -negamax(search, board, depth - 1, ply + 1, -beta, -alpha, !cutnode);
@@ -193,7 +188,8 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha,
             if (moves_searched >= FullDepthMoves && depth >= ReductionLimit &&
                     !isPv && !is_check(board) &&
                     !staticExchangeEvaluation(board, move, 0) &&
-                    ok_to_reduce(board, move)) {
+                    ok_to_reduce(board, move) &&
+                    KILLER_MOVES[board->color][ply] != move) {
                 value = -negamax(search, board, depth - 2, ply + 1, -alpha - 1, -alpha,
                                  true);
             } else {
@@ -209,7 +205,6 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha,
                 }
             }
         }
-
         undo_move(board, move, &undo);
 
         moves_searched++;
@@ -224,17 +219,20 @@ int negamax(Search *search, ChessBoard *board, int depth, int ply, int alpha,
 
         if (value >= beta) {
             // Store Killer moves
-            KILLER_MOVES[BLACK][ply] = KILLER_MOVES[WHITE][ply];
-            KILLER_MOVES[WHITE][ply] = move;
-
+            if (!is_capture(board, move)) {
+                KILLER_MOVES[BLACK][ply] = KILLER_MOVES[WHITE][ply];
+                KILLER_MOVES[WHITE][ply] = move;
+            }
             table_set(&search->table, board->hash, depth, beta, BETA);
             table_set_move(&search->table, board->hash, depth, move);
             return beta;
         }
 
         if (value > alpha) {
-            History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] +=
-                depth * depth;
+            if (!is_capture(board, move)) {
+                History_Heuristic[board->color][EXTRACT_FROM(move)][EXTRACT_TO(move)] +=
+                    depth * depth;
+            }
             flag = EXACT;
             alpha = value;
             table_set_move(&search->table, board->hash, depth, move);

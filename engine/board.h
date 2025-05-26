@@ -68,7 +68,7 @@ int is_draw(ChessBoard *board, int ply);
 
 bb perft_test(ChessBoard *board, int depth);
 
-void thread_init(Search *search, ChessBoard *board, Move *result, int duration, bool debug);
+void thread_init(Search *search, ChessBoard *board, Move *result, float duration, bool debug);
 
 void thread_stop(Search *search);
 

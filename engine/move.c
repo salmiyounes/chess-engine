@@ -289,7 +289,7 @@ void score_moves(ChessBoard *board, Move move, int *score) {
         : square_values[piece][FLIP(dst)] - square_values[piece][FLIP(src)];
 
     if (is_capture(board, move))
-        result += MVV_LVA[victim][attacker];
+        result += MVV_LVA[victim][attacker] + 10000;
 
     if (IS_PROMO(flag))
         result += (color == WHITE) ? square_values[PROMO_PT(flag)][dst] -
@@ -297,7 +297,7 @@ void score_moves(ChessBoard *board, Move move, int *score) {
                   : square_values[PROMO_PT(flag)][FLIP(dst)] -
                   square_values[BLACK_PAWN][FLIP(dst)];
     else if (IS_ENP(flag))
-        result += MVV_LVA[PAWN][PAWN];
+        result += MVV_LVA[PAWN][PAWN] + 10000;
 
     *score = result;
 }

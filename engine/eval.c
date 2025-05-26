@@ -1,13 +1,10 @@
 #include "eval.h"
 
 int eval(ChessBoard *board) {
-    return pesto_eval(board) + evaluate_pawns(board);
+    return pesto_eval(board);
 }
 
 int pesto_eval(ChessBoard *board) {
-    if (board_drawn_by_insufficient_material(board))
-        return 0;
-
     int side2move = board->color;
     int mgScore = board->mg[side2move] - board->mg[side2move ^ BLACK];
     int egScore = board->eg[side2move] - board->eg[side2move ^ BLACK];

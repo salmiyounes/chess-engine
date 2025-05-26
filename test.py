@@ -215,8 +215,12 @@ class BoardTestCase(unittest.TestCase):
         self.assertTrue(board.is_checkmate())
 
     def test_castling_rights(self):
-        # TODO: add castling rights tests
-        pass
+        board = engine.Board()
+        self.assertEqual(board.castling_rights(), engine.CASTLE_ALL)
+
+        board = engine.Board("1q1k4/2Rr4/8/2Q3K1/8/8/8/8 w - - 0 1")
+        self.assertEqual(board.castling_rights(), engine.EMPTY_FLAG)
+
 
     def test_peek(self):
         board = engine.Board()
@@ -302,7 +306,12 @@ class MoveTestCase(unittest.TestCase):
         board.pop()  # Undo move
 
     def test_parse_uci(self):
-        pass
+        board = engine.Board()
+        m1 = engine.Move.parse_uci(board, "g1f3")
+        self.assertIn(m1, board.gen_legal_moves)
+
+        with self.assertRaises(ValueError):
+            engine.Move.parse_uci(board, "")
 
     def test_san(self):
         move = engine.Move(
@@ -317,9 +326,9 @@ class PiecTypeTestCase(unittest.TestCase):
         p2 = engine.PieceType(engine.KING, engine.WHITE)
         p3 = engine.PieceType(engine.QUEEN, engine.BLACK)
 
-        self.assertEqual(p1.symbol(), "p")
-        self.assertEqual(p2.symbol(), "k")
-        self.assertEqual(p3.symbol(), "Q")
+        self.assertEqual(p1.symbol(), "P")
+        self.assertEqual(p2.symbol(), "K")
+        self.assertEqual(p3.symbol(), "q")
 
     def test_to_index(self):
         piece = engine.PieceType(engine.QUEEN, engine.BLACK)

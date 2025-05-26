@@ -38,7 +38,7 @@ void thread_stop(Search *search) {
 }
 
 void thread_init(Search *search, ChessBoard *board, Move *result, 
-                int duration, 
+                float duration, 
                 bool debug) {
     Thread_d *thread_d = (Thread_d *)calloc(1, sizeof(Thread_d));
 
@@ -65,8 +65,8 @@ void thread_init(Search *search, ChessBoard *board, Move *result,
     }
 
     struct timespec ts;
-    ts.tv_sec = duration;
-    ts.tv_nsec = 0;
+    ts.tv_sec = (time_t)duration;
+    ts.tv_nsec = (long)((duration - (time_t)duration) * 1000000000L);
     nanosleep(&ts, NULL);
 
     thread_stop(search);
