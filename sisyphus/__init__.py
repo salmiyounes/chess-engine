@@ -17,7 +17,9 @@ from __future__ import annotations
 
 __author__ = "Salmi Younes"
 
-__version__ = ""
+__version__ = "0.1.0"
+
+__license__ = "MIT" 
 
 import os
 import dataclasses
@@ -169,8 +171,8 @@ NONE: Piece = 12
 PIECE_SYMBOLS: List[str] = ["p", "n", "b", "r", "q", "k"]
 
 
-# ChesBoard struct
 class ChessBoard(Structure):
+    """A C structure that represents a chess position using bitboards for piece placement, game state, and move history."""
     _fields_ = [
         ("squares", c_int * SQUARE_NB),
         ("numMoves", c_int),
@@ -188,8 +190,8 @@ class ChessBoard(Structure):
     ]
 
 
-# Table Entry struct
 class Entry(Structure):
+    """A C structure that represents a transposition table entry storing position evaluations and best moves."""
     _fields_ = [
         ("key", c_uint64),
         ("score", c_int),
@@ -198,17 +200,18 @@ class Entry(Structure):
     ]
 
 
-# Table struct
 class Table(Structure):
+    """A C structure representing a transposition table with size, mask and array of position entries."""
     _fields_ = [("size", c_int), ("mask", c_int), ("entry", POINTER(Entry))]
 
 
-# Search struct
 class Search(Structure):
+    """A C structure that manages chess engine search state including node count, stop flag, and transposition table."""
     _fields_ = [("nodes", c_int), ("stop", c_bool), ("num", c_int), ("table", Table)]
 
 
 class Undo(Structure):
+    """A C structure that stores information needed to undo a chess move, including captured pieces, castling rights, and en passant state."""
     _fields_ = [("capture", c_int), ("castle", c_int), ("ep", c_uint64)]
 
 
@@ -217,7 +220,8 @@ try:
 except OSError as e:
     raise RuntimeError(f"Could not load chess engine library: {e}")
 
-# main bit board functions
+
+# Bitboard manipulation functions
 chess_lib.get_lsb.argtypes = [c_uint64]
 chess_lib.get_lsb.restype = c_int
 chess_lib.get_msb.argtypes = [c_uint64]
@@ -243,7 +247,7 @@ chess_lib.attacks_to_king_square.restype = c_int
 chess_lib.attacks_to_square.argtypes = [POINTER(ChessBoard), c_int, c_uint64]
 chess_lib.attacks_to_square.restype = c_uint64
 
-# main board functions
+# Main board functions
 chess_lib.board_init.argtypes = [POINTER(ChessBoard)]
 chess_lib.board_init.restype = c_void_p
 chess_lib.board_load_fen.argtypes = [POINTER(ChessBoard), POINTER(c_char)]
@@ -293,7 +297,7 @@ chess_lib.move_to_str.restype = c_char_p
 chess_lib.make_move.argtypes = [POINTER(ChessBoard), c_uint32]
 chess_lib.make_move.restype = c_void_p
 
-#
+# Search and functions
 chess_lib.thread_init.argtypes = [
     POINTER(Search),
     POINTER(ChessBoard),
@@ -309,6 +313,7 @@ chess_lib.best_move.restype = c_int
 
 
 class IllegalMoveError(ValueError):
+    """Exception raised when attempting to make an illegal chess move."""
     pass
 
 
@@ -978,7 +983,7 @@ class SquareSet:
 class Searcher:
     """Chess engine searcher that manages search parameters and execution."""
 
-    def __init__(self, board: Board, debug: bool = True):
+    def __init__(self, board: Board, debug: bool = False):
         """Initialize the searcher with a board position.
 
         Args:
@@ -1622,7 +1627,7 @@ class Board:
         Raises:
             IllegalMoveError: If the move is not legal in current position
 
-        Exemple:
+        Example:
         >>>
         >>> board = Board()
         >>> move = Move(E2, E3, PieceType(PAWN, WHITE))
@@ -1645,7 +1650,7 @@ class Board:
 
     def push_null(self) -> None:
         """Push a null move this will just flip the color
-        and update the zobrist hash
+        and update the zobrist hash.
         """
         return None
 
@@ -1685,9 +1690,9 @@ class Board:
         """
         Returns a string representation of the board with ranks and files.
 
-        >>> import engine
+        >>> import sisyphus
         >>>
-        >>> board = engine.Board()
+        >>> board = sisyphus.Board()
         >>> print (board)
 
         8 R N B Q K B N R
@@ -1727,7 +1732,7 @@ class Board:
         pretty-printing the current board position using Unicode chess symbols.
 
         >>>
-        >>> board = engine.Board()
+        >>> board = sisyphus.Board()
         >>> board.unicode()
 
         8 ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖

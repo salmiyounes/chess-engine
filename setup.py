@@ -4,14 +4,19 @@ import subprocess
 
 class CustomBuildPyCommand(build_py):
     def run(self):
-        subprocess.check_call(['make'], cwd='sisyphus')
+        subprocess.check_call(
+            ['make', 'DEBUG=0', 'DEBUG_DISABLE_PRINT=1', 'DISABLE_ASSERT=1'],
+            cwd='sisyphus'
+        )
         super().run()
 
 setup(
     name='sisyphus',
     version='0.1.0',
     author='Salmi Younes',
-    description='Sisyphus chess engine',
+    description='Sisyphus: a Python Chess Engine/Library based on C backend',
+    long_description=open('README.md').read(),
+    url='https://github.com/salmiyounes/Sisyphus',
     packages=['sisyphus'],
     package_dir={'sisyphus': 'sisyphus'},
     package_data={'sisyphus': ['libchess.so']},  

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys
 from typing import List, Dict, Any
+import sisyphus
 from sisyphus import Board, Move, Searcher
 
 class UCI:
@@ -12,7 +13,20 @@ class UCI:
         self.board = Board()
         self.searcher = Searcher(self.board)
         self.debug = False
-        
+
+    def print_banner(self) -> None:
+        """Print engine banner with name and version."""
+        banner = """
+    ███████ ██ ███████ ██    ██ ██████  ██   ██ ██    ██ ███████ 
+    ██      ██ ██       ██  ██  ██   ██ ██   ██ ██    ██ ██      
+    ███████ ██ ███████   ████   ██████  ███████ ██    ██ ███████ 
+        ██ ██      ██    ██    ██      ██   ██ ██    ██      ██ 
+    ███████ ██ ███████    ██    ██      ██   ██  ██████  ███████ 
+    """
+        print(banner)
+        print(f"\t\t\t\t\t\tAuthor: {sisyphus.__author__}")
+        print(f"\t\t\t\t\t\tVersion: {sisyphus.__version__}\n")
+
     def _position(self, args: List[str]) -> None:
         """Handle 'position' command."""
         if not args:
@@ -59,6 +73,9 @@ class UCI:
         
     def loop(self) -> None:
         """Main UCI command loop."""
+        
+        self.print_banner()
+
         while True:
             try:
                 command = input().strip()
@@ -76,8 +93,8 @@ class UCI:
                     self.searcher.stop()
                     
                 elif cmd == "uci":
-                    print("id name Chess Engine")
-                    print("id author Younes Salmi")
+                    print("id name Sisyphus")
+                    print(f"id author {sisyphus.__author__}")
                     print("uciok")
                     
                 elif cmd == "isready":

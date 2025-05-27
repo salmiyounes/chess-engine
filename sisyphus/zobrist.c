@@ -1,14 +1,5 @@
 #include "zobrist.h"
 #include "utils.h"
-/*
-    from https://research.cs.wisc.edu/techreports/1970/TR88.pdf
-    Properties :
-        p1) ri XOR (rj XOR rk) = (ri XOR rj) XOR rk (Associative property)
-        p2) ri XOR rj = rj XOR ri (Commutative property)
-        p3) ri XOR ri = 0
-        p4) if si = r1 XOR r2 XOR .... XOR ri then {si} is a random sequence
-        p5) {si} is uniformly distributed
-*/
 
 bb HASH_PIECES[12][64];
 bb HASH_EP[8];
