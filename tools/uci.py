@@ -12,7 +12,8 @@ class UCI:
     def __init__(self):
         self.board = Board()
         self.searcher = Searcher(self.board)
-        self.debug = False
+        self.count    = 0
+        self.debug    = False
 
     def print_banner(self) -> None:
         """Print engine banner with name and version."""
@@ -43,6 +44,7 @@ class UCI:
         if args and args[0] == "moves":
             for move in args[1:]:
                 self.board.push(Move.parse_uci(self.board, move))
+                self.count += 1
                 
     def _go(self, args: List[str]) -> None:
         """Handle 'go' command."""
@@ -52,7 +54,7 @@ class UCI:
         while i < len(args):
             param = args[i]
             
-            if param in ["depth", "movetime"]:
+            if param in ["depth", "movetime", "movestogo", "wtime", "winc", "binc", "btime"]:
                 i += 1
                 if i < len(args):
                     params[param] = int(args[i])
@@ -60,15 +62,35 @@ class UCI:
                 params[param] = True
                 
             i += 1
-            
+
         # Start search with parameters
         if "movetime" in params:
-            best_move = self.searcher.start(time_s=params["movetime"] / 1000 - 0.1)
+            movetime = params["movetime"] / 1000
+            best_move = self.searcher.start(time_s=movetime)
+        
+        elif "wtime" in params:
+            wtime = params.get("wtime", 0) / 1000
+            btime = params.get("btime", 0) / 1000
+            winc  = params.get("winc", 0) / 1000
+            binc  = params.get("binc", 0) / 1000
+
+            if not self.board.turn:  
+                time, inc = wtime, winc
+            else:                
+                time, inc = btime, binc
+
+            think = min(time / 40 + inc, time / 2 - 1)
+            if self.count < 3:
+                think = min(think, 1.0)
+
+            best_move = self.searcher.start(time_s=think)
+
         elif "depth" in params:
             best_move = self.searcher.start(depth=params["depth"])
         else:
             best_move = self.searcher.start()
-            
+        
+        self.count = 0
         print(f"bestmove {best_move.move_str()}")
         
     def loop(self) -> None:
