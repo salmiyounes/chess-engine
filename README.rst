@@ -77,7 +77,7 @@ Use Sisyphus as library
         >>> board.gen_legal_moves
         LegalMoveGenerator at 0x7e1c20527fb0 (a2a3, b2b3, c2c3, d2d3, e2e3, f2f3, g2g3, h2h3, a2a4, b2b4, c2c4, d2d4, e2e4, f2f4, g2g4, h2h4, b1a3, b1c3, g1f3, g1h3)
         >>> 
-        >>> board.board.gen_pseudo_legal_moves
+        >>> board.gen_pseudo_legal_moves
         PseudoLegalMoveGenerator at 0x7e1c203695b0 (a2a3, b2b3, c2c3, d2d3, e2e3, f2f3, g2g3, h2h3, a2a4, b2b4, c2c4, d2d4, e2e4, f2f4, g2g4, h2h4, b1a3, b1c3, g1f3, g1h3)
 
 * Show a simple ASCII board.
@@ -191,7 +191,7 @@ Play against Sisyphus!
 ----------------------
 
 You can play against Sisyphus using any chess GUI that supports the UCI protocol,
-It has been primarily tested with `CuteChess <https://github.com/cutechess/cutechess>`_
+It has been primarily tested with `CuteChess <https://github.com/cutechess/cutechess>`_, It also has a `Lichess account <https://lichess.org/@/Sisyphus-engine>`_ where you can challenge it.
 
 License
 -------

@@ -15,7 +15,7 @@ setup(
     version='0.1.0',
     author='Salmi Younes',
     description='Sisyphus: a Python Chess Engine/Library based on C backend',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     url='https://github.com/salmiyounes/Sisyphus',
     packages=['sisyphus'],
     package_dir={'sisyphus': 'sisyphus'},
